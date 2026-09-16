@@ -1,0 +1,27 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/annoyie
+    username: postgres
+    password: 123123@123AA
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: dwx1110804@gmail.com
+    password: xgjb zcpd vnhi itgp
+
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  jwt:
+    secret: 8St7npi80n21m0nU060a8NU89123gIJ
+    expiration: 604800000
+
+

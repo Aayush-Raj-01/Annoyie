@@ -27,6 +27,8 @@ public class User {
     private boolean verified;
     private String otp;
     private LocalDateTime otpExpiry;
+    private String gender;
+    private String tag;
 
     public User(){}
 }

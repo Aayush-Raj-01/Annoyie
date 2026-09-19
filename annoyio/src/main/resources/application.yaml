@@ -20,8 +20,8 @@ spring:
           auth: true
           starttls:
             enable: true
-  jwt:
-    secret: 8St7npi80n21m0nU060a8NU89123gIJ
-    expiration: 604800000
+jwt:
+  secret: 8St7npi80n21m0nU060a8NU89123gIJf
+  expiration: 604800000
 
 

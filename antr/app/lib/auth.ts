@@ -8,6 +8,7 @@ export interface UserProfile {
 
 const STORAGE_KEY = "annoyms_user_profile";
 const PENDING_EMAIL_KEY = "annoyms_pending_email";
+const TOKEN_KEY = "annoyms_auth_token";
 
 export function getPendingEmail(): string {
   if (typeof window === "undefined") return "";
@@ -17,6 +18,16 @@ export function getPendingEmail(): string {
 export function setPendingEmail(email: string): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(PENDING_EMAIL_KEY, email);
+}
+
+export function getAuthToken(): string {
+  if (typeof window === "undefined") return "";
+  return localStorage.getItem(TOKEN_KEY) || "";
+}
+
+export function setAuthToken(token: string): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(TOKEN_KEY, token);
 }
 
 export function getUserProfile(): UserProfile | null {
@@ -55,5 +66,6 @@ export function clearUserProfile(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(STORAGE_KEY);
   localStorage.removeItem(PENDING_EMAIL_KEY);
+  localStorage.removeItem(TOKEN_KEY);
   window.dispatchEvent(new Event("annoyms_profile_updated"));
 }

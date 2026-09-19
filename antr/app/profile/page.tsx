@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Navbar from "../components/navbar";
-import { getUserProfile, UserProfile } from "../lib/auth";
+import { getUserProfile, clearUserProfile, UserProfile } from "../lib/auth";
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loaded, setLoaded] = useState(false);
 
@@ -21,6 +23,11 @@ export default function ProfilePage() {
     return () => window.removeEventListener("annoyms_profile_updated", handleUpdate);
   }, []);
 
+  const handleSignOut = () => {
+    clearUserProfile();
+    router.push("/authentication");
+  };
+
   if (!loaded) {
     return (
       <div className="min-h-screen bg-zinc-950 flex items-center justify-center text-zinc-400">
@@ -35,10 +42,20 @@ export default function ProfilePage() {
         {/* Top bar */}
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold tracking-tight">User Profile</h1>
-          <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            Anonymous Identity Active
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              {profile ? "Anonymous Identity Active" : "Guest"}
+            </span>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="text-xs px-2.5 py-1 rounded-xl border border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-red-400 hover:border-red-500/30 hover:bg-red-500/10 transition-all cursor-pointer flex items-center gap-1 font-medium"
+              title="Sign Out"
+            >
+              <span>🚪</span> Sign Out
+            </button>
+          </div>
         </div>
 
         {profile ? (
@@ -124,6 +141,14 @@ export default function ProfilePage() {
                 💬 Open Chats
               </Link>
             </div>
+
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="w-full text-center py-2.5 px-4 rounded-xl border border-red-500/20 bg-red-500/10 text-xs font-medium text-red-400 hover:bg-red-500/20 hover:border-red-500/30 hover:text-red-300 transition-all cursor-pointer flex items-center justify-center gap-2"
+            >
+              <span>🚪</span> Sign Out of Account
+            </button>
           </div>
         ) : (
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-8 text-center space-y-4">
@@ -134,17 +159,18 @@ export default function ProfilePage() {
             </p>
             <div className="flex justify-center gap-3 pt-2">
               <Link
-                href="/authentication"
-                className="py-2.5 px-5 rounded-xl bg-blue-600 text-xs font-semibold text-white hover:bg-blue-500 transition-all cursor-pointer"
-              >
-                Sign Up / Sign In
-              </Link>
-              <Link
                 href="/onboarding"
-                className="py-2.5 px-4 rounded-xl border border-zinc-700 bg-zinc-800 text-xs font-medium text-zinc-300 hover:text-white"
+                className="py-2.5 px-4 rounded-xl bg-blue-600 text-xs font-semibold text-white hover:bg-blue-500 transition-all cursor-pointer"
               >
                 Setup Persona
               </Link>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="py-2.5 px-4 rounded-xl border border-zinc-700 bg-zinc-800 text-xs font-medium text-zinc-300 hover:text-red-400 hover:border-red-500/30 transition-all cursor-pointer"
+              >
+                Sign Out
+              </button>
             </div>
           </div>
         )}

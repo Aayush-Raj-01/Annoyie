@@ -1,9 +1,7 @@
 package com.reio.annoyio.auth.controller;
 
 
-import com.reio.annoyio.auth.dto.ProfileRequest;
-import com.reio.annoyio.auth.dto.RegisterRequest;
-import com.reio.annoyio.auth.dto.VerifyOtpRequest;
+import com.reio.annoyio.auth.dto.*;
 import com.reio.annoyio.auth.service.AuthService;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,5 +32,16 @@ public class AuthController {
     public String updateProfile(@RequestBody ProfileRequest request){
         authService.updateProfile(request);
         return "Profile updated successfully";
+    }
+
+    @PostMapping("/login")
+    public LoginResponse login(@RequestBody LoginRequest request){
+        return authService.login(request);
+    }
+
+    @GetMapping("/me")
+    public UserResponse me(@RequestHeader("Authorization") String authHeader){
+        String token = authHeader.replace("Bearer ", "");
+        return authService.me(token);
     }
 }

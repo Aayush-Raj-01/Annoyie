@@ -44,4 +44,13 @@ public class AuthController {
         String token = authHeader.replace("Bearer ", "");
         return authService.me(token);
     }
+
+    @PostMapping(value = "/upload-avatar", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public java.util.Map<String, String> uploadAvatar(
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            @RequestParam(value = "email", required = false) String email
+    ) {
+        String avatarUrl = authService.uploadAvatar(file, email);
+        return java.util.Map.of("avatarUrl", avatarUrl, "message", "Avatar uploaded successfully");
+    }
 }

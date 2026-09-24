@@ -97,10 +97,20 @@ public class AuthService {
         if (chosenUsername != null && !chosenUsername.isBlank()) {
             user.setUsername(chosenUsername);
             user.setName(chosenUsername);
-            userRepository.save(user);
         }
 
-        if
+        if(request.gender() != null && !request.gender().isBlank()) {
+            user.setGender(request.gender());
+        }
+
+        if(request.tag() != null && !request.tag().isBlank()) {
+            user.setTag(request.tag());
+        }
+
+        if(request.avatarUrl() != null && !request.avatarUrl().isBlank()) {
+            user.setAvatarUrl(request.avatarUrl().trim());
+        }
+        userRepository.save(user);
     }
 
 
@@ -121,10 +131,54 @@ public class AuthService {
         String email = jwtService.extractUsername(token);
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        return new UserResponse(user.getEmail(), user.getUsername());
-
+        return new UserResponse(user.getEmail(), user.getUsername(), user.getGender(), user.getTag(), user.getAvatarUrl());
     }
 
+    public String uploadAvatar(org.springframework.web.multipart.MultipartFile file, String email) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File cannot be empty");
+        }
 
+        if (file.getSize() > 5 * 1024 * 1024) {
+            throw new IllegalArgumentException("File size must be less than 5MB");
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new IllegalArgumentException("Only image files (PNG, JPEG, WEBP, GIF) are allowed");
+        }
+
+        try {
+            String originalName = file.getOriginalFilename();
+            String ext = "";
+            if (originalName != null && originalName.contains(".")) {
+                ext = originalName.substring(originalName.lastIndexOf(".")).toLowerCase();
+            } else {
+                ext = ".jpg";
+            }
+
+            String filename = java.util.UUID.randomUUID().toString() + ext;
+            java.nio.file.Path uploadDir = java.nio.file.Paths.get("uploads", "avatars");
+            if (!java.nio.file.Files.exists(uploadDir)) {
+                java.nio.file.Files.createDirectories(uploadDir);
+            }
+
+            java.nio.file.Path targetPath = uploadDir.resolve(filename);
+            java.nio.file.Files.copy(file.getInputStream(), targetPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+            String avatarUrl = "http://localhost:8080/uploads/avatars/" + filename;
+
+            if (email != null && !email.isBlank()) {
+                userRepository.findByEmail(email.trim().toLowerCase()).ifPresent(user -> {
+                    user.setAvatarUrl(avatarUrl);
+                    userRepository.save(user);
+                });
+            }
+
+            return avatarUrl;
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("Failed to store uploaded file: " + e.getMessage(), e);
+        }
+    }
 
 }

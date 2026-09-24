@@ -12,13 +12,10 @@ export default function Navbar() {
           Chats
         </Link>
         <Link href="/olx" className="hover:text-zinc-100 transition-colors">
-          OLX
+          MarketPlace
         </Link>
         <Link href="/profile" className="hover:text-zinc-100 transition-colors">
           Profile
-        </Link>
-        <Link href="/authentication" className="text-blue-400 hover:text-blue-300 transition-colors">
-          Auth
         </Link>
       </div>
     </nav>

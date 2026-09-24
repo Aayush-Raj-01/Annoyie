@@ -17,7 +17,7 @@ public class EmailService {
         message.setFrom("dwx1110804@gmail.com");
         message.setTo(email);
         message.setSubject("VERIFICATION CODE");
-        message.setText("Your verification code is: " + otp);
+        message.setText("Your Annoyoi Account Creation Verification code is: " + otp);
         mailSender.send(message);
     }
 

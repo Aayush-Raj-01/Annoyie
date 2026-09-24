@@ -5,6 +5,7 @@ public record ProfileRequest(
         String username,
         String anonymousName,
         String gender,
-        String tag
+        String tag,
+        String avatarUrl
 ) {
 }

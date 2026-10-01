@@ -8,6 +8,7 @@ export interface Message {
   roomId?: number;
   tag?: string;
   senderEmail?: string;
+  avatarUrl?: string;
 }
 
 // ─── Payload sent via WebSocket /app/sendMessage ─────────────────────────────
@@ -15,6 +16,9 @@ export interface SendMessageDTO {
   senderEmail: string;
   roomId: number;
   content: string;
+  sender?: string;
+  avatarUrl?: string;
+  tag?: string;
 }
 
 // ─── Chat Room Model ─────────────────────────────────────────────────────────

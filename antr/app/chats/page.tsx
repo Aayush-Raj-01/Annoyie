@@ -6,7 +6,12 @@ import ChatContainer from "@/components/chat/ChatContainer";
 import { getUserProfile, syncUserProfile, UserProfile } from "../lib/auth";
 
 export default function ChatsPage() {
-  const [user, setUser] = useState<{ anonymousName: string; tag?: string }>({
+  const [user, setUser] = useState<{
+    anonymousName: string;
+    tag?: string;
+    email?: string;
+    avatarUrl?: string;
+  }>({
     anonymousName: "Anonymous",
   });
 
@@ -18,6 +23,8 @@ export default function ChatsPage() {
         setUser({
           anonymousName: profile.anonymousName,
           tag: profile.hobbies?.[0] || undefined,
+          email: profile.email || undefined,
+          avatarUrl: profile.avatarUrl || undefined,
         });
         return true;
       }

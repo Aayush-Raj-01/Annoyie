@@ -39,7 +39,7 @@ export default function MessageList({
   const bottomRef = useRef<HTMLDivElement>(null);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
 
-  // Auto scroll on new messages
+  // Auto-scroll on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
@@ -57,26 +57,30 @@ export default function MessageList({
   };
 
   return (
-    <div className="relative flex-1 min-h-0 bg-zinc-950/40 flex flex-col">
+    <div className="relative flex-1 min-h-0 bg-[#08090d] flex flex-col overflow-hidden">
+      {/* Subtle Dot Grid Background */}
+      <div className="absolute inset-0 bg-[radial-gradient(#27272a_1px,transparent_1px)] [background-size:32px_32px] opacity-15 pointer-events-none" />
+
+      {/* Messages Scroll Area */}
       <div
         ref={containerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-4 py-4 space-y-1 scrollbar-thin scrollbar-thumb-zinc-800"
+        className="flex-1 overflow-y-auto px-3 sm:px-6 py-5 scrollbar-thin scrollbar-thumb-zinc-800 relative z-10"
       >
         {/* Loading Skeleton */}
         {isLoading && (
-          <div className="space-y-4 py-6 animate-pulse">
+          <div className="space-y-4 py-8 animate-pulse max-w-2xl mx-auto">
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-full bg-zinc-800" />
-              <div className="space-y-1.5 flex-1">
+              <div className="space-y-2 flex-1">
                 <div className="w-24 h-3 bg-zinc-800 rounded" />
-                <div className="w-48 h-10 bg-zinc-800/60 rounded-2xl" />
+                <div className="w-56 h-10 bg-zinc-900 rounded-2xl" />
               </div>
             </div>
             <div className="flex items-start gap-3 justify-end">
-              <div className="space-y-1.5 flex flex-col items-end">
+              <div className="space-y-2 flex flex-col items-end">
                 <div className="w-20 h-3 bg-zinc-800 rounded" />
-                <div className="w-40 h-10 bg-indigo-900/40 rounded-2xl" />
+                <div className="w-48 h-10 bg-emerald-950/40 rounded-2xl" />
               </div>
             </div>
           </div>
@@ -84,78 +88,100 @@ export default function MessageList({
 
         {/* Error State */}
         {isError && (
-          <div className="text-center py-8 px-4 bg-red-950/20 border border-red-900/30 rounded-2xl my-4">
+          <div className="text-center py-8 px-4 bg-rose-950/20 border border-rose-500/20 rounded-2xl my-4 max-w-md mx-auto">
             <div className="text-2xl mb-2">⚠️</div>
-            <p className="text-sm font-medium text-red-300">Failed to load previous messages</p>
-            <p className="text-xs text-red-400/80 mt-1 max-w-sm mx-auto">
+            <p className="text-sm font-semibold text-rose-300">Could not retrieve messages</p>
+            <p className="text-xs text-zinc-400 mt-1">
               {error instanceof Error ? error.message : "The chat backend could not be reached."}
             </p>
             {onRetry && (
               <button
                 onClick={onRetry}
-                className="mt-3 px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-800/40 hover:bg-red-800/60 text-red-200 border border-red-700/50 transition-colors"
+                className="mt-3 px-4 py-1.5 text-xs font-semibold rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 border border-rose-500/30 transition-colors cursor-pointer"
               >
-                Try Again
+                Retry Connection
               </button>
             )}
           </div>
         )}
 
-        {/* Welcome Room Banner */}
+        {/* Welcome Room Clean Header */}
         {!isLoading && (
-          <div className="text-center py-6 border-b border-zinc-800/40 mb-4">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 text-2xl mb-2 shadow-inner">
-              💬
+          <div className="py-8 mb-4 max-w-xl mx-auto flex flex-col items-center text-center">
+            <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-white/[0.08] flex items-center justify-center text-emerald-400 text-xl font-bold font-mono mb-3 shadow-lg shadow-black/40 ring-1 ring-white/[0.04]">
+              #
             </div>
-            <h2 className="text-sm font-bold text-zinc-200">
+            <h2 className="text-base font-bold text-white tracking-tight">
               Welcome to #{roomName}
             </h2>
-            <p className="text-xs text-zinc-500 mt-1 max-w-sm mx-auto">
-              This is the start of #{roomName}. Messages are exchanged in real-time over STOMP WebSockets and saved in PostgreSQL.
+            <p className="text-xs text-zinc-400 mt-1 max-w-sm leading-relaxed">
+              This is the official channel log. Transmissions here are broadcast in real-time to all connected operatives.
             </p>
+            <div className="h-px w-24 bg-gradient-to-r from-transparent via-white/10 to-transparent mt-4" />
           </div>
         )}
 
         {/* Empty State */}
         {!isLoading && !isError && messages.length === 0 && (
-          <div className="text-center py-12 text-zinc-500 space-y-2">
-            <div className="text-4xl">👋</div>
-            <p className="text-sm font-medium text-zinc-400">No messages yet in this room.</p>
-            <p className="text-xs text-zinc-500">Be the first to say hello!</p>
+          <div className="text-center py-10 text-zinc-500 space-y-1">
+            <div className="text-2xl mb-1 opacity-70">💬</div>
+            <p className="text-xs font-medium text-zinc-400">No transmissions yet in #{roomName}.</p>
+            <p className="text-[11px] text-zinc-500">Say hello or drop a sticker to get things rolling.</p>
           </div>
         )}
 
-        {/* Messages Feed */}
-        {!isLoading &&
-          messages.map((message) => {
-            const senderName = resolveSenderString(message.sender, (message as any)?.senderEmail);
-            const myName = typeof currentUserName === "string" ? currentUserName.trim().toLowerCase() : "";
-            const isMe =
-              Boolean(myName) &&
-              Boolean(senderName) &&
-              senderName.toLowerCase() === myName;
+        {/* Messages Feed with Sender Clustering */}
+        <div className="max-w-4xl mx-auto">
+          {!isLoading &&
+            messages.map((message, index) => {
+              const senderName = resolveSenderString(message.sender, (message as any)?.senderEmail);
+              const myName = typeof currentUserName === "string" ? currentUserName.trim().toLowerCase() : "";
+              const isMe =
+                Boolean(myName) &&
+                Boolean(senderName) &&
+                senderName.toLowerCase() === myName;
 
-            return (
-              <MessageBubble
-                key={message.id}
-                message={message}
-                isMe={isMe}
-              />
-            );
-          })}
+              // Check if previous message was from the same sender within 2 minutes
+              const prevMessage = index > 0 ? messages[index - 1] : null;
+              const prevSender = prevMessage
+                ? resolveSenderString(prevMessage.sender, (prevMessage as any)?.senderEmail)
+                : null;
 
-        <div ref={bottomRef} className="h-1" />
+              const isSameSender = prevSender === senderName;
+              let isWithinTwoMinutes = false;
+
+              if (isSameSender && prevMessage?.createdAt && message.createdAt) {
+                const diffMs = Math.abs(
+                  new Date(message.createdAt).getTime() - new Date(prevMessage.createdAt).getTime()
+                );
+                isWithinTwoMinutes = diffMs < 120000;
+              }
+
+              const showSenderHeader = !isSameSender || !isWithinTwoMinutes;
+
+              return (
+                <MessageBubble
+                  key={message.id}
+                  message={message}
+                  isMe={isMe}
+                  showSenderHeader={showSenderHeader}
+                />
+              );
+            })}
+        </div>
+
+        <div ref={bottomRef} className="h-2" />
       </div>
 
       {/* Floating Scroll to Bottom Button */}
       {showScrollBottom && (
         <button
           onClick={scrollToBottom}
-          className="absolute bottom-4 right-4 z-20 p-2.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-900/50 border border-indigo-400/40 transition-transform active:scale-95 animate-in fade-in zoom-in-75"
-          title="Scroll to latest"
+          className="absolute bottom-5 right-5 z-30 p-2.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold shadow-xl shadow-emerald-500/25 border border-emerald-400/40 transition-transform active:scale-95 animate-in fade-in zoom-in-75 cursor-pointer"
+          title="Scroll to latest messages"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
           </svg>
         </button>
       )}

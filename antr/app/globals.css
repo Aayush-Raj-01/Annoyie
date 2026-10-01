@@ -43,6 +43,12 @@
   font-weight: 700;
   font-style: normal;
 }
+@font-face {
+  font-family: 'OrientalChicken';
+  src: url(../font/OrientalChicken.woff2);
+  font-weight: 700;
+  font-style: normal;
+}
 
 body {
   background: var(--background);
@@ -102,6 +108,37 @@ body {
   font-family: 'BlackBoard',sans-serif;
 }
 .onboardtext{
-  font-family: 'Chalkiez-Regular';
+  font-family: 'Chalkiez-Regular',sans-serif;
   font-size: 20px;
 }
+.profilepg{
+  font-family: 'OrientalChicken', sans-serif;
+  font-size: 80px;
+  text-align: center;
+  width: 100%;
+}
+
+/* Custom smooth dark scrollbars */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+

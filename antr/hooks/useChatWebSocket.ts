@@ -31,14 +31,24 @@ export function useChatWebSocket() {
   }, [addMessage, setConnectionStatus]);
 
   const send = useCallback(
-    (content: string, sender: string, targetRoomId?: number) => {
+    (
+      content: string,
+      sender: string,
+      targetRoomId?: number,
+      senderEmail?: string,
+      avatarUrl?: string,
+      tag?: string
+    ) => {
       const targetRoom = targetRoomId ?? activeRoomId;
       if (!content.trim()) return;
 
       const payload: SendMessageDTO = {
-        senderEmail: sender.trim() || "Anonymous",
+        sender: sender.trim() || "Anonymous",
+        senderEmail: senderEmail?.trim() || sender.trim() || "Anonymous",
         roomId: targetRoom,
         content: content.trim(),
+        avatarUrl: avatarUrl?.trim() || undefined,
+        tag: tag?.trim() || undefined,
       };
 
       sendMessage(payload);

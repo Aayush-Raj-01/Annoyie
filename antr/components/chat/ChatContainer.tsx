@@ -13,12 +13,15 @@ interface ChatContainerProps {
   currentUser: {
     anonymousName: string;
     tag?: string;
+    email?: string;
+    avatarUrl?: string;
   };
 }
 
 export default function ChatContainer({ currentUser }: ChatContainerProps) {
   const activeRoomId = useChatStore((state) => state.activeRoomId);
   const activeRoom = useChatStore((state) => state.activeRoom);
+  const setActiveRoom = useChatStore((state) => state.setActiveRoom);
 
   // React Query hook: loads previous messages for activeRoomId, caches them, refetches on switch
   const { messages, isLoading, isFetching, isError, error, refetch } =
@@ -27,39 +30,50 @@ export default function ChatContainer({ currentUser }: ChatContainerProps) {
   // WebSocket hook: connects to /chat, subscribes to /topic/messages, reconnects on drop
   const { isConnected, isConnecting, send } = useChatWebSocket();
 
-  // Mobile sidebar drawer state
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Mobile WhatsApp-style view state: "list" shows chats list, "chat" shows conversation
+  const [mobileView, setMobileView] = useState<"list" | "chat">("list");
 
   const handleSendMessage = (content: string) => {
     try {
-      send(content, currentUser.anonymousName || "Anonymous", activeRoomId);
+      send(
+        content,
+        currentUser.anonymousName || "Anonymous",
+        activeRoomId,
+        currentUser.email,
+        currentUser.avatarUrl,
+        currentUser.tag
+      );
     } catch (err) {
       console.error("Failed to send message:", err);
     }
   };
 
   return (
-    <div className="flex h-screen w-full bg-zinc-950 text-zinc-100 overflow-hidden font-sans">
-      {/* Overlay backdrop for mobile drawer */}
-      {sidebarOpen && (
-        <div
-          onClick={() => setSidebarOpen(false)}
-          className="fixed inset-0 z-20 bg-black/60 backdrop-blur-xs md:hidden"
+    <div className="flex h-screen w-full bg-[#08090d] text-zinc-100 overflow-hidden font-sans">
+      {/* Left Chats List: On mobile takes 100% width when mobileView === 'list'; on desktop is always fixed w-80 */}
+      <div
+        className={`h-full md:flex md:w-80 md:shrink-0 ${
+          mobileView === "list" ? "flex flex-col w-full" : "hidden"
+        }`}
+      >
+        <ChatSidebar
+          currentUser={currentUser}
+          onSelectRoom={(roomId) => {
+            setActiveRoom(roomId);
+            setMobileView("chat");
+          }}
         />
-      )}
+      </div>
 
-      {/* Left Sidebar: Room List */}
-      <ChatSidebar
-        currentUser={currentUser}
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
-
-      {/* Main Chat Area */}
-      <main className="flex-1 flex flex-col min-w-0 h-full relative">
-        {/* Chat Top Header */}
+      {/* Main Conversation Pane: On mobile takes 100% width when mobileView === 'chat'; on desktop always fills remaining space */}
+      <main
+        className={`h-full flex-col min-w-0 relative md:flex md:flex-1 ${
+          mobileView === "chat" ? "flex w-full" : "hidden"
+        }`}
+      >
+        {/* Chat Top Header with WhatsApp Back Button on Mobile */}
         <ChatHeader
-          onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
+          onBack={() => setMobileView("list")}
           onRefresh={() => refetch()}
           isFetching={isFetching}
         />

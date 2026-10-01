@@ -18,6 +18,18 @@ function extractSenderName(sender: any, fallbackEmail?: any): string {
   return "Anonymous";
 }
 
+function extractAvatarUrl(item: any): string | undefined {
+  if (typeof item.avatarUrl === "string" && item.avatarUrl.trim()) {
+    return item.avatarUrl.trim();
+  }
+  if (item.sender && typeof item.sender === "object") {
+    if (typeof item.sender.avatarUrl === "string" && item.sender.avatarUrl.trim()) {
+      return item.sender.avatarUrl.trim();
+    }
+  }
+  return undefined;
+}
+
 export async function fetchMessages(roomId: number): Promise<Message[]> {
   const response = await fetch(`${API_BASE_URL}/messages/${roomId}`, {
     method: "GET",
@@ -48,5 +60,6 @@ export async function fetchMessages(roomId: number): Promise<Message[]> {
     room: item.room ? { id: item.room.id } : { id: roomId },
     roomId: item.room?.id ?? item.roomId ?? roomId,
     tag: item.tag || (typeof item.sender === "object" ? item.sender?.tag : undefined),
+    avatarUrl: extractAvatarUrl(item),
   }));
 }

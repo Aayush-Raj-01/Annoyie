@@ -72,12 +72,25 @@ public class MessageService {
             tag = senderUser.getTag();
         }
 
+        // Determine user avatarUrl
+        String avatarUrl = dto.getAvatarUrl();
+        if ((avatarUrl == null || avatarUrl.isBlank()) && senderUser != null) {
+            avatarUrl = senderUser.getAvatarUrl();
+        }
+
+        // Determine student year
+        Integer studentYear = dto.getStudentYear();
+        if (studentYear == null && senderUser != null) {
+            studentYear = senderUser.getStudentYear();
+        }
+
         Message message = new Message();
         message.setSender(senderUser);
         message.setSenderEmail(displayName);
         message.setContent(dto.getContent());
         message.setCreatedAt(LocalDateTime.now());
         message.setRoom(room);
+        message.setAvatarUrl(avatarUrl);
         Message saved = repository.save(message);
 
         // Populate DTO for broadcasting to all subscribers
@@ -87,6 +100,8 @@ public class MessageService {
         dto.setRoomId(roomId);
         dto.setCreatedAt(saved.getCreatedAt().toString());
         dto.setTag(tag);
+        dto.setAvatarUrl(avatarUrl);
+        dto.setStudentYear(studentYear);
 
         return dto;
     }

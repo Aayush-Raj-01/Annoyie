@@ -10,6 +10,7 @@ import {
   syncUserProfile,
   saveUserProfile,
   uploadAvatarImage,
+  formatStudentYear,
   UserProfile,
 } from "../lib/auth";
 
@@ -175,11 +176,24 @@ export default function ProfilePage() {
               </div>
 
               <div className="flex-1 min-w-0">
-                <h2 className="text-3xl font-bold text-white truncate">
-                  {profile.anonymousName}
-                </h2>
-                <div className="flex items-center gap-2 mt-0.5">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-white truncate">
+                    {profile.anonymousName}
+                  </h2>
+                  {(profile.studentYear || profile.admissionYear) && (
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono shadow-sm">
+                      {formatStudentYear(
+                        profile.studentYear ||
+                          new Date().getFullYear() - profile.admissionYear! + 1
+                      )}
+                    </span>
+                  )}
                 </div>
+                {profile.admissionYear && (
+                  <p className="text-xs text-zinc-400 font-mono mt-1">
+                    Class of {profile.admissionYear + 4}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -221,12 +235,24 @@ export default function ProfilePage() {
             </div>
 
             {/* Information Grid */}
-            <div className="grid grid-cols-2 gap-4 pt-2 border-t border-zinc-800/60 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-2 border-t border-zinc-800/60 text-xs">
+              <div>
+                <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400 block mb-1">
+                  Current Year
+                </span>
+                <span className="text-emerald-400 font-semibold font-mono">
+                  {profile.studentYear
+                    ? formatStudentYear(profile.studentYear)
+                    : profile.admissionYear
+                    ? formatStudentYear(new Date().getFullYear() - profile.admissionYear + 1)
+                    : "Not Available"}
+                </span>
+              </div>
               <div>
                 <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400 block mb-1">
                   Gender
                 </span>
-                <span className="text-zinc-200">{profile.gender || "GUSSE KRTE RAHE HO"}</span>
+                <span className="text-zinc-200">{profile.gender || "Not specified"}</span>
               </div>
               <div>
                 <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400 block mb-1">

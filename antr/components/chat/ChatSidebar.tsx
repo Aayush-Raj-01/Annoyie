@@ -9,6 +9,7 @@ interface ChatSidebarProps {
     anonymousName: string;
     tag?: string;
     avatarUrl?: string;
+    studentYear?: number;
   };
   onSelectRoom?: (roomId: number) => void;
 }
@@ -88,54 +89,9 @@ export default function ChatSidebar({ currentUser, onSelectRoom }: ChatSidebarPr
               <span className="font-bold text-sm tracking-tight text-white">
                 Annoyms
               </span>
-              <span className="text-[9px] uppercase font-mono px-1.5 py-0.2 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold">
-                chat
-              </span>
             </div>
-            <p className="text-[10px] text-zinc-400 font-mono flex items-center gap-1">
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${
-                  isConnected
-                    ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]"
-                    : isConnecting
-                    ? "bg-amber-400 animate-pulse"
-                    : "bg-rose-500"
-                }`}
-              />
-              <span>{isConnected ? "Encrypted Live" : isConnecting ? "Connecting" : "Offline"}</span>
-            </p>
+        
           </div>
-        </div>
-
-        {/* Top-Right Quick Links */}
-        <div className="flex items-center gap-1">
-          <Link
-            href="/"
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.06] transition-colors"
-            title="Home"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-          </Link>
-          <Link
-            href="/olx"
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.06] transition-colors"
-            title="Market"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-            </svg>
-          </Link>
-          <Link
-            href="/profile"
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.06] transition-colors"
-            title="Profile"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </Link>
         </div>
       </div>
 
@@ -264,7 +220,7 @@ export default function ChatSidebar({ currentUser, onSelectRoom }: ChatSidebarPr
       </div>
 
       {/* User Profile Footer Panel */}
-      <div className="p-3 border-t border-white/[0.06] bg-[#0a0c12]">
+      <div className="p-3 border-t border-white/[0.06] bg-[#0a0c12] pb-24 md:pb-3">
         <div className="flex items-center justify-between gap-2 p-2 rounded-2xl bg-zinc-900/60 border border-white/[0.06]">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="relative shrink-0">
@@ -295,9 +251,16 @@ export default function ChatSidebar({ currentUser, onSelectRoom }: ChatSidebarPr
             </div>
 
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold text-white truncate">
-                {currentUser.anonymousName || "Anonymous"}
-              </p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-xs font-bold text-white truncate">
+                  {currentUser.anonymousName || "Anonymous"}
+                </p>
+                {currentUser.studentYear && (
+                  <span className="text-[9px] px-1.5 py-0.2 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium font-mono shrink-0">
+                    Yr {currentUser.studentYear}
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 font-mono">
                 <span>{currentUser.tag || "Operative"}</span>
                 <span>•</span>

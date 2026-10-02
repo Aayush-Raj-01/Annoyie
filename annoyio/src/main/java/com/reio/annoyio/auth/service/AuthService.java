@@ -32,8 +32,7 @@ public class AuthService {
         }
         String cleanEmail = request.email().trim().toLowerCase();
 
-//        boolean isGmail = cleanEmail.endsWith("@gmail.com");
-        boolean isGmail = true;
+        boolean isGmail = cleanEmail.endsWith("@imsec.ac.in");
         boolean isCollegeMail = cleanEmail.endsWith(".edu") || cleanEmail.endsWith(".ac.in") || cleanEmail.endsWith(".edu.in");
 
         if (!isGmail && !isCollegeMail) {
@@ -60,13 +59,20 @@ public class AuthService {
         String otp = String.valueOf(100000 + new java.util.Random().nextInt(900000));
         user.setOtp(otp);
         user.setOtpExpiry(LocalDateTime.now().plusMinutes(10));
+        user.setAdmissionYear(
+                extractAdmissionYear(request.email())
+        );
 
         userRepository.save(user);
         emailService.sendotp(cleanEmail, otp);
     }
 
     public void verifyOtp(VerifyOtpRequest request){
-        User user = userRepository.findByEmail(request.email())
+        if (request.email() == null || request.email().isBlank()) {
+            throw new RuntimeException("Email is required");
+        }
+        String cleanEmail = request.email().trim().toLowerCase();
+        User user = userRepository.findByEmail(cleanEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if(user.getOtp() == null || !user.getOtp().equals(request.otp())){
@@ -83,7 +89,11 @@ public class AuthService {
     }
 
     public void updateProfile(ProfileRequest request){
-        User user = userRepository.findByEmail(request.email())
+        if (request.email() == null || request.email().isBlank()) {
+            throw new RuntimeException("Email is required");
+        }
+        String cleanEmail = request.email().trim().toLowerCase();
+        User user = userRepository.findByEmail(cleanEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (!user.isVerified()) {
@@ -115,7 +125,12 @@ public class AuthService {
 
 
     public LoginResponse login(LoginRequest request){
-        User user = userRepository.findByEmail(request.email()).orElseThrow(() -> new RuntimeException("User not found"));
+        if (request.email() == null || request.email().isBlank()) {
+            throw new RuntimeException("Email is required");
+        }
+        String cleanEmail = request.email().trim().toLowerCase();
+        User user = userRepository.findByEmail(cleanEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         if(!user.isVerified()){
             throw new RuntimeException("Email is not verified");
@@ -131,7 +146,22 @@ public class AuthService {
         String email = jwtService.extractUsername(token);
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        return new UserResponse(user.getEmail(), user.getUsername(), user.getGender(), user.getTag(), user.getAvatarUrl());
+        if (user.getAdmissionYear() == null && user.getEmail() != null) {
+            Integer extracted = extractAdmissionYear(user.getEmail());
+            if (extracted != null) {
+                user.setAdmissionYear(extracted);
+                userRepository.save(user);
+            }
+        }
+        return new UserResponse(
+                user.getEmail(),
+                user.getUsername(),
+                user.getGender(),
+                user.getTag(),
+                user.getAvatarUrl(),
+                user.getAdmissionYear(),
+                user.getStudentYear()
+        );
     }
 
     public String uploadAvatar(org.springframework.web.multipart.MultipartFile file, String email) {
@@ -179,6 +209,19 @@ public class AuthService {
         } catch (java.io.IOException e) {
             throw new RuntimeException("Failed to store uploaded file: " + e.getMessage(), e);
         }
+    }
+    private Integer extractAdmissionYear(String email){
+        if (email == null) return null;
+        try {
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("(20[12][0-9])").matcher(email);
+            if (matcher.find()) {
+                return Integer.parseInt(matcher.group(1));
+            }
+            if (email.length() >= 5) {
+                return Integer.parseInt(email.substring(1, 5));
+            }
+        } catch (Exception ignored) {}
+        return null;
     }
 
 }

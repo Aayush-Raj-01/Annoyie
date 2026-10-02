@@ -25,6 +25,8 @@ public class Message {
     @JoinColumn(name = "sender_id")
     private User sender;
 
+    private String avatarUrl;
+
     @Column(columnDefinition = "TEXT")
     private String Content;
 
@@ -33,4 +35,65 @@ public class Message {
     @ManyToOne
     @JoinColumn(name = "room_id")
     private ChatRoom room;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getSenderEmail() {
+        return senderEmail;
+    }
+
+    public void setSenderEmail(String senderEmail) {
+        this.senderEmail = senderEmail;
+    }
+
+    public User getSender() {
+        return sender;
+    }
+
+    public void setSender(User sender) {
+        this.sender = sender;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
+    }
+
+    public String getContent() {
+        return Content;
+    }
+
+    public void setContent(String content) {
+        Content = content;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public ChatRoom getRoom() {
+        return room;
+    }
+
+    public void setRoom(ChatRoom room) {
+        this.room = room;
+    }
+
+    @Transient
+    public Integer getStudentYear() {
+        return sender != null ? sender.getStudentYear() : null;
+    }
 }

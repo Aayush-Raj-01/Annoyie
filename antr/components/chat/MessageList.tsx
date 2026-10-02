@@ -105,28 +105,13 @@ export default function MessageList({
           </div>
         )}
 
-        {/* Welcome Room Clean Header */}
-        {!isLoading && (
-          <div className="py-8 mb-4 max-w-xl mx-auto flex flex-col items-center text-center">
-            <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-white/[0.08] flex items-center justify-center text-emerald-400 text-xl font-bold font-mono mb-3 shadow-lg shadow-black/40 ring-1 ring-white/[0.04]">
-              #
-            </div>
-            <h2 className="text-base font-bold text-white tracking-tight">
-              Welcome to #{roomName}
-            </h2>
-            <p className="text-xs text-zinc-400 mt-1 max-w-sm leading-relaxed">
-              This is the official channel log. Transmissions here are broadcast in real-time to all connected operatives.
-            </p>
-            <div className="h-px w-24 bg-gradient-to-r from-transparent via-white/10 to-transparent mt-4" />
-          </div>
-        )}
-
+       
         {/* Empty State */}
         {!isLoading && !isError && messages.length === 0 && (
           <div className="text-center py-10 text-zinc-500 space-y-1">
             <div className="text-2xl mb-1 opacity-70">💬</div>
-            <p className="text-xs font-medium text-zinc-400">No transmissions yet in #{roomName}.</p>
-            <p className="text-[11px] text-zinc-500">Say hello or drop a sticker to get things rolling.</p>
+            <p className="text-xs font-medium text-zinc-400">Make Heat Start in {roomName}.</p>
+            <p className="text-[11px] text-zinc-500">Start with a banger chat</p>
           </div>
         )}
 

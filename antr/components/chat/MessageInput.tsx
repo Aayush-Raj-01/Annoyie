@@ -61,7 +61,7 @@ export default function MessageInput({
   };
 
   return (
-    <div className="relative border-t border-white/[0.06] bg-[#090b10]/95 backdrop-blur-xl p-3 sm:p-4 z-20">
+    <div className="relative border-t border-white/[0.06] bg-[#090b10]/95 backdrop-blur-xl px-3 pt-3 pb-20 sm:px-4 sm:pt-4 sm:pb-20 z-20">
       {/* Tabbed Sticker / GIF / Emoji Picker Drawer */}
       <MediaPicker
         isOpen={showMediaPicker}

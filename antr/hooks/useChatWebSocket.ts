@@ -31,13 +31,14 @@ export function useChatWebSocket() {
   }, [addMessage, setConnectionStatus]);
 
   const send = useCallback(
-    (
+    async (
       content: string,
       sender: string,
       targetRoomId?: number,
       senderEmail?: string,
       avatarUrl?: string,
-      tag?: string
+      tag?: string,
+      studentYear?: number
     ) => {
       const targetRoom = targetRoomId ?? activeRoomId;
       if (!content.trim()) return;
@@ -49,9 +50,10 @@ export function useChatWebSocket() {
         content: content.trim(),
         avatarUrl: avatarUrl?.trim() || undefined,
         tag: tag?.trim() || undefined,
+        studentYear: studentYear,
       };
 
-      sendMessage(payload);
+      await sendMessage(payload);
     },
     [activeRoomId]
   );

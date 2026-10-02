@@ -87,9 +87,6 @@ export default function Navbar() {
                   {item.icon}
                 </span>
                 <span>{item.label}</span>
-                {isActive && (
-                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-                )}
               </Link>
             );
           })}

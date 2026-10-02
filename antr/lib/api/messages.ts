@@ -61,5 +61,7 @@ export async function fetchMessages(roomId: number): Promise<Message[]> {
     roomId: item.room?.id ?? item.roomId ?? roomId,
     tag: item.tag || (typeof item.sender === "object" ? item.sender?.tag : undefined),
     avatarUrl: extractAvatarUrl(item),
+    studentYear:
+      item.studentYear ?? (typeof item.sender === "object" ? item.sender?.studentYear : undefined),
   }));
 }

@@ -16,4 +16,6 @@ public class ChatMessage {
     private String content;
     private String createdAt;
     private String tag;
+    private String avatarUrl;
+    private Integer studentYear;
 }

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import QueryProvider from "@/components/providers/QueryProvider";
 import ChatContainer from "@/components/chat/ChatContainer";
+import Navbar from "../components/navbar";
 import { getUserProfile, syncUserProfile, UserProfile } from "../lib/auth";
 
 export default function ChatsPage() {
@@ -11,6 +12,7 @@ export default function ChatsPage() {
     tag?: string;
     email?: string;
     avatarUrl?: string;
+    studentYear?: number;
   }>({
     anonymousName: "Anonymous",
   });
@@ -25,6 +27,7 @@ export default function ChatsPage() {
           tag: profile.hobbies?.[0] || undefined,
           email: profile.email || undefined,
           avatarUrl: profile.avatarUrl || undefined,
+          studentYear: profile.studentYear,
         });
         return true;
       }
@@ -64,6 +67,7 @@ export default function ChatsPage() {
   return (
     <QueryProvider>
       <ChatContainer currentUser={user} />
+      <Navbar />
     </QueryProvider>
   );
 }

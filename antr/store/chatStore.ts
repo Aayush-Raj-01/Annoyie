@@ -5,34 +5,45 @@ import type { Message, ChatRoom } from "@/types/chat";
 export const CHAT_ROOMS: ChatRoom[] = [
   {
     id: 1,
-    name: "General Lounge",
-    description: "Casual chat & open community banter",
+    name: "All Year",
+    description: "BE RESPECTFULL",
     emoji: "💬",
-    category: "Community",
     memberCount: 42,
   },
   {
     id: 2,
-    name: "Coders & Tech",
-    description: "Dev talk, bugs, frameworks, and architecture",
+    name: "1st Year",
     emoji: "💻",
-    category: "Development",
     memberCount: 28,
   },
   {
     id: 3,
-    name: "Off-Topic & Chill",
-    description: "Memes, coffee, music, life, and random thoughts",
+    name: "2nd Year",
     emoji: "☕",
-    category: "Social",
     memberCount: 19,
   },
   {
     id: 4,
-    name: "Anonymous Confessions",
-    description: "Whisper your secrets in 100% anonymous comfort",
+    name: "3rd Year",
     emoji: "🕶️",
-    category: "Confessions",
+    memberCount: 35,
+  },
+   {
+    id: 5,
+    name: "4th Year",
+    emoji: "🕶️",
+    memberCount: 35,
+  },
+  {
+    id: 6,
+    name: "Coding",
+    emoji: "🕶️",
+    memberCount: 35,
+  },
+  {
+    id: 7,
+    name: "Creative",
+    emoji: "🕶️",
     memberCount: 35,
   },
 ];
@@ -93,7 +104,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   setActiveRoom: (roomId) => {
     const room = CHAT_ROOMS.find((r) => r.id === roomId) || {
       id: roomId,
-      name: `Room #${roomId}`,
+      name: `Room ${roomId}`,
       description: "Chat room",
       emoji: "💭",
     };
@@ -127,8 +138,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   setMessages: (roomId, messages) => {
-    // Collect known avatars per sender from incoming messages and stored profile
+    // Collect known avatars and student years per sender from incoming messages and stored profile
     const avatarBySender: Record<string, string> = {};
+    const yearBySender: Record<string, number> = {};
     if (typeof window !== "undefined") {
       try {
         const raw = localStorage.getItem("annoyms_user_profile");
@@ -137,6 +149,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
           if (parsed?.anonymousName && parsed?.avatarUrl) {
             avatarBySender[parsed.anonymousName] = parsed.avatarUrl;
           }
+          if (parsed?.anonymousName && parsed?.studentYear) {
+            yearBySender[parsed.anonymousName] = parsed.studentYear;
+          }
         }
       } catch {}
     }
@@ -144,8 +159,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
     for (const m of messages) {
       const sender = resolveSenderName(m.sender, (m as any).senderEmail);
       const avatar = resolveAvatarUrl(m);
+      const yr =
+        (m as any).studentYear ??
+        (typeof m.sender === "object" ? (m.sender as any)?.studentYear : undefined);
       if (sender && avatar && !avatarBySender[sender]) {
         avatarBySender[sender] = avatar;
+      }
+      if (sender && yr && !yearBySender[sender]) {
+        yearBySender[sender] = yr;
       }
     }
 
@@ -161,11 +182,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
       .map((m) => {
         const sender = resolveSenderName(m.sender, (m as any).senderEmail);
         const avatar = resolveAvatarUrl(m) || (sender ? avatarBySender[sender] : undefined);
+        const studentYear =
+          (m as any).studentYear ??
+          (typeof m.sender === "object" ? (m.sender as any)?.studentYear : undefined) ??
+          (sender ? yearBySender[sender] : undefined);
         return {
           ...m,
           sender,
           tag: m.tag ?? (typeof m.sender === "object" ? (m.sender as any)?.tag : undefined),
           avatarUrl: avatar,
+          studentYear,
         };
       });
 
@@ -204,23 +230,35 @@ export const useChatStore = create<ChatState>((set, get) => ({
       (typeof rawMessage.sender === "object" ? (rawMessage.sender as any)?.tag : undefined);
 
     let resolvedAvatarUrl = resolveAvatarUrl(rawMessage);
-    if (!resolvedAvatarUrl && resolvedSender) {
+    let resolvedStudentYear =
+      (rawMessage as any).studentYear ??
+      (typeof rawMessage.sender === "object" ? (rawMessage.sender as any)?.studentYear : undefined);
+
+    if (resolvedSender) {
       if (typeof window !== "undefined") {
         try {
           const raw = localStorage.getItem("annoyms_user_profile");
           if (raw) {
             const parsed = JSON.parse(raw);
-            if (parsed?.anonymousName === resolvedSender && parsed?.avatarUrl) {
-              resolvedAvatarUrl = parsed.avatarUrl;
+            if (parsed?.anonymousName === resolvedSender) {
+              if (!resolvedAvatarUrl && parsed?.avatarUrl) {
+                resolvedAvatarUrl = parsed.avatarUrl;
+              }
+              if (!resolvedStudentYear && parsed?.studentYear) {
+                resolvedStudentYear = parsed.studentYear;
+              }
             }
           }
         } catch {}
       }
-      if (!resolvedAvatarUrl) {
+      if (!resolvedAvatarUrl || !resolvedStudentYear) {
         const existing = get().messagesByRoom[roomId] ?? [];
-        const prevMsg = existing.find((m) => m.sender === resolvedSender && m.avatarUrl);
-        if (prevMsg?.avatarUrl) {
+        const prevMsg = existing.find((m) => m.sender === resolvedSender && (m.avatarUrl || m.studentYear));
+        if (!resolvedAvatarUrl && prevMsg?.avatarUrl) {
           resolvedAvatarUrl = prevMsg.avatarUrl;
+        }
+        if (!resolvedStudentYear && prevMsg?.studentYear) {
+          resolvedStudentYear = prevMsg.studentYear;
         }
       }
     }
@@ -234,6 +272,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       roomId: roomId,
       tag: resolvedTag,
       avatarUrl: resolvedAvatarUrl,
+      studentYear: resolvedStudentYear,
     };
 
     const existing = get().messagesByRoom[roomId] ?? [];

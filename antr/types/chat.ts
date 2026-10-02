@@ -9,6 +9,7 @@ export interface Message {
   tag?: string;
   senderEmail?: string;
   avatarUrl?: string;
+  studentYear?: number;
 }
 
 // ─── Payload sent via WebSocket /app/sendMessage ─────────────────────────────
@@ -19,6 +20,7 @@ export interface SendMessageDTO {
   sender?: string;
   avatarUrl?: string;
   tag?: string;
+  studentYear?: number;
 }
 
 // ─── Chat Room Model ─────────────────────────────────────────────────────────

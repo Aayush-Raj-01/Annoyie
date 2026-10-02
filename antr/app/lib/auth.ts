@@ -9,6 +9,16 @@ export interface UserProfile {
   avatarColor?: string;
   bio?: string;
   stealthMode?: boolean;
+  admissionYear?: number;
+  studentYear?: number;
+}
+
+export function formatStudentYear(year?: number | null): string {
+  if (!year || isNaN(year) || year < 1) return "";
+  if (year === 1) return "1st Year";
+  if (year === 2) return "2nd Year";
+  if (year === 3) return "3rd Year";
+  return `${year}th Year`;
 }
 
 const STORAGE_KEY = "annoyms_user_profile";
@@ -74,6 +84,8 @@ export function saveUserProfile(data: Partial<UserProfile> & { anonymousName: st
     avatarColor: data.avatarColor !== undefined ? data.avatarColor : (existing?.avatarColor || "emerald"),
     bio: data.bio !== undefined ? data.bio : (existing?.bio || ""),
     stealthMode: data.stealthMode !== undefined ? data.stealthMode : (existing?.stealthMode ?? true),
+    admissionYear: data.admissionYear !== undefined ? data.admissionYear : existing?.admissionYear,
+    studentYear: data.studentYear !== undefined ? data.studentYear : existing?.studentYear,
   };
 
   if (typeof window !== "undefined") {
@@ -120,6 +132,8 @@ export async function syncUserProfile(token?: string): Promise<UserProfile | nul
         gender: data.gender,
         hobbies: hobbies,
         avatarUrl: data.avatarUrl,
+        admissionYear: data.admissionYear,
+        studentYear: data.studentYear,
       });
     }
   } catch (err) {

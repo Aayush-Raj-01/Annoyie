@@ -41,28 +41,10 @@ export default function ChatHeader({ onBack, onRefresh, isFetching }: ChatHeader
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <h1 className="text-sm sm:text-base font-semibold text-white tracking-tight truncate">
-              #{activeRoom.name}
+              {activeRoom.name}
             </h1>
-            <span className="hidden sm:inline-block text-[10px] font-mono px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06] text-zinc-400 font-medium">
-              {activeRoom.category || "General"}
-            </span>
           </div>
           <div className="flex items-center gap-2 text-[11px] text-zinc-400 truncate">
-            <span className="flex items-center gap-1.5">
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${
-                  isConnected
-                    ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]"
-                    : isConnecting
-                    ? "bg-amber-400 animate-pulse"
-                    : "bg-rose-500"
-                }`}
-              />
-              <span className="font-mono text-[10px]">
-                {isConnected ? "Live Room" : isConnecting ? "Connecting..." : "Offline"}
-              </span>
-            </span>
-            <span className="text-zinc-600">•</span>
             <span className="truncate max-w-xs sm:max-w-md">
               {activeRoom.description || "Real-time anonymous discussions"}
             </span>
@@ -72,18 +54,6 @@ export default function ChatHeader({ onBack, onRefresh, isFetching }: ChatHeader
 
       {/* Right Controls: Encrypted Beacon & Refresh */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Encrypted Live Pill */}
-        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/[0.08] border border-emerald-500/20 text-emerald-400 text-[11px] font-mono font-medium">
-          <svg className="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-            />
-          </svg>
-          <span>E2E Socket</span>
-        </div>
 
         {/* Refresh Room Messages Button */}
         {onRefresh && (

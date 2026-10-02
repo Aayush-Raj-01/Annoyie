@@ -21,17 +21,22 @@ export function connectSocket(
     currentStatusCallback = onStatusChange;
   }
 
-  // If already active, trigger status and return
-  if (stompClient?.active) {
+  // If already connected, trigger status and return
+  if (stompClient?.connected) {
     currentStatusCallback?.(true, false);
     return;
   }
 
   currentStatusCallback?.(false, true);
 
+  if (stompClient?.active) {
+    // Already activated and trying to connect
+    return;
+  }
+
   stompClient = new Client({
     webSocketFactory: () => new SockJS(WS_URL),
-    reconnectDelay: 5000,
+    reconnectDelay: 3000,
     heartbeatIncoming: 4000,
     heartbeatOutgoing: 4000,
 
@@ -59,7 +64,7 @@ export function connectSocket(
     },
 
     onWebSocketClose: () => {
-      console.warn("[STOMP] WebSocket connection closed, reconnecting in 5s...");
+      console.warn("[STOMP] WebSocket connection closed, reconnecting in 3s...");
       currentStatusCallback?.(false, true);
     },
 
@@ -77,18 +82,41 @@ export function connectSocket(
   stompClient.activate();
 }
 
-export function sendMessage(payload: SendMessageDTO): void {
-  if (!stompClient || !stompClient.active) {
-    console.warn("[STOMP] Cannot send message - socket not active. Reconnecting...");
-    stompClient?.activate();
-    throw new Error("Chat connection is currently offline. Please wait a moment.");
+export async function sendMessage(payload: SendMessageDTO): Promise<void> {
+  // If STOMP client is live and connected, publish via WebSocket
+  if (stompClient && stompClient.connected) {
+    try {
+      stompClient.publish({
+        destination: "/app/sendMessage",
+        body: JSON.stringify(payload),
+        headers: { "content-type": "application/json" },
+      });
+      return;
+    } catch (wsErr) {
+      console.warn("[STOMP] WebSocket publish failed, trying HTTP POST fallback:", wsErr);
+    }
   }
 
-  stompClient.publish({
-    destination: "/app/sendMessage",
-    body: JSON.stringify(payload),
-    headers: { "content-type": "application/json" },
-  });
+  // Fallback to HTTP POST so messages are NEVER lost even when socket is reconnecting
+  try {
+    const res = await fetch("http://localhost:8080/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Failed to deliver message via HTTP (status ${res.status})`);
+    }
+
+    const savedMsg = await res.json();
+    if (currentMessageCallback) {
+      currentMessageCallback(savedMsg);
+    }
+  } catch (httpErr) {
+    console.error("[STOMP] Failed to send message via HTTP fallback:", httpErr);
+    throw httpErr;
+  }
 }
 
 export function disconnectSocket(): void {
@@ -101,5 +129,5 @@ export function disconnectSocket(): void {
 }
 
 export function isSocketConnected(): boolean {
-  return !!stompClient?.active;
+  return !!stompClient?.connected;
 }

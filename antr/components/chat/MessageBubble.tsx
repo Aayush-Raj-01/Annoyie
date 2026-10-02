@@ -3,6 +3,7 @@
 import React from "react";
 import type { Message } from "@/types/chat";
 import { parseMessageContent } from "@/lib/chat/mediaData";
+import { formatStudentYear } from "@/app/lib/auth";
 
 interface MessageBubbleProps {
   message: Message;
@@ -81,6 +82,11 @@ export default function MessageBubble({
   const avatarUrl =
     message.avatarUrl ||
     (typeof message.sender === "object" ? (message.sender as any)?.avatarUrl : undefined);
+  const studentYear =
+    message.studentYear ??
+    (typeof message.sender === "object" ? (message.sender as any)?.studentYear : undefined);
+  const formattedYear = formatStudentYear(studentYear);
+  const userTitle = formattedYear ? `${senderName} (${formattedYear})` : senderName;
 
   // Parse if message is a Sticker, GIF, or regular text
   const media = parseMessageContent(message.content);
@@ -96,7 +102,7 @@ export default function MessageBubble({
         avatarUrl ? (
           <div
             className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-white/[0.08] shadow-md shadow-black/40 bg-zinc-900 select-none ring-1 ring-white/[0.04]"
-            title={senderName}
+            title={userTitle}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -111,7 +117,7 @@ export default function MessageBubble({
         ) : (
           <div
             className={`w-8 h-8 rounded-full bg-gradient-to-tr ${avatarGradient} flex items-center justify-center text-xs font-bold text-white shadow-md shadow-black/40 shrink-0 select-none ring-1 ring-white/[0.04]`}
-            title={senderName}
+            title={userTitle}
           >
             {initial}
           </div>
@@ -128,10 +134,18 @@ export default function MessageBubble({
       >
         {/* Sender Name & Meta Header (only if not me and showSenderHeader is true) */}
         {!isMe && showSenderHeader && (
-          <div className="flex items-center gap-1.5 mb-1 px-1 select-none">
+          <div className="flex items-center gap-1.5 mb-1 px-1 select-none flex-wrap">
             <span className={`text-xs font-semibold ${senderColor}`}>
               {senderName}
             </span>
+            {formattedYear && (
+              <span
+                className="text-[10px] px-1.5 py-0.2 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium font-mono"
+                title={`Academic: ${formattedYear}`}
+              >
+                {formattedYear}
+              </span>
+            )}
             {tag && (
               <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-white/[0.04] text-zinc-400 border border-white/[0.06] font-medium font-mono">
                 {tag}

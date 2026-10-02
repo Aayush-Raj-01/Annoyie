@@ -15,6 +15,7 @@ interface ChatContainerProps {
     tag?: string;
     email?: string;
     avatarUrl?: string;
+    studentYear?: number;
   };
 }
 
@@ -22,6 +23,7 @@ export default function ChatContainer({ currentUser }: ChatContainerProps) {
   const activeRoomId = useChatStore((state) => state.activeRoomId);
   const activeRoom = useChatStore((state) => state.activeRoom);
   const setActiveRoom = useChatStore((state) => state.setActiveRoom);
+  const addMessage = useChatStore((state) => state.addMessage);
 
   // React Query hook: loads previous messages for activeRoomId, caches them, refetches on switch
   const { messages, isLoading, isFetching, isError, error, refetch } =
@@ -33,15 +35,37 @@ export default function ChatContainer({ currentUser }: ChatContainerProps) {
   // Mobile WhatsApp-style view state: "list" shows chats list, "chat" shows conversation
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
 
-  const handleSendMessage = (content: string) => {
+  const handleSendMessage = async (content: string) => {
+    const trimmed = content.trim();
+    if (!trimmed) return;
+
+    const senderName = currentUser.anonymousName || "Anonymous";
+    const senderEmail = currentUser.email || senderName;
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+
+    // 1. Optimistically display in UI immediately
+    addMessage({
+      id: tempId,
+      sender: senderName,
+      senderEmail: senderEmail,
+      content: trimmed,
+      createdAt: new Date().toISOString(),
+      roomId: activeRoomId,
+      avatarUrl: currentUser.avatarUrl,
+      tag: currentUser.tag,
+      studentYear: currentUser.studentYear,
+    });
+
+    // 2. Transmit to server (via WebSocket with automatic HTTP fallback)
     try {
-      send(
-        content,
-        currentUser.anonymousName || "Anonymous",
+      await send(
+        trimmed,
+        senderName,
         activeRoomId,
-        currentUser.email,
+        senderEmail,
         currentUser.avatarUrl,
-        currentUser.tag
+        currentUser.tag,
+        currentUser.studentYear
       );
     } catch (err) {
       console.error("Failed to send message:", err);
@@ -92,7 +116,7 @@ export default function ChatContainer({ currentUser }: ChatContainerProps) {
         {/* Message Input Bar */}
         <MessageInput
           onSendMessage={handleSendMessage}
-          disabled={!isConnected && !isConnecting}
+          disabled={false}
           senderName={currentUser.anonymousName || "Anonymous"}
         />
       </main>

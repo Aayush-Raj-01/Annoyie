@@ -38,9 +38,19 @@ public class User {
     @Transient
     public Integer getStudentYear(){
         if (admissionYear == null) {
-            return null;
+            return 1;
         }
-        return Year.now().getValue() - admissionYear + 1;
+        int currentYear = Year.now().getValue();
+        int year = currentYear - admissionYear + 1;
+        if (year < 1) return 1;
+        if (year > 4) return 4;
+        return year;
+    }
+
+    public void setStudentYear(Integer studentYear) {
+        if (studentYear != null && studentYear >= 1 && studentYear <= 6) {
+            this.admissionYear = Year.now().getValue() - studentYear + 1;
+        }
     }
 
     private String gender;

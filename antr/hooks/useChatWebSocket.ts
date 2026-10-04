@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useCallback } from "react";
-import { connectSocket, disconnectSocket, sendMessage } from "@/lib/socket/chatClient";
+import { connectSocket, sendMessage } from "@/lib/socket/chatClient";
 import { useChatStore } from "@/store/chatStore";
 import type { SendMessageDTO } from "@/types/chat";
 
@@ -16,7 +16,6 @@ export function useChatWebSocket() {
     // Connect STOMP socket with message handler and status listener
     connectSocket(
       (incomingMsg) => {
-        // incomingMsg can be { sender, roomId, content } or full Message entity
         addMessage(incomingMsg);
       },
       (connected, connecting) => {
@@ -24,9 +23,8 @@ export function useChatWebSocket() {
       }
     );
 
-    // Optional cleanup on complete unmount if required
     return () => {
-      // Keep socket alive across route switches or disconnect
+      // Keep socket alive across route switches
     };
   }, [addMessage, setConnectionStatus]);
 
@@ -38,19 +36,22 @@ export function useChatWebSocket() {
       senderEmail?: string,
       avatarUrl?: string,
       tag?: string,
-      studentYear?: number
+      studentYear?: number,
+      receiverId?: number,
+      senderId?: number
     ) => {
-      const targetRoom = targetRoomId ?? activeRoomId;
       if (!content.trim()) return;
 
       const payload: SendMessageDTO = {
         sender: sender.trim() || "Anonymous",
         senderEmail: senderEmail?.trim() || sender.trim() || "Anonymous",
-        roomId: targetRoom,
+        roomId: receiverId ? undefined : (targetRoomId ?? activeRoomId),
         content: content.trim(),
         avatarUrl: avatarUrl?.trim() || undefined,
         tag: tag?.trim() || undefined,
         studentYear: studentYear,
+        receiverId: receiverId,
+        senderId: senderId,
       };
 
       await sendMessage(payload);

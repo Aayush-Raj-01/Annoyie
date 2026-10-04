@@ -38,4 +38,15 @@ public class MessageController {
         }
         return saved;
     }
+
+    @GetMapping("/dm/{user1Id}/{user2Id}")
+    public List<Message> getConversation(
+            @PathVariable Long user1Id,
+            @PathVariable Long user2Id
+    ) {
+        return service.getConversation(
+                user1Id,
+                user2Id
+        );
+    }
 }

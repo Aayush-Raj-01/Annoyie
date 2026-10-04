@@ -6,6 +6,8 @@ public record ProfileRequest(
         String anonymousName,
         String gender,
         String tag,
-        String avatarUrl
+        String avatarUrl,
+        Integer studentYear,
+        Integer admissionYear
 ) {
 }

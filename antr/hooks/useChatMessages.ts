@@ -2,40 +2,61 @@
 
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchMessages } from "@/lib/api/messages";
+import { fetchMessages, fetchDmMessages } from "@/lib/api/messages";
 import { useChatStore } from "@/store/chatStore";
 
-export function useChatMessages(roomId: number) {
+export function useChatMessages(
+  activeChatType: "channel" | "dm",
+  roomId: number,
+  myUserId?: number,
+  dmUserId?: number
+) {
   const setMessages = useChatStore((state) => state.setMessages);
+  const setDmMessages = useChatStore((state) => state.setDmMessages);
   const messagesByRoom = useChatStore((state) => state.messagesByRoom);
+  const messagesByDm = useChatStore((state) => state.messagesByDm);
 
-  const query = useQuery({
+  const isChannel = activeChatType === "channel";
+  const isDm = activeChatType === "dm" && Boolean(myUserId && dmUserId);
+
+  const channelQuery = useQuery({
     queryKey: ["messages", roomId],
-    queryFn: async () => {
-      const data = await fetchMessages(roomId);
-      return data;
-    },
-    enabled: typeof roomId === "number" && !isNaN(roomId),
-    staleTime: 1000 * 60 * 3, // 3 minutes cache
+    queryFn: () => fetchMessages(roomId),
+    enabled: isChannel && typeof roomId === "number" && !isNaN(roomId),
+    staleTime: 1000 * 60 * 3,
   });
 
-  // When React Query delivers historical messages, sync them into the Zustand store
-  useEffect(() => {
-    if (query.data && Array.isArray(query.data)) {
-      setMessages(roomId, query.data);
-    }
-  }, [query.data, roomId, setMessages]);
+  const dmQuery = useQuery({
+    queryKey: ["dm-messages", myUserId, dmUserId],
+    queryFn: () => fetchDmMessages(myUserId!, dmUserId!),
+    enabled: isDm,
+    staleTime: 1000 * 60 * 3,
+  });
 
-  // Messages displayed are the ones currently stored in Zustand for this room
-  // (which combines initial historical messages + any newly arrived real-time messages)
-  const roomMessages = messagesByRoom[roomId] ?? query.data ?? [];
+  useEffect(() => {
+    if (isChannel && channelQuery.data && Array.isArray(channelQuery.data)) {
+      setMessages(roomId, channelQuery.data);
+    }
+  }, [isChannel, channelQuery.data, roomId, setMessages]);
+
+  useEffect(() => {
+    if (isDm && dmUserId && dmQuery.data && Array.isArray(dmQuery.data)) {
+      setDmMessages(dmUserId, dmQuery.data);
+    }
+  }, [isDm, dmUserId, dmQuery.data, setDmMessages]);
+
+  const activeMessages = isChannel
+    ? (messagesByRoom[roomId] ?? channelQuery.data ?? [])
+    : (dmUserId ? (messagesByDm[dmUserId] ?? dmQuery.data ?? []) : []);
+
+  const activeQuery = isChannel ? channelQuery : dmQuery;
 
   return {
-    messages: roomMessages,
-    isLoading: query.isLoading && !messagesByRoom[roomId],
-    isFetching: query.isFetching,
-    isError: query.isError,
-    error: query.error,
-    refetch: query.refetch,
+    messages: activeMessages,
+    isLoading: activeQuery.isLoading && activeMessages.length === 0,
+    isFetching: activeQuery.isFetching,
+    isError: activeQuery.isError,
+    error: activeQuery.error,
+    refetch: activeQuery.refetch,
   };
 }

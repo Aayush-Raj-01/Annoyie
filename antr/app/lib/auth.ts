@@ -1,4 +1,5 @@
 export interface UserProfile {
+  id?: number;
   email: string;
   anonymousName: string;
   gender?: string;
@@ -51,10 +52,26 @@ export function getAuthToken(): string {
   );
 }
 
+export function syncTokenCookie(): void {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
+  const token = getAuthToken();
+  const profile = getUserProfile();
+  const loggedIn = isUserLoggedIn();
+  if (loggedIn) {
+    const val = token || profile?.anonymousName || "active_user";
+    document.cookie = `annoyms_token=${encodeURIComponent(val)}; path=/; max-age=604800; SameSite=Lax`;
+  } else {
+    document.cookie = "annoyms_token=; path=/; max-age=0; SameSite=Lax";
+  }
+}
+
 export function setAuthToken(token: string): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(TOKEN_KEY, token);
   localStorage.setItem("annoyms_token", token);
+  if (typeof document !== "undefined") {
+    document.cookie = `annoyms_token=${encodeURIComponent(token)}; path=/; max-age=604800; SameSite=Lax`;
+  }
 }
 
 export function getUserProfile(): UserProfile | null {
@@ -69,27 +86,48 @@ export function getUserProfile(): UserProfile | null {
   }
 }
 
+export function isUserLoggedIn(): boolean {
+  if (typeof window === "undefined") return false;
+  const token = getAuthToken();
+  const profile = getUserProfile();
+  if (!token && !profile) return false;
+  if (!profile?.anonymousName) return Boolean(token && token.trim().length > 0);
+  if (profile.anonymousName.startsWith("Guest_") || profile.anonymousName === "Guest") return false;
+  return Boolean((token && token.trim().length > 0) || (profile.anonymousName && profile.anonymousName.trim().length > 0));
+}
+
 export function saveUserProfile(data: Partial<UserProfile> & { anonymousName: string }): UserProfile {
   const existing = getUserProfile();
-  const email = data.email || existing?.email || getPendingEmail() || "anonymous@annoyms.local";
+  
+  // Check if we are updating the exact same user profile
+  const isSameUser = Boolean(
+    existing && (
+      (data.id != null && existing.id != null && data.id === existing.id) ||
+      (data.email && existing.email && data.email.toLowerCase() === existing.email.toLowerCase())
+    )
+  );
+
+  const email = data.email || (isSameUser ? existing?.email : undefined) || getPendingEmail() || "anonymous@annoyms.local";
   
   const updated: UserProfile = {
+    id: data.id !== undefined ? data.id : (isSameUser ? existing?.id : undefined),
     email,
     anonymousName: data.anonymousName.trim(),
-    gender: data.gender !== undefined ? data.gender?.trim() || undefined : existing?.gender,
-    hobbies: data.hobbies !== undefined ? data.hobbies : existing?.hobbies || [],
-    createdAt: existing?.createdAt || new Date().toISOString(),
-    avatarEmoji: data.avatarEmoji !== undefined ? data.avatarEmoji : (existing?.avatarEmoji || "🎭"),
-    avatarUrl: data.avatarUrl !== undefined ? data.avatarUrl : existing?.avatarUrl,
-    avatarColor: data.avatarColor !== undefined ? data.avatarColor : (existing?.avatarColor || "emerald"),
-    bio: data.bio !== undefined ? data.bio : (existing?.bio || ""),
-    stealthMode: data.stealthMode !== undefined ? data.stealthMode : (existing?.stealthMode ?? true),
-    admissionYear: data.admissionYear !== undefined ? data.admissionYear : existing?.admissionYear,
-    studentYear: data.studentYear !== undefined ? data.studentYear : existing?.studentYear,
+    gender: data.gender !== undefined ? data.gender?.trim() || undefined : (isSameUser ? existing?.gender : undefined),
+    hobbies: data.hobbies !== undefined ? data.hobbies : (isSameUser ? existing?.hobbies || [] : []),
+    createdAt: isSameUser && existing?.createdAt ? existing.createdAt : new Date().toISOString(),
+    avatarEmoji: data.avatarEmoji !== undefined ? data.avatarEmoji : (isSameUser ? (existing?.avatarEmoji || "🎭") : "🎭"),
+    avatarUrl: data.avatarUrl !== undefined ? (data.avatarUrl || undefined) : (isSameUser ? existing?.avatarUrl : undefined),
+    avatarColor: data.avatarColor !== undefined ? data.avatarColor : (isSameUser ? (existing?.avatarColor || "emerald") : "emerald"),
+    bio: data.bio !== undefined ? data.bio : (isSameUser ? (existing?.bio || "") : ""),
+    stealthMode: data.stealthMode !== undefined ? data.stealthMode : (isSameUser ? (existing?.stealthMode ?? true) : true),
+    admissionYear: data.admissionYear !== undefined ? data.admissionYear : (isSameUser ? existing?.admissionYear : undefined),
+    studentYear: data.studentYear !== undefined ? data.studentYear : (isSameUser ? existing?.studentYear : undefined),
   };
 
   if (typeof window !== "undefined") {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    syncTokenCookie();
     window.dispatchEvent(new Event("annoyms_profile_updated"));
   }
 
@@ -104,6 +142,11 @@ export function clearUserProfile(): void {
   localStorage.removeItem("annoyms_token");
   localStorage.removeItem("annoyms_email");
   localStorage.removeItem("annoyms_pending");
+  localStorage.removeItem("annoyms_dm_conversations");
+  localStorage.removeItem("annoyms_blocked_users");
+  if (typeof document !== "undefined") {
+    document.cookie = "annoyms_token=; path=/; max-age=0; SameSite=Lax";
+  }
   window.dispatchEvent(new Event("annoyms_profile_updated"));
 }
 
@@ -127,11 +170,12 @@ export async function syncUserProfile(token?: string): Promise<UserProfile | nul
     if (data.username) {
       const hobbies = data.tag ? (data.tag.split(",") as ("Coder" | "Non-coder")[]) : [];
       return saveUserProfile({
+        id: typeof data.id === "number" ? data.id : undefined,
         email: data.email,
         anonymousName: data.username,
         gender: data.gender,
         hobbies: hobbies,
-        avatarUrl: data.avatarUrl,
+        avatarUrl: data.avatarUrl || undefined,
         admissionYear: data.admissionYear,
         studentYear: data.studentYear,
       });

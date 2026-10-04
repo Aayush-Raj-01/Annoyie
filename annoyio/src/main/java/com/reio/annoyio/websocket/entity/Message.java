@@ -36,6 +36,17 @@ public class Message {
     @JoinColumn(name = "room_id")
     private ChatRoom room;
 
+    @ManyToOne
+    @JoinColumn(name = "receiver_id")
+    private User receiver;
+
+    public User getReceiver(){
+        return receiver;
+    }
+    public void setReceiver(User receiver){
+        this.receiver = receiver;
+    }
+
     public Long getId() {
         return id;
     }
@@ -44,7 +55,18 @@ public class Message {
         this.id = id;
     }
 
+    public Long getSenderId() {
+        return sender != null ? sender.getId() : null;
+    }
+
+    public String getSenderUsername() {
+        return sender != null ? sender.getUsername() : null;
+    }
+
     public String getSenderEmail() {
+        if (sender != null && sender.getEmail() != null && !sender.getEmail().isBlank()) {
+            return sender.getEmail();
+        }
         return senderEmail;
     }
 
@@ -61,11 +83,18 @@ public class Message {
     }
 
     public String getAvatarUrl() {
+        if (sender != null) {
+            return sender.getAvatarUrl();
+        }
         return avatarUrl;
     }
 
     public void setAvatarUrl(String avatarUrl) {
         this.avatarUrl = avatarUrl;
+    }
+
+    public String getTag() {
+        return sender != null ? sender.getTag() : null;
     }
 
     public String getContent() {

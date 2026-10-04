@@ -1,11 +1,29 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { isUserLoggedIn } from "../lib/auth";
 
 export default function Navbar() {
   const pathname = usePathname();
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  useEffect(() => {
+    setLoggedIn(isUserLoggedIn());
+    const onUpdate = () => setLoggedIn(isUserLoggedIn());
+    window.addEventListener("annoyms_profile_updated", onUpdate);
+    window.addEventListener("storage", onUpdate);
+    return () => {
+      window.removeEventListener("annoyms_profile_updated", onUpdate);
+      window.removeEventListener("storage", onUpdate);
+    };
+  }, []);
+
+  // Do not show navbar if user is not logged in or is on the authentication/onboarding pages
+  if (!loggedIn || pathname === "/authentication" || pathname === "/onboarding") {
+    return null;
+  }
 
   const navItems = [
     {

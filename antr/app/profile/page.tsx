@@ -33,6 +33,10 @@ export default function ProfilePage() {
         data = await syncUserProfile();
       }
       if (!isMounted) return;
+      if (!data || !data.anonymousName || data.anonymousName.startsWith("Guest_")) {
+        router.replace("/authentication");
+        return;
+      }
       setProfile(data);
       setLoaded(true);
     };
@@ -180,14 +184,12 @@ export default function ProfilePage() {
                   <h2 className="text-2xl sm:text-3xl font-bold text-white truncate">
                     {profile.anonymousName}
                   </h2>
-                  {(profile.studentYear || profile.admissionYear) && (
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono shadow-sm">
-                      {formatStudentYear(
-                        profile.studentYear ||
-                          new Date().getFullYear() - profile.admissionYear! + 1
-                      )}
-                    </span>
-                  )}
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono shadow-sm">
+                    {formatStudentYear(
+                      profile.studentYear ||
+                        (profile.admissionYear ? new Date().getFullYear() - profile.admissionYear + 1 : 1)
+                    )}
+                  </span>
                 </div>
                 {profile.admissionYear && (
                   <p className="text-xs text-zinc-400 font-mono mt-1">
@@ -241,11 +243,10 @@ export default function ProfilePage() {
                   Current Year
                 </span>
                 <span className="text-emerald-400 font-semibold font-mono">
-                  {profile.studentYear
-                    ? formatStudentYear(profile.studentYear)
-                    : profile.admissionYear
-                    ? formatStudentYear(new Date().getFullYear() - profile.admissionYear + 1)
-                    : "Not Available"}
+                  {formatStudentYear(
+                    profile.studentYear ||
+                      (profile.admissionYear ? new Date().getFullYear() - profile.admissionYear + 1 : 1)
+                  )}
                 </span>
               </div>
               <div>

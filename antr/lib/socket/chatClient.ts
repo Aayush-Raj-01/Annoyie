@@ -8,15 +8,36 @@ let stompClient: Client | null = null;
 let currentMessageCallback: ((msg: any) => void) | null = null;
 let currentStatusCallback: ((connected: boolean, connecting: boolean) => void) | null = null;
 
+type GalleryCallback = (post: any) => void;
+type GalleryDeleteCallback = (deleteInfo: { id: number }) => void;
+
+const galleryCallbacks: Set<GalleryCallback> = new Set();
+const galleryDeleteCallbacks: Set<GalleryDeleteCallback> = new Set();
+
+export function subscribeToGallery(
+  onPost: GalleryCallback,
+  onDelete?: GalleryDeleteCallback
+): () => void {
+  galleryCallbacks.add(onPost);
+  if (onDelete) galleryDeleteCallbacks.add(onDelete);
+
+  return () => {
+    galleryCallbacks.delete(onPost);
+    if (onDelete) galleryDeleteCallbacks.delete(onDelete);
+  };
+}
+
 export function getSocketClient(): Client | null {
   return stompClient;
 }
 
 export function connectSocket(
-  onMessage: (msg: any) => void,
+  onMessage?: (msg: any) => void,
   onStatusChange?: (connected: boolean, connecting: boolean) => void
 ): void {
-  currentMessageCallback = onMessage;
+  if (onMessage) {
+    currentMessageCallback = onMessage;
+  }
   if (onStatusChange) {
     currentStatusCallback = onStatusChange;
   }
@@ -44,7 +65,7 @@ export function connectSocket(
       console.log("[STOMP] Connected successfully", frame.headers);
       currentStatusCallback?.(true, false);
 
-      // Subscribe to global room topic
+      // Subscribe to global chat messages topic
       stompClient?.subscribe("/topic/messages", (messageFrame) => {
         try {
           const payload = JSON.parse(messageFrame.body);
@@ -54,6 +75,28 @@ export function connectSocket(
           }
         } catch (err) {
           console.error("[STOMP] Failed to parse message frame:", err);
+        }
+      });
+
+      // Subscribe to real-time gallery upload topic
+      stompClient?.subscribe("/topic/gallery", (frame) => {
+        try {
+          const payload = JSON.parse(frame.body);
+          console.log("[STOMP] Incoming gallery post:", payload);
+          galleryCallbacks.forEach((cb) => cb(payload));
+        } catch (err) {
+          console.error("[STOMP] Failed to parse gallery frame:", err);
+        }
+      });
+
+      // Subscribe to real-time gallery delete topic
+      stompClient?.subscribe("/topic/gallery/delete", (frame) => {
+        try {
+          const payload = JSON.parse(frame.body);
+          console.log("[STOMP] Incoming gallery deletion:", payload);
+          galleryDeleteCallbacks.forEach((cb) => cb(payload));
+        } catch (err) {
+          console.error("[STOMP] Failed to parse gallery delete frame:", err);
         }
       });
     },
@@ -110,7 +153,7 @@ export async function sendMessage(payload: SendMessageDTO): Promise<void> {
     }
 
     const savedMsg = await res.json();
-    if (currentMessageCallback) {
+    if (!stompClient?.connected && currentMessageCallback) {
       currentMessageCallback(savedMsg);
     }
   } catch (httpErr) {

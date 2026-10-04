@@ -29,9 +29,8 @@ public class AuthController {
     }
 
     @PostMapping("/profile")
-    public String updateProfile(@RequestBody ProfileRequest request){
-        authService.updateProfile(request);
-        return "Profile updated successfully";
+    public UserResponse updateProfile(@RequestBody ProfileRequest request){
+        return authService.updateProfile(request);
     }
 
     @PostMapping("/login")

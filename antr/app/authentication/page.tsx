@@ -4,7 +4,7 @@ import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "../components/navbar";
-import { syncUserProfile, setAuthToken } from "../lib/auth";
+import { syncUserProfile, setAuthToken, clearUserProfile, setPendingEmail } from "../lib/auth";
 
 export default function AuthenticationPage() {
 
@@ -97,6 +97,10 @@ export default function AuthenticationPage() {
         const errorText = await res.text();
         throw new Error(errorText || "SHAI SAI OTP DE BHAI");
       }
+      
+      // Wipe any lingering previous session to prevent avatar / profile bleed
+      clearUserProfile();
+      setPendingEmail(cleanEmail);
       setSuccess("Email Verified Yep !!!");
 
       setTimeout(() =>{

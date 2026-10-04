@@ -9,6 +9,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import com.reio.annoyio.websocket.entity.Message;
+import com.reio.annoyio.websocket.repository.MessageRepository;
 
 @Service
 public class AuthService {
@@ -17,12 +20,14 @@ public class AuthService {
     private final EmailService emailService;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
+    private final MessageRepository messageRepository;
 
-    public AuthService(UserRepository userRepository, EmailService emailService, JwtService jwtService,PasswordEncoder passwordEncoder) {
+    public AuthService(UserRepository userRepository, EmailService emailService, JwtService jwtService, PasswordEncoder passwordEncoder, MessageRepository messageRepository) {
         this.userRepository = userRepository;
         this.emailService = emailService;
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
+        this.messageRepository = messageRepository;
     }
 
 
@@ -88,7 +93,7 @@ public class AuthService {
         userRepository.save(user);
     }
 
-    public void updateProfile(ProfileRequest request){
+    public UserResponse updateProfile(ProfileRequest request){
         if (request.email() == null || request.email().isBlank()) {
             throw new RuntimeException("Email is required");
         }
@@ -99,6 +104,17 @@ public class AuthService {
         if (!user.isVerified()) {
             throw new RuntimeException("Please verify your email before setting a profile");
         }
+
+        if (request.studentYear() != null && request.studentYear() >= 1 && request.studentYear() <= 6) {
+            user.setStudentYear(request.studentYear());
+        } else if (request.admissionYear() != null && request.admissionYear() >= 2000 && request.admissionYear() <= 2040) {
+            user.setAdmissionYear(request.admissionYear());
+        } else if (user.getAdmissionYear() == null) {
+            user.setAdmissionYear(extractAdmissionYear(user.getEmail()));
+        }
+
+        String oldUsername = user.getUsername();
+        String oldName = user.getName();
 
         String chosenUsername = request.username() != null && !request.username().isBlank()
                 ? request.username().trim()
@@ -120,7 +136,42 @@ public class AuthService {
         if(request.avatarUrl() != null && !request.avatarUrl().isBlank()) {
             user.setAvatarUrl(request.avatarUrl().trim());
         }
-        userRepository.save(user);
+        User saved = userRepository.save(user);
+
+        // Ensure all messages belonging to this user are linked to this user's id and updated with their verified email
+        try {
+            List<Message> allMessages = messageRepository.findAll();
+            for (Message m : allMessages) {
+                boolean isUserMsg = (m.getSender() != null && m.getSender().getId().equals(saved.getId()));
+                if (!isUserMsg && m.getSenderEmail() != null) {
+                    String sEmail = m.getSenderEmail().trim();
+                    if (sEmail.equalsIgnoreCase(saved.getEmail()) || 
+                        (oldUsername != null && sEmail.equalsIgnoreCase(oldUsername)) ||
+                        (oldName != null && sEmail.equalsIgnoreCase(oldName)) ||
+                        (saved.getUsername() != null && sEmail.equalsIgnoreCase(saved.getUsername()))) {
+                        isUserMsg = true;
+                    }
+                }
+                if (isUserMsg) {
+                    m.setSender(saved);
+                    m.setSenderEmail(saved.getEmail());
+                    messageRepository.save(m);
+                }
+            }
+        } catch (Exception ex) {
+            System.err.println("Notice: Could not sync legacy messages during profile update: " + ex.getMessage());
+        }
+
+        return new UserResponse(
+                saved.getId(),
+                saved.getEmail(),
+                saved.getUsername(),
+                saved.getGender(),
+                saved.getTag(),
+                saved.getAvatarUrl(),
+                saved.getAdmissionYear(),
+                saved.getStudentYear()
+        );
     }
 
 
@@ -154,6 +205,7 @@ public class AuthService {
             }
         }
         return new UserResponse(
+                user.getId(),
                 user.getEmail(),
                 user.getUsername(),
                 user.getGender(),
@@ -212,16 +264,51 @@ public class AuthService {
     }
     private Integer extractAdmissionYear(String email){
         if (email == null) return null;
+        String clean = email.trim().toLowerCase();
         try {
-            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("(20[12][0-9])").matcher(email);
-            if (matcher.find()) {
-                return Integer.parseInt(matcher.group(1));
+            // 1. Explicit 4-digit year: 2018 to 2035
+            java.util.regex.Matcher m4 = java.util.regex.Pattern.compile("(20[123][0-9])").matcher(clean);
+            if (m4.find()) {
+                return Integer.parseInt(m4.group(1));
             }
-            if (email.length() >= 5) {
-                return Integer.parseInt(email.substring(1, 5));
+
+            // 2. Roll number starting with 2-digit year (e.g. 210143..., 220143..., 230143..., 240143..., 250143...)
+            java.util.regex.Matcher mRoll = java.util.regex.Pattern.compile("^(\\d{2})\\d{4,}").matcher(clean);
+            if (mRoll.find()) {
+                int yy = Integer.parseInt(mRoll.group(1));
+                if (yy >= 18 && yy <= 35) {
+                    return 2000 + yy;
+                }
+            }
+
+            // 3. Branch code + 2-digit year (e.g. cs22..., it23..., aiml24..., etc.)
+            java.util.regex.Matcher mBranch = java.util.regex.Pattern.compile("[a-z]+(\\d{2})[a-z0-9]*@").matcher(clean);
+            if (mBranch.find()) {
+                int yy = Integer.parseInt(mBranch.group(1));
+                if (yy >= 18 && yy <= 35) {
+                    return 2000 + yy;
+                }
             }
         } catch (Exception ignored) {}
-        return null;
+        // Fallback default: current year - 1 (2nd year)
+        return java.time.Year.now().getValue() - 1;
+    }
+
+    @jakarta.annotation.PostConstruct
+    public void backfillMissingAdmissionYears() {
+        try {
+            List<User> users = userRepository.findAll();
+            for (User u : users) {
+                if (u.getAdmissionYear() == null) {
+                    Integer yr = extractAdmissionYear(u.getEmail());
+                    if (yr == null) yr = java.time.Year.now().getValue() - 1;
+                    u.setAdmissionYear(yr);
+                    userRepository.save(u);
+                }
+            }
+        } catch (Exception ex) {
+            System.err.println("Notice: Could not backfill user admission years: " + ex.getMessage());
+        }
     }
 
 }

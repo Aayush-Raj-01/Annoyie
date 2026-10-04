@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import Navbar from "../components/navbar";
-import { getPendingEmail, getUserProfile, saveUserProfile, uploadAvatarImage } from "../lib/auth";
+import { getPendingEmail, getUserProfile, saveUserProfile, uploadAvatarImage, syncUserProfile } from "../lib/auth";
 
 const GENDER_OPTIONS = [
   { label: "Male", icon: "♂" },
@@ -19,6 +19,13 @@ const HOBBY_TAGS = [
   { tag: "Sports" as const, icon: "🏃", desc: "Fitness & athletics" },
 ];
 
+const YEAR_OPTIONS = [
+  { year: 1, label: "1st Year", subtitle: "Freshman" },
+  { year: 2, label: "2nd Year", subtitle: "Sophomore" },
+  { year: 3, label: "3rd Year", subtitle: "Junior" },
+  { year: 4, label: "4th Year", subtitle: "Senior" },
+];
+
 type HobbyTag = (typeof HOBBY_TAGS)[number]["tag"];
 
 export default function OnboardingPage() {
@@ -29,36 +36,67 @@ export default function OnboardingPage() {
   // Lazy state initialization to prevent cascading renders
   const [email, setEmail] = useState(() => {
     if (typeof window === "undefined") return "";
-    const existing = getUserProfile();
     const pending = getPendingEmail();
-    return existing?.email || pending || "operative@annoyms.local";
+    const existing = getUserProfile();
+    if (pending) return pending;
+    return existing?.email || "operative@annoyms.local";
   });
 
   const [anonymousName, setAnonymousName] = useState(() => {
     if (typeof window === "undefined") return "";
-    return getUserProfile()?.anonymousName || "";
+    const pending = getPendingEmail();
+    const existing = getUserProfile();
+    if (pending && existing?.email && pending.toLowerCase() !== existing.email.toLowerCase()) return "";
+    return existing?.anonymousName || "";
   });
 
   const [gender, setGender] = useState<string>(() => {
     if (typeof window === "undefined") return "";
-    return getUserProfile()?.gender || "";
+    const pending = getPendingEmail();
+    const existing = getUserProfile();
+    if (pending && existing?.email && pending.toLowerCase() !== existing.email.toLowerCase()) return "";
+    return existing?.gender || "";
+  });
+
+  const [studentYear, setStudentYear] = useState<number>(() => {
+    if (typeof window === "undefined") return 1;
+    const pending = getPendingEmail();
+    const existing = getUserProfile();
+    if (pending && existing?.email && pending.toLowerCase() !== existing.email.toLowerCase()) return 1;
+    if (existing?.studentYear && existing.studentYear >= 1 && existing.studentYear <= 4) {
+      return existing.studentYear;
+    }
+    if (existing?.admissionYear) {
+      const calc = new Date().getFullYear() - existing.admissionYear + 1;
+      if (calc >= 1 && calc <= 4) return calc;
+    }
+    return 1;
   });
 
   const [selectedHobbies, setSelectedHobbies] = useState<HobbyTag[]>(() => {
     if (typeof window === "undefined") return ["Coder"];
-    const existing = getUserProfile()?.hobbies as HobbyTag[] | undefined;
-    return existing && existing.length > 0 ? [existing[0]] : ["Coder"];
+    const pending = getPendingEmail();
+    const existing = getUserProfile();
+    if (pending && existing?.email && pending.toLowerCase() !== existing.email.toLowerCase()) return ["Coder"];
+    const existingHobbies = existing?.hobbies as HobbyTag[] | undefined;
+    return existingHobbies && existingHobbies.length > 0 ? [existingHobbies[0]] : ["Coder"];
   });
 
   const [bio, setBio] = useState(() => {
     if (typeof window === "undefined") return "";
-    return getUserProfile()?.bio || "";
+    const pending = getPendingEmail();
+    const existing = getUserProfile();
+    if (pending && existing?.email && pending.toLowerCase() !== existing.email.toLowerCase()) return "";
+    return existing?.bio || "";
   });
 
   // Profile Picture state (< 5MB)
   const [avatarUrl, setAvatarUrl] = useState(() => {
     if (typeof window === "undefined") return "";
-    return getUserProfile()?.avatarUrl || "";
+    const pending = getPendingEmail();
+    const existing = getUserProfile();
+    if (pending && existing?.email && pending.toLowerCase() !== existing.email.toLowerCase()) return "";
+    return existing?.avatarUrl || "";
   });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -70,10 +108,12 @@ export default function OnboardingPage() {
     // Sync if profile was updated elsewhere
     const handleUpdate = () => {
       const p = getUserProfile();
-      if (p) {
+      const pending = getPendingEmail();
+      if (p && (!pending || (p.email && p.email.toLowerCase() === pending.toLowerCase()))) {
         if (p.email) setEmail(p.email);
         if (p.anonymousName) setAnonymousName(p.anonymousName);
         if (p.gender) setGender(p.gender);
+        if (p.studentYear) setStudentYear(p.studentYear);
         if (p.hobbies?.length) setSelectedHobbies(p.hobbies as HobbyTag[]);
         if (p.bio) setBio(p.bio);
         if (p.avatarUrl) setAvatarUrl(p.avatarUrl);
@@ -154,18 +194,26 @@ export default function OnboardingPage() {
       }
 
       // Save locally to storage for persistence across profile & chats
+      const existing = getUserProfile();
+      const isSame = Boolean(existing?.email && existing.email.toLowerCase() === email.toLowerCase());
+      const currentYear = new Date().getFullYear();
+      const admissionYear = currentYear - studentYear + 1;
+
       saveUserProfile({
+        id: isSame ? existing?.id : undefined,
         email,
         anonymousName: anonymousName.trim(),
         gender: gender || undefined,
         hobbies: selectedHobbies,
         bio: bio.trim(),
         avatarUrl: finalAvatarUrl || undefined,
+        studentYear,
+        admissionYear,
       });
 
       // Also notify backend if reachable
       try {
-        await fetch("http://localhost:8080/auth/profile", {
+        const res = await fetch("http://localhost:8080/auth/profile", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -175,11 +223,33 @@ export default function OnboardingPage() {
             gender: gender || null,
             tag: selectedHobbies.join(","),
             avatarUrl: finalAvatarUrl || null,
+            studentYear,
+            admissionYear,
           }),
         });
+        if (res.ok) {
+          try {
+            const data = await res.json();
+            if (data && typeof data.id === "number") {
+              saveUserProfile({
+                id: data.id,
+                email: data.email || email,
+                anonymousName: data.username || anonymousName.trim(),
+                gender: data.gender || gender,
+                avatarUrl: data.avatarUrl || finalAvatarUrl,
+                admissionYear: data.admissionYear || admissionYear,
+                studentYear: data.studentYear || studentYear,
+              });
+            }
+          } catch {}
+        }
       } catch (beError) {
         console.warn("Backend profile sync skipped:", beError);
       }
+
+      try {
+        await syncUserProfile();
+      } catch {}
 
       // Route directly to user profile
       router.push("/profile");
@@ -351,6 +421,36 @@ export default function OnboardingPage() {
                       <p className="text-[11px] text-zinc-500 pl-8 leading-snug">
                         {item.desc}
                       </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Academic Year Selection */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <label className="onboardtext font-medium text-zinc-300 text-xs block tracking-wide">
+                  Academic Year <span className="text-emerald-400">*</span>
+                </label>
+                <span className="text-zinc-500 text-[11px]">College standing</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {YEAR_OPTIONS.map((opt) => {
+                  const isSelected = studentYear === opt.year;
+                  return (
+                    <button
+                      key={opt.year}
+                      type="button"
+                      onClick={() => setStudentYear(opt.year)}
+                      className={`py-2.5 px-3 rounded-xl text-center border transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
+                        isSelected
+                          ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.12)]"
+                          : "bg-zinc-900/40 border-zinc-800/80 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200"
+                      }`}
+                    >
+                      <span className="font-semibold text-xs tracking-tight">{opt.label}</span>
+                      <span className="text-[10px] text-zinc-500 font-mono">{opt.subtitle}</span>
                     </button>
                   );
                 })}

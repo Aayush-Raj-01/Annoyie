@@ -4,6 +4,7 @@ import React from "react";
 import type { Message } from "@/types/chat";
 import { parseMessageContent } from "@/lib/chat/mediaData";
 import { formatStudentYear } from "@/app/lib/auth";
+import UserAvatar from "./UserAvatar";
 
 interface MessageBubbleProps {
   message: Message;
@@ -56,15 +57,21 @@ function formatMessageTime(isoString?: string): string {
   }
 }
 
-function resolveSenderName(sender: unknown, fallback?: unknown): string {
-  if (typeof sender === "string" && sender.trim()) return sender.trim();
-  if (sender && typeof sender === "object") {
-    const s = sender as Record<string, unknown>;
+function resolveSenderName(message: Message): string {
+  if (typeof (message as any)?.senderUsername === "string" && (message as any).senderUsername.trim()) {
+    return (message as any).senderUsername.trim();
+  }
+  if (message.sender && typeof message.sender === "object") {
+    const s = message.sender as Record<string, unknown>;
     if (typeof s.username === "string" && s.username.trim()) return s.username.trim();
     if (typeof s.name === "string" && s.name.trim()) return s.name.trim();
-    if (typeof s.email === "string" && s.email.trim()) return s.email.trim();
   }
-  if (typeof fallback === "string" && fallback.trim()) return fallback.trim();
+  if (typeof message.sender === "string" && message.sender.trim()) {
+    return message.sender.trim();
+  }
+  if (typeof (message as any)?.senderEmail === "string" && (message as any).senderEmail.trim()) {
+    return (message as any).senderEmail.trim();
+  }
   return "Anonymous";
 }
 
@@ -74,19 +81,20 @@ export default function MessageBubble({
   showSenderHeader = true,
 }: MessageBubbleProps) {
   const timeFormatted = formatMessageTime(message.createdAt);
-  const senderName = resolveSenderName(message.sender, (message as any)?.senderEmail);
-  const avatarGradient = getAvatarGradient(senderName);
+  const senderName = resolveSenderName(message);
   const senderColor = getSenderNameColor(senderName);
-  const initial = (senderName || "A").charAt(0).toUpperCase();
-  const tag = message.tag || (typeof message.sender === "object" ? (message.sender as any)?.tag : undefined);
   const avatarUrl =
     message.avatarUrl ||
     (typeof message.sender === "object" ? (message.sender as any)?.avatarUrl : undefined);
-  const studentYear =
+  const rawStudentYear =
     message.studentYear ??
     (typeof message.sender === "object" ? (message.sender as any)?.studentYear : undefined);
+  const studentYear =
+    rawStudentYear != null && rawStudentYear >= 1 && rawStudentYear <= 6 ? rawStudentYear : 1;
+  const tag =
+    message.tag ||
+    (typeof message.sender === "object" ? (message.sender as any)?.tag : undefined);
   const formattedYear = formatStudentYear(studentYear);
-  const userTitle = formattedYear ? `${senderName} (${formattedYear})` : senderName;
 
   // Parse if message is a Sticker, GIF, or regular text
   const media = parseMessageContent(message.content);
@@ -99,29 +107,12 @@ export default function MessageBubble({
     >
       {/* Avatar (shown for other users) */}
       {!isMe ? (
-        avatarUrl ? (
-          <div
-            className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-white/[0.08] shadow-md shadow-black/40 bg-zinc-900 select-none ring-1 ring-white/[0.04]"
-            title={userTitle}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={avatarUrl}
-              alt={senderName}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLElement).style.display = "none";
-              }}
-            />
-          </div>
-        ) : (
-          <div
-            className={`w-8 h-8 rounded-full bg-gradient-to-tr ${avatarGradient} flex items-center justify-center text-xs font-bold text-white shadow-md shadow-black/40 shrink-0 select-none ring-1 ring-white/[0.04]`}
-            title={userTitle}
-          >
-            {initial}
-          </div>
-        )
+        <UserAvatar
+          src={avatarUrl}
+          name={senderName}
+          size="sm"
+          className="shrink-0 mb-0.5"
+        />
       ) : (
         <div className="w-1" /> // subtle spacer
       )}

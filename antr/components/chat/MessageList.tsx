@@ -6,12 +6,18 @@ import MessageBubble from "./MessageBubble";
 
 interface MessageListProps {
   messages: Message[];
+  currentUserId?: number;
+  currentUserEmail?: string;
   currentUserName: string;
   isLoading: boolean;
   isError: boolean;
   error?: unknown;
   onRetry?: () => void;
   roomName: string;
+  isDm?: boolean;
+  dmUsername?: string;
+  isBlocked?: boolean;
+  onUnblock?: () => void;
 }
 
 function resolveSenderString(sender: unknown, fallback?: unknown): string {
@@ -28,12 +34,18 @@ function resolveSenderString(sender: unknown, fallback?: unknown): string {
 
 export default function MessageList({
   messages,
+  currentUserId,
+  currentUserEmail,
   currentUserName,
   isLoading,
   isError,
   error,
   onRetry,
   roomName,
+  isDm = false,
+  dmUsername,
+  isBlocked = false,
+  onUnblock,
 }: MessageListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -60,6 +72,26 @@ export default function MessageList({
     <div className="relative flex-1 min-h-0 bg-[#08090d] flex flex-col overflow-hidden">
       {/* Subtle Dot Grid Background */}
       <div className="absolute inset-0 bg-[radial-gradient(#27272a_1px,transparent_1px)] [background-size:32px_32px] opacity-15 pointer-events-none" />
+
+      {/* Blocked User Notice Banner */}
+      {isDm && isBlocked && (
+        <div className="relative z-20 bg-rose-950/40 border-b border-rose-500/20 px-4 py-2.5 flex items-center justify-between gap-3 text-xs backdrop-blur-md">
+          <div className="flex items-center gap-2 text-rose-300">
+            <span className="text-base">🚫</span>
+            <span>
+              You have blocked <strong>@{dmUsername || "this user"}</strong>. You will not receive any new messages from them.
+            </span>
+          </div>
+          {onUnblock && (
+            <button
+              onClick={onUnblock}
+              className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 border border-rose-500/30 font-semibold text-[11px] transition-colors cursor-pointer shrink-0"
+            >
+              Unblock
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Messages Scroll Area */}
       <div
@@ -105,13 +137,22 @@ export default function MessageList({
           </div>
         )}
 
-       
         {/* Empty State */}
         {!isLoading && !isError && messages.length === 0 && (
-          <div className="text-center py-10 text-zinc-500 space-y-1">
-            <div className="text-2xl mb-1 opacity-70">💬</div>
-            <p className="text-xs font-medium text-zinc-400">Make Heat Start in {roomName}.</p>
-            <p className="text-[11px] text-zinc-500">Start with a banger chat</p>
+          <div className="text-center py-12 text-zinc-500 space-y-1.5 max-w-md mx-auto">
+            <div className="text-3xl mb-1 opacity-70">
+              {isDm ? "🔒" : "💬"}
+            </div>
+            <p className="text-sm font-medium text-zinc-300">
+              {isDm
+                ? `Direct message with @${dmUsername || "User"}`
+                : `Make Heat Start in ${roomName}.`}
+            </p>
+            <p className="text-xs text-zinc-500">
+              {isDm
+                ? "This is the start of your direct, private message history."
+                : "Start with a banger chat"}
+            </p>
           </div>
         )}
 
@@ -119,20 +160,47 @@ export default function MessageList({
         <div className="max-w-4xl mx-auto">
           {!isLoading &&
             messages.map((message, index) => {
-              const senderName = resolveSenderString(message.sender, (message as any)?.senderEmail);
+              const msgSenderId =
+                typeof message.senderId === "number"
+                  ? message.senderId
+                  : typeof message.sender === "object" && typeof (message.sender as any)?.id === "number"
+                  ? (message.sender as any).id
+                  : undefined;
+
+              const rawEmail = (message as any)?.senderEmail || (typeof message.sender === "object" ? (message.sender as any)?.email : undefined);
+              const msgSenderEmail = typeof rawEmail === "string" && rawEmail.includes("@") ? rawEmail.trim().toLowerCase() : undefined;
+
+              const senderName =
+                (typeof (message as any)?.senderUsername === "string" && (message as any).senderUsername.trim()) ||
+                resolveSenderString(message.sender, (message as any)?.senderEmail);
               const myName = typeof currentUserName === "string" ? currentUserName.trim().toLowerCase() : "";
-              const isMe =
-                Boolean(myName) &&
-                Boolean(senderName) &&
-                senderName.toLowerCase() === myName;
+
+              let isMe = false;
+              if (currentUserId != null && msgSenderId != null && Number(currentUserId) === Number(msgSenderId)) {
+                isMe = true;
+              } else if (currentUserEmail && msgSenderEmail && currentUserEmail.trim().toLowerCase() === msgSenderEmail) {
+                isMe = true;
+              } else {
+                isMe = Boolean(myName) && Boolean(senderName) && senderName.toLowerCase() === myName;
+              }
 
               // Check if previous message was from the same sender within 2 minutes
               const prevMessage = index > 0 ? messages[index - 1] : null;
+              const prevSenderId =
+                typeof prevMessage?.senderId === "number"
+                  ? prevMessage.senderId
+                  : typeof prevMessage?.sender === "object" && typeof (prevMessage?.sender as any)?.id === "number"
+                  ? (prevMessage?.sender as any).id
+                  : undefined;
+
               const prevSender = prevMessage
-                ? resolveSenderString(prevMessage.sender, (prevMessage as any)?.senderEmail)
+                ? (typeof (prevMessage as any)?.senderUsername === "string" && (prevMessage as any).senderUsername.trim()) ||
+                  resolveSenderString(prevMessage.sender, (prevMessage as any)?.senderEmail)
                 : null;
 
-              const isSameSender = prevSender === senderName;
+              const isSameSender =
+                (msgSenderId != null && prevSenderId != null && Number(msgSenderId) === Number(prevSenderId)) ||
+                (prevSender === senderName);
               let isWithinTwoMinutes = false;
 
               if (isSameSender && prevMessage?.createdAt && message.createdAt) {

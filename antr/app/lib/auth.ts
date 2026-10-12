@@ -26,6 +26,8 @@ const STORAGE_KEY = "annoyms_user_profile";
 const PENDING_EMAIL_KEY = "annoyms_pending_email";
 const TOKEN_KEY = "annoyms_auth_token";
 
+import { clearCachedMarketplaceProfile, fetchMarketplaceProfile } from "@/lib/api/marketplace";
+
 export function getPendingEmail(): string {
   if (typeof window === "undefined") return "";
   return (
@@ -144,6 +146,7 @@ export function clearUserProfile(): void {
   localStorage.removeItem("annoyms_pending");
   localStorage.removeItem("annoyms_dm_conversations");
   localStorage.removeItem("annoyms_blocked_users");
+  clearCachedMarketplaceProfile();
   if (typeof document !== "undefined") {
     document.cookie = "annoyms_token=; path=/; max-age=0; SameSite=Lax";
   }
@@ -167,18 +170,25 @@ export async function syncUserProfile(token?: string): Promise<UserProfile | nul
     if (!res.ok) return null;
 
     const data = await res.json();
-    if (data.username) {
+    if (data.username || data.email) {
       const hobbies = data.tag ? (data.tag.split(",") as ("Coder" | "Non-coder")[]) : [];
-      return saveUserProfile({
+      const updated = saveUserProfile({
         id: typeof data.id === "number" ? data.id : undefined,
         email: data.email,
-        anonymousName: data.username,
+        anonymousName: data.username || data.email?.split("@")[0] || "User",
         gender: data.gender,
         hobbies: hobbies,
         avatarUrl: data.avatarUrl || undefined,
         admissionYear: data.admissionYear,
         studentYear: data.studentYear,
       });
+
+      // Synchronize marketplace profile immediately if user ID is known
+      if (updated.id) {
+        fetchMarketplaceProfile(updated.id).catch(() => {});
+      }
+
+      return updated;
     }
   } catch (err) {
     console.error("Failed to sync profile from backend:", err);

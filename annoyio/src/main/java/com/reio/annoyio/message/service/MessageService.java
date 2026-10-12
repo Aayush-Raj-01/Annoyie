@@ -10,8 +10,9 @@ import com.reio.annoyio.websocket.repository.ChatRoomRepository;
 import com.reio.annoyio.websocket.repository.MessageRepository;
 import org.springframework.stereotype.Service;
 
+import com.reio.annoyio.message.dto.DMConversationResponse;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.*;
 
 @Service
 public class MessageService {
@@ -94,6 +95,19 @@ public class MessageService {
             receiverUser = userRepository.findById(dto.getReceiverId()).orElse(null);
             if (senderUser != null && receiverUser != null && senderUser.getId().equals(receiverUser.getId())) {
                 throw new IllegalArgumentException("Cannot send direct message to yourself");
+            }
+        }
+
+        // Cohort Year-group restriction check:
+        // Room 2 -> 1st Year, Room 3 -> 2nd Year, Room 4 -> 3rd Year, Room 5 -> 4th Year
+        if (receiverUser == null && roomId != null && roomId >= 2 && roomId <= 5) {
+            int requiredYear = (int) (roomId - 1);
+            Integer actualYear = senderUser != null && senderUser.getStudentYear() != null
+                    ? senderUser.getStudentYear()
+                    : studentYear;
+            if (actualYear == null || actualYear != requiredYear) {
+                String suffix = requiredYear == 1 ? "st" : requiredYear == 2 ? "nd" : requiredYear == 3 ? "rd" : "th";
+                throw new RuntimeException("Access denied: Only " + requiredYear + suffix + " year students can chat in this room.");
             }
         }
 
@@ -207,6 +221,33 @@ public class MessageService {
                 user1Id,
                 user2Id
         );
+    }
+
+    public List<DMConversationResponse> getDmConversations(Long userId) {
+        if (userId == null) return List.of();
+        List<Message> list = repository.findDmMessagesForUser(userId);
+        Map<Long, DMConversationResponse> convMap = new LinkedHashMap<>();
+        for (Message m : list) {
+            if (m.getSender() == null || m.getReceiver() == null) continue;
+            User partner = m.getSender().getId().equals(userId) ? m.getReceiver() : m.getSender();
+            if (partner == null || partner.getId() == null || partner.getId().equals(userId)) continue;
+            if (!convMap.containsKey(partner.getId())) {
+                String partnerName = partner.getUsername() != null && !partner.getUsername().isBlank()
+                        ? partner.getUsername()
+                        : (partner.getEmail() != null ? partner.getEmail().split("@")[0] : "User #" + partner.getId());
+                convMap.put(partner.getId(), new DMConversationResponse(
+                        partner.getId(),
+                        partnerName,
+                        partner.getAvatarUrl(),
+                        partner.getTag(),
+                        partner.getStudentYear(),
+                        m.getContent(),
+                        m.getCreatedAt() != null ? m.getCreatedAt().toString() : "",
+                        0
+                ));
+            }
+        }
+        return new ArrayList<>(convMap.values());
     }
 
 }

@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "../components/navbar";
+import ProfileHeaderNavigation from "@/components/profile/ProfileHeaderNavigation";
 import {
   getUserProfile,
   clearUserProfile,
@@ -20,7 +21,6 @@ export default function ProfilePage() {
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const [isCopied, setIsCopied] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
 
@@ -29,8 +29,9 @@ export default function ProfilePage() {
 
     const load = async () => {
       let data = getUserProfile();
-      if (!data) {
-        data = await syncUserProfile();
+      if (!data || !data.id) {
+        const synced = await syncUserProfile();
+        if (synced) data = synced;
       }
       if (!isMounted) return;
       if (!data || !data.anonymousName || data.anonymousName.startsWith("Guest_")) {
@@ -52,24 +53,7 @@ export default function ProfilePage() {
       isMounted = false;
       window.removeEventListener("annoyms_profile_updated", handleUpdate);
     };
-  }, []);
-
-  const handleCopyEmail = () => {
-    if (!profile?.email) return;
-    navigator.clipboard.writeText(profile.email);
-    setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2000);
-  };
-
-  const handleToggleStealth = () => {
-    if (!profile) return;
-    const updated = saveUserProfile({
-      ...profile,
-      anonymousName: profile.anonymousName,
-      stealthMode: !profile.stealthMode,
-    });
-    setProfile(updated);
-  };
+  }, [router]);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -115,6 +99,40 @@ export default function ProfilePage() {
     }
   };
 
+  const handleRemoveAvatar = async () => {
+    if (!profile) return;
+    setIsUploading(true);
+    setUploadError("");
+    try {
+      const updated = saveUserProfile({
+        ...profile,
+        anonymousName: profile.anonymousName,
+        avatarUrl: undefined,
+      });
+      setProfile(updated);
+
+      if (profile.email) {
+        await fetch("http://localhost:8080/auth/profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: profile.email,
+            username: profile.anonymousName,
+            anonymousName: profile.anonymousName,
+            avatarUrl: "",
+            gender: profile.gender || null,
+            tag: profile.hobbies?.join(",") || null,
+          }),
+        });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to remove avatar";
+      setUploadError(msg);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleSignOut = () => {
     clearUserProfile();
     router.push("/authentication");
@@ -144,26 +162,34 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col justify-between pt-10 pb-28 px-4">
       {/* Hidden file input for photo upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleAvatarUpload}
+      />
 
       <div className="max-w-lg w-full mx-auto space-y-6">
-        {/* Simple Page Header */}
-        <div className="flex items-center justify-center">
-          <div className="relative">
-            <h1 className="text-xl font-semibold tracking-tight text-emerald-600 profilepg absolute"
-            style={{ textShadow: "0 0 20px #10B981" }}>Profile</h1>
-            <h1 className="text-xl font-semibold tracking-tight text-white profilepg translate-x-1 translate-y-1">Profile</h1>
-          </div>
-          
-        </div>
+        {/* Top Navigation Header with Back to Marketplace and Segmented Persona Pill */}
+        <ProfileHeaderNavigation
+          activeTab="chat"
+          backHref="/marketplace"
+          backLabel="Marketplace"
+        />
 
         {profile ? (
           <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/50 backdrop-blur-sm p-6 space-y-6 shadow-xl">
             {/* User Identity Header */}
             <div className="flex items-center gap-4">
               <div className="relative group shrink-0">
-                <div className="w-16 h-16 rounded-full overflow-hidden bg-zinc-800 border border-zinc-700/80 flex items-center justify-center">
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-16 h-16 rounded-full overflow-hidden bg-zinc-800 border-2 border-dashed border-zinc-700/80 hover:border-emerald-500/80 flex items-center justify-center cursor-pointer transition-colors relative"
+                  title="Click to change profile picture"
+                >
                   {isUploading ? (
-                    <div className="w-5 h-5 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-5 h-5 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
                   ) : profile.avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -176,6 +202,9 @@ export default function ProfilePage() {
                       {profile.anonymousName?.slice(0, 2).toUpperCase() || "AN"}
                     </span>
                   )}
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[10px] text-white font-mono">
+                    📷 Change
+                  </div>
                 </div>
               </div>
 
@@ -191,11 +220,30 @@ export default function ProfilePage() {
                     )}
                   </span>
                 </div>
-                {profile.admissionYear && (
-                  <p className="text-xs text-zinc-400 font-mono mt-1">
-                    Class of {profile.admissionYear + 4}
-                  </p>
-                )}
+
+                <div className="flex items-center gap-2 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="text-xs text-emerald-400 hover:text-emerald-300 font-medium transition-colors cursor-pointer"
+                  >
+                    Change photo
+                  </button>
+                  {profile.avatarUrl && (
+                    <>
+                      <span className="text-zinc-600">•</span>
+                      <button
+                        type="button"
+                        onClick={handleRemoveAvatar}
+                        disabled={isUploading}
+                        className="text-xs text-rose-400 hover:text-rose-300 font-medium transition-colors cursor-pointer"
+                      >
+                        Remove photo
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -269,15 +317,33 @@ export default function ProfilePage() {
             </div>
 
 
+            {/* Marketplace Profile Link Card */}
+            <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-950/30 via-zinc-900/80 to-teal-950/20 border border-emerald-500/20 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <span className="text-lg">🏪</span>
+                <div>
+                  <div className="text-xs font-semibold text-white">Marketplace Profile</div>
+                  <div className="text-[11px] text-zinc-400">Different profile for buying & selling on campus</div>
+                </div>
+              </div>
+              <Link
+                href="/marketplace/profile"
+                className="px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-colors shrink-0"
+              >
+                Manage Store →
+              </Link>
+            </div>
+
             {/* Action Buttons */}
             <div className="pt-2 flex flex-col sm:flex-row gap-2.5">
               <Link
                 href="/onboarding"
                 className="flex-1 text-center py-2.5 px-4 rounded-xl border border-zinc-700 bg-zinc-800/80 hover:bg-zinc-700 text-xs font-medium text-white transition-colors cursor-pointer"
               >
-                Edit Profile
+                Edit Chat Profile
               </Link>
             </div>
+
 
             <button
               type="button"

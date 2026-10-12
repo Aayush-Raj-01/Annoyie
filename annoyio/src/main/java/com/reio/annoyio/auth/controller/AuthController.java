@@ -52,4 +52,9 @@ public class AuthController {
         String avatarUrl = authService.uploadAvatar(file, email);
         return java.util.Map.of("avatarUrl", avatarUrl, "message", "Avatar uploaded successfully");
     }
+
+    @ExceptionHandler(RuntimeException.class)
+    public org.springframework.http.ResponseEntity<?> handleRuntimeException(RuntimeException e) {
+        return org.springframework.http.ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage() != null ? e.getMessage() : "An error occurred"));
+    }
 }

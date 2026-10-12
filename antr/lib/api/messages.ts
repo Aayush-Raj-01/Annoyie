@@ -1,4 +1,5 @@
-import type { Message } from "@/types/chat";
+import type { Message, DMConversation } from "@/types/chat";
+import { getAuthToken } from "@/app/lib/auth";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -80,11 +81,17 @@ export function normalizeRawMessage(item: any, fallbackRoomId?: number): Message
 }
 
 export async function fetchMessages(roomId: number): Promise<Message[]> {
+  const token = getAuthToken();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${API_BASE_URL}/messages/${roomId}`, {
     method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
     cache: "no-store",
   });
 
@@ -121,4 +128,47 @@ export async function fetchDmMessages(user1Id: number, user2Id: number): Promise
   }
 
   return data.map((item: any) => normalizeRawMessage(item));
+}
+
+export async function fetchDmConversations(userId?: number): Promise<DMConversation[]> {
+  const token = getAuthToken();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const url = userId
+    ? `${API_BASE_URL}/messages/dm-conversations/${userId}`
+    : `${API_BASE_URL}/messages/dm-conversations`;
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers,
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await response.json();
+    if (!Array.isArray(data)) return [];
+
+    return data.map((item: any) => ({
+      userId: Number(item.userId),
+      username: item.username,
+      avatarUrl: item.avatarUrl,
+      tag: item.tag,
+      studentYear: item.studentYear,
+      lastMessage: item.lastMessage,
+      lastMessageTime: item.lastMessageTime,
+      unreadCount: item.unreadCount || 0,
+    }));
+  } catch (err) {
+    console.error("Failed to fetch DM conversations:", err);
+    return [];
+  }
 }

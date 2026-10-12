@@ -1,6 +1,6 @@
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
-import type { Message, SendMessageDTO } from "@/types/chat";
+import type { SendMessageDTO } from "@/types/chat";
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "http://localhost:8080/chat";
 
@@ -13,6 +13,9 @@ type GalleryDeleteCallback = (deleteInfo: { id: number }) => void;
 
 const galleryCallbacks: Set<GalleryCallback> = new Set();
 const galleryDeleteCallbacks: Set<GalleryDeleteCallback> = new Set();
+let messagesSubscription: any = null;
+let gallerySubscription: any = null;
+let galleryDeleteSubscription: any = null;
 
 export function subscribeToGallery(
   onPost: GalleryCallback,
@@ -65,8 +68,19 @@ export function connectSocket(
       console.log("[STOMP] Connected successfully", frame.headers);
       currentStatusCallback?.(true, false);
 
+      // Clean up previous subscriptions if any before re-subscribing
+      if (messagesSubscription) {
+        try { messagesSubscription.unsubscribe(); } catch {}
+      }
+      if (gallerySubscription) {
+        try { gallerySubscription.unsubscribe(); } catch {}
+      }
+      if (galleryDeleteSubscription) {
+        try { galleryDeleteSubscription.unsubscribe(); } catch {}
+      }
+
       // Subscribe to global chat messages topic
-      stompClient?.subscribe("/topic/messages", (messageFrame) => {
+      messagesSubscription = stompClient?.subscribe("/topic/messages", (messageFrame) => {
         try {
           const payload = JSON.parse(messageFrame.body);
           console.log("[STOMP] Incoming message:", payload);
@@ -79,7 +93,7 @@ export function connectSocket(
       });
 
       // Subscribe to real-time gallery upload topic
-      stompClient?.subscribe("/topic/gallery", (frame) => {
+      gallerySubscription = stompClient?.subscribe("/topic/gallery", (frame) => {
         try {
           const payload = JSON.parse(frame.body);
           console.log("[STOMP] Incoming gallery post:", payload);
@@ -90,7 +104,7 @@ export function connectSocket(
       });
 
       // Subscribe to real-time gallery delete topic
-      stompClient?.subscribe("/topic/gallery/delete", (frame) => {
+      galleryDeleteSubscription = stompClient?.subscribe("/topic/gallery/delete", (frame) => {
         try {
           const payload = JSON.parse(frame.body);
           console.log("[STOMP] Incoming gallery deletion:", payload);

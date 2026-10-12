@@ -1,6 +1,12 @@
 import { create } from "zustand";
-import type { Message, ChatRoom, DMConversation, UserSearchResult } from "@/types/chat";
+import type { Message, ChatRoom, DMConversation } from "@/types/chat";
 import { getUserById } from "@/lib/api/users";
+import { fetchDmConversations } from "@/lib/api/messages";
+import {
+  playNotificationSound,
+  showDesktopNotification,
+  triggerInAppNotification,
+} from "@/lib/notifications/chatNotifier";
 
 // ─── Default Chat Rooms ───────────────────────────────────────────────────────
 export const CHAT_ROOMS: ChatRoom[] = [
@@ -14,25 +20,33 @@ export const CHAT_ROOMS: ChatRoom[] = [
   {
     id: 2,
     name: "1st Year",
+    description: "1st Year Students Only",
     emoji: "💻",
+    requiredYear: 1,
     memberCount: 28,
   },
   {
     id: 3,
     name: "2nd Year",
+    description: "2nd Year Students Only",
     emoji: "☕",
+    requiredYear: 2,
     memberCount: 19,
   },
   {
     id: 4,
     name: "3rd Year",
+    description: "3rd Year Students Only",
     emoji: "🕶️",
+    requiredYear: 3,
     memberCount: 35,
   },
   {
     id: 5,
     name: "4th Year",
-    emoji: "🕶️",
+    description: "4th Year Students Only",
+    emoji: "🎓",
+    requiredYear: 4,
     memberCount: 35,
   },
   {
@@ -45,6 +59,12 @@ export const CHAT_ROOMS: ChatRoom[] = [
     id: 7,
     name: "Creative",
     emoji: "🎨",
+    memberCount: 35,
+  },
+  {
+    id: 8,
+    name: "Study",
+    emoji: "📚",
     memberCount: 35,
   },
 ];
@@ -65,10 +85,11 @@ function getInitialBlockedUsers(): number[] {
 function getInitialDmConversations(): DMConversation[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = localStorage.getItem(DM_CONVERSATIONS_KEY);
+    const stored = getStoredProfile();
+    const userKey = stored?.id ? `annoyms_dm_conversations_${stored.id}` : null;
+    const raw = (userKey && localStorage.getItem(userKey)) || localStorage.getItem(DM_CONVERSATIONS_KEY);
     if (!raw) return [];
     const list: DMConversation[] = JSON.parse(raw);
-    const stored = getStoredProfile();
     // Sanitize any corrupt local cache where the logged-in user's DP was assigned to other users
     return list.map((c) => {
       if (stored?.avatarUrl && c.avatarUrl === stored.avatarUrl) {
@@ -97,6 +118,7 @@ interface ChatState {
   isConnecting: boolean;
 
   setCurrentUserId: (id?: number) => void;
+  syncDmConversationsFromBackend: (userId?: number) => Promise<void>;
   setActiveRoom: (roomId: number) => void;
   openDm: (user: { id: number; username: string; avatarUrl?: string; tag?: string; studentYear?: number }) => void;
   blockUser: (userId: number) => void;
@@ -167,10 +189,80 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   setCurrentUserId: (id) => {
     set({ currentUserId: id });
+    if (id) {
+      get().syncDmConversationsFromBackend(id).catch(() => {});
+    }
+  },
+
+  syncDmConversationsFromBackend: async (userId) => {
+    const stored = getStoredProfile();
+    const effectiveId = userId || get().currentUserId || stored?.id;
+    if (!effectiveId) return;
+
+    try {
+      const backendConvs = await fetchDmConversations(effectiveId);
+      if (!Array.isArray(backendConvs) || backendConvs.length === 0) return;
+
+      set((state) => {
+        const mergedMap = new Map<number, DMConversation>();
+
+        // 1. First add backend conversations
+        for (const c of backendConvs) {
+          if (c.userId === effectiveId) continue;
+          mergedMap.set(c.userId, {
+            ...c,
+            isBlocked: state.blockedUserIds.includes(c.userId),
+          });
+        }
+
+        // 2. Preserve any local conversations or unread counts
+        for (const c of state.dmConversations) {
+          if (c.userId === effectiveId) continue;
+          const existing = mergedMap.get(c.userId);
+          if (existing) {
+            mergedMap.set(c.userId, {
+              ...existing,
+              avatarUrl: c.avatarUrl || existing.avatarUrl,
+              username: c.username || existing.username,
+              lastMessage: c.lastMessage || existing.lastMessage,
+              lastMessageTime: c.lastMessageTime || existing.lastMessageTime,
+              isBlocked: state.blockedUserIds.includes(c.userId),
+            });
+          } else {
+            mergedMap.set(c.userId, c);
+          }
+        }
+
+        const mergedList = Array.from(mergedMap.values()).sort((a, b) => {
+          const tA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0;
+          const tB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0;
+          return tB - tA;
+        });
+
+        if (typeof window !== "undefined") {
+          try {
+            const key = `annoyms_dm_conversations_${effectiveId}`;
+            localStorage.setItem(key, JSON.stringify(mergedList));
+            localStorage.setItem(DM_CONVERSATIONS_KEY, JSON.stringify(mergedList));
+          } catch {}
+        }
+
+        return { dmConversations: mergedList };
+      });
+    } catch (err) {
+      console.warn("Could not sync DM conversations from backend:", err);
+    }
   },
 
   setActiveRoom: (roomId) => {
-    const room = CHAT_ROOMS.find((r) => r.id === roomId) || {
+    const targetRoom = CHAT_ROOMS.find((r) => r.id === roomId);
+    const stored = getStoredProfile();
+    const myYear = stored?.studentYear;
+    if (targetRoom?.requiredYear && myYear && myYear !== targetRoom.requiredYear) {
+      console.warn(`[CHAT] Access denied to room ${roomId}: requires year ${targetRoom.requiredYear}, user is year ${myYear}`);
+      return;
+    }
+    const room = targetRoom || {
       id: roomId,
       name: `Room ${roomId}`,
       description: "Chat room",
@@ -240,6 +332,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
       if (typeof window !== "undefined") {
         try {
           localStorage.setItem(DM_CONVERSATIONS_KEY, JSON.stringify(updatedList));
+          if (myId) {
+            localStorage.setItem(`annoyms_dm_conversations_${myId}`, JSON.stringify(updatedList));
+          }
         } catch {}
       }
 
@@ -375,11 +470,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   setMessages: (roomId, messages) => {
+    const targetRoom = CHAT_ROOMS.find((r) => r.id === roomId);
+    const stored = getStoredProfile();
+    const myYear = stored?.studentYear;
+    if (targetRoom?.requiredYear && myYear && myYear !== targetRoom.requiredYear) {
+      return;
+    }
+
     const latestUsernameBySenderId: Record<number, string> = {};
     const latestAvatarBySenderId: Record<number, string> = {};
     const latestYearBySenderId: Record<number, number> = {};
 
-    const stored = getStoredProfile();
     if (stored?.anonymousName && stored?.id) {
       latestUsernameBySenderId[stored.id] = stored.anonymousName;
       if (stored.avatarUrl) latestAvatarBySenderId[stored.id] = stored.avatarUrl;
@@ -639,6 +740,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
       if (typeof window !== "undefined") {
         try {
           localStorage.setItem(DM_CONVERSATIONS_KEY, JSON.stringify(updatedConvs));
+          if (stored?.id) {
+            localStorage.setItem(`annoyms_dm_conversations_${stored.id}`, JSON.stringify(updatedConvs));
+          }
         } catch {}
       }
 
@@ -845,6 +949,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
         if (typeof window !== "undefined") {
           try {
             localStorage.setItem(DM_CONVERSATIONS_KEY, JSON.stringify(updatedConversations));
+            if (stored?.id) {
+              localStorage.setItem(`annoyms_dm_conversations_${stored.id}`, JSON.stringify(updatedConversations));
+            }
           } catch {}
         }
 
@@ -872,12 +979,47 @@ export const useChatStore = create<ChatState>((set, get) => ({
         };
       });
 
+      // Notification trigger for DMs: Notify whenever a new message is received from another user
+      if (!isSentByMe && otherUserId) {
+        const isCurrentlyViewing = isCurrentActiveDm && typeof document !== "undefined" && !document.hidden;
+        if (!isCurrentlyViewing) {
+          playNotificationSound();
+          triggerInAppNotification({
+            id: `dm-${Date.now()}-${Math.random()}`,
+            type: "dm",
+            senderName: resolvedSender,
+            senderAvatar: normalizedMsg.avatarUrl,
+            senderId: otherUserId,
+            content: normalizedMsg.content,
+            createdAt: Date.now(),
+          });
+          showDesktopNotification(
+            `💬 ${resolvedSender}`,
+            normalizedMsg.content,
+            () => {
+              get().openDm({
+                id: otherUserId!,
+                username: resolvedSender,
+                avatarUrl: normalizedMsg.avatarUrl,
+              });
+            }
+          );
+        }
+      }
+
       return;
     }
 
     // ─── Standard Channel Message Routing ────────────────────────────────────
     const roomId = rawMessage.room?.id ?? rawMessage.roomId ?? get().activeRoomId;
     if (!roomId) return;
+
+    const targetRoom = CHAT_ROOMS.find((r) => r.id === roomId);
+    const myYear = stored?.studentYear;
+    if (targetRoom?.requiredYear && myYear && myYear !== targetRoom.requiredYear) {
+      // User is not in this cohort: cannot view, store or receive notifications for this room
+      return;
+    }
 
     const senderUsername =
       (rawMessage as any).senderUsername ??
@@ -997,6 +1139,43 @@ export const useChatStore = create<ChatState>((set, get) => ({
         [roomId]: isCurrentActive ? 0 : (state.unreadCounts[roomId] || 0) + 1,
       },
     }));
+
+    // Group Notifications: In groups/channels, ONLY messages with tags/mentions (@MyName) trigger notifications!
+    if (!isMyMessage) {
+      const myNames = [
+        stored?.anonymousName,
+        (stored as any)?.username,
+        (stored as any)?.tag,
+      ].filter(Boolean) as string[];
+
+      const isTagged = myNames.some((name) => {
+        const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const regex = new RegExp(`@${escaped}(\\b|\\s|$)`, "i");
+        return regex.test(normalizedMessage.content);
+      });
+
+      if (isTagged) {
+        const roomName = CHAT_ROOMS.find((r) => r.id === roomId)?.name || "group";
+        playNotificationSound();
+        triggerInAppNotification({
+          id: `tag-${Date.now()}-${Math.random()}`,
+          type: "group_tag",
+          senderName: resolvedSender,
+          senderAvatar: normalizedMessage.avatarUrl,
+          roomName,
+          roomId,
+          content: normalizedMessage.content,
+          createdAt: Date.now(),
+        });
+        showDesktopNotification(
+          `🔔 @${resolvedSender} tagged you in #${roomName}`,
+          normalizedMessage.content,
+          () => {
+            get().setActiveRoom(roomId);
+          }
+        );
+      }
+    }
   },
 
   setConnectionStatus: (connected, connecting = false) => {

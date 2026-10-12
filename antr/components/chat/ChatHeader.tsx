@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useChatStore } from "@/store/chatStore";
 import UserAvatar from "./UserAvatar";
+import UserProfileModal from "./UserProfileModal";
 
 interface ChatHeaderProps {
   onBack?: () => void;
@@ -20,6 +21,7 @@ export default function ChatHeader({ onBack, onRefresh, isFetching }: ChatHeader
 
   const isDm = activeChatType === "dm" && Boolean(activeDmUser);
   const isBlocked = isDm && activeDmUser ? blockedUserIds.includes(activeDmUser.userId) : false;
+  const [profileUserId, setProfileUserId] = useState<number | null>(null);
 
   const handleToggleBlock = () => {
     if (!activeDmUser) return;
@@ -31,7 +33,8 @@ export default function ChatHeader({ onBack, onRefresh, isFetching }: ChatHeader
   };
 
   return (
-    <header className="h-16 px-3.5 sm:px-5 border-b border-white/[0.06] bg-[#090b10]/90 backdrop-blur-xl flex items-center justify-between z-10 shrink-0 select-none">
+    <>
+    <header className="h-16 px-3.5 sm:px-6 border-b border-white/[0.06] bg-[#090b10]/90 backdrop-blur-xl flex items-center justify-between z-10 shrink-0 select-none">
       <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
         {/* Mobile Back Button */}
         {onBack && (
@@ -51,33 +54,39 @@ export default function ChatHeader({ onBack, onRefresh, isFetching }: ChatHeader
         {isDm && activeDmUser ? (
           /* DM User Header Profile */
           <>
-            <UserAvatar
-              src={activeDmUser.avatarUrl}
-              name={activeDmUser.username}
-              size="md"
-              isBlocked={isBlocked}
-            />
+            <button
+              onClick={() => setProfileUserId(activeDmUser.userId)}
+              className="flex items-center gap-2.5 sm:gap-3.5 hover:opacity-80 transition-opacity cursor-pointer rounded-xl"
+              title="View profile"
+            >
+              <UserAvatar
+                src={activeDmUser.avatarUrl}
+                name={activeDmUser.username}
+                size="md"
+                isBlocked={isBlocked}
+              />
 
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h1 className="text-sm sm:text-base font-semibold text-white tracking-tight truncate">
-                  @{activeDmUser.username}
-                </h1>
-                <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium font-mono shrink-0">
-                  Yr {activeDmUser.studentYear ?? 1}
-                </span>
-                {isBlocked && (
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-rose-500/15 text-rose-300 border border-rose-500/30 font-medium font-mono shrink-0">
-                    Blocked
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h1 className="text-sm sm:text-base font-semibold text-white tracking-tight truncate">
+                    @{activeDmUser.username}
+                  </h1>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium font-mono shrink-0">
+                    Yr {activeDmUser.studentYear ?? 1}
                   </span>
-                )}
+                  {isBlocked && (
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-rose-500/15 text-rose-300 border border-rose-500/30 font-medium font-mono shrink-0">
+                      Blocked
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 text-[11px] text-zinc-400 truncate">
+                  <span className="truncate max-w-xs sm:max-w-md font-mono">
+                    {activeDmUser.tag ? `${activeDmUser.tag} • Direct Message` : "Direct Message (Encrypted)"}
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-[11px] text-zinc-400 truncate">
-                <span className="truncate max-w-xs sm:max-w-md font-mono">
-                  {activeDmUser.tag ? `${activeDmUser.tag} • Direct Message` : "Direct Message (Encrypted)"}
-                </span>
-              </div>
-            </div>
+            </button>
           </>
         ) : (
           /* Channel Header */
@@ -91,6 +100,11 @@ export default function ChatHeader({ onBack, onRefresh, isFetching }: ChatHeader
                 <h1 className="text-sm sm:text-base font-semibold text-white tracking-tight truncate">
                   {activeRoom.name}
                 </h1>
+                {activeRoom.requiredYear && (
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 font-medium font-mono shrink-0">
+                    🔒 Year {activeRoom.requiredYear} Only
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-2 text-[11px] text-zinc-400 truncate">
                 <span className="truncate max-w-xs sm:max-w-md">
@@ -166,5 +180,12 @@ export default function ChatHeader({ onBack, onRefresh, isFetching }: ChatHeader
         )}
       </div>
     </header>
+
+      {/* Profile modal triggered from DM header */}
+      <UserProfileModal
+        userId={profileUserId}
+        onClose={() => setProfileUserId(null)}
+      />
+    </>
   );
 }

@@ -1,34 +1,48 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import type { Message } from "@/types/chat";
 import { parseMessageContent } from "@/lib/chat/mediaData";
 import { formatStudentYear } from "@/app/lib/auth";
 import UserAvatar from "./UserAvatar";
+import ImageZoomModal from "@/components/marketplace/ImageZoomModal";
 
 interface MessageBubbleProps {
   message: Message;
   isMe: boolean;
   showSenderHeader?: boolean;
+  onAvatarClick?: (senderId: number) => void;
+  currentUserName?: string;
 }
 
-// Generate consistent avatar background based on username string
-function getAvatarGradient(name: string) {
-  const gradients = [
-    "from-indigo-600 to-violet-600",
-    "from-emerald-600 to-teal-600",
-    "from-rose-600 to-pink-600",
-    "from-amber-600 to-orange-600",
-    "from-cyan-600 to-blue-600",
-    "from-fuchsia-600 to-purple-600",
-  ];
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const index = Math.abs(hash) % gradients.length;
-  return gradients[index];
+function renderMessageContentWithTags(content: string, currentUserName?: string) {
+  const mentionRegex = /(@[\w-]+)/g;
+  const parts = content.split(mentionRegex);
+
+  return parts.map((part, idx) => {
+    if (part.startsWith("@") && part.length > 1) {
+      const mentionName = part.slice(1);
+      const isMeMentioned =
+        Boolean(currentUserName) &&
+        mentionName.toLowerCase() === currentUserName?.toLowerCase();
+
+      return (
+        <span
+          key={idx}
+          className={`inline-flex items-center px-1.5 py-0.2 mx-0.5 rounded-md font-mono text-[11px] font-semibold transition-all select-none ${
+            isMeMentioned
+              ? "bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.3)]"
+              : "bg-sky-500/15 text-sky-300 border border-sky-500/25"
+          }`}
+        >
+          {part}
+        </span>
+      );
+    }
+    return part;
+  });
 }
+
 
 function getSenderNameColor(name: string) {
   const colors = [
@@ -79,6 +93,8 @@ export default function MessageBubble({
   message,
   isMe,
   showSenderHeader = true,
+  onAvatarClick,
+  currentUserName,
 }: MessageBubbleProps) {
   const timeFormatted = formatMessageTime(message.createdAt);
   const senderName = resolveSenderName(message);
@@ -98,35 +114,58 @@ export default function MessageBubble({
 
   // Parse if message is a Sticker, GIF, or regular text
   const media = parseMessageContent(message.content);
+  const [isPhotoZoomOpen, setIsPhotoZoomOpen] = useState(false);
+
+  const senderId =
+    typeof message.senderId === "number"
+      ? message.senderId
+      : typeof message.sender === "object" && typeof (message.sender as any)?.id === "number"
+      ? (message.sender as any).id
+      : undefined;
 
   return (
-    <div
-      className={`group flex items-end gap-2.5 my-1.5 transition-all duration-150 animate-in fade-in-50 slide-in-from-bottom-1 ${
-        isMe ? "flex-row-reverse justify-start" : "flex-row justify-start"
-      }`}
-    >
-      {/* Avatar (shown for other users) */}
+    <>
+      <div
+        className={`w-full group flex items-end gap-2.5 my-1 transition-all duration-150 animate-in fade-in-50 slide-in-from-bottom-1 ${
+          isMe ? "flex-row-reverse justify-start" : "flex-row justify-start"
+        }`}
+      >
+      {/* Avatar (shown for other users, clickable to view profile) */}
       {!isMe ? (
-        <UserAvatar
-          src={avatarUrl}
-          name={senderName}
-          size="sm"
-          className="shrink-0 mb-0.5"
-        />
-      ) : (
-        <div className="w-1" /> // subtle spacer
-      )}
+        onAvatarClick && senderId ? (
+          <button
+            type="button"
+            onClick={() => onAvatarClick(senderId)}
+            className="shrink-0 mb-0.5 cursor-pointer hover:scale-110 transition-transform active:scale-95"
+            title={`View ${senderName}'s profile`}
+          >
+            <UserAvatar src={avatarUrl} name={senderName} size="sm" />
+          </button>
+        ) : (
+          <UserAvatar
+            src={avatarUrl}
+            name={senderName}
+            size="sm"
+            className="shrink-0 mb-0.5"
+          />
+        )
+      ) : null}
 
       {/* Bubble Content Body */}
       <div
-        className={`max-w-[85%] sm:max-w-[70%] flex flex-col ${
+        className={`max-w-[85%] sm:max-w-[75%] md:max-w-[70%] flex flex-col ${
           isMe ? "items-end" : "items-start"
         }`}
       >
         {/* Sender Name & Meta Header (only if not me and showSenderHeader is true) */}
         {!isMe && showSenderHeader && (
           <div className="flex items-center gap-1.5 mb-1 px-1 select-none flex-wrap">
-            <span className={`text-xs font-semibold ${senderColor}`}>
+            <span
+              onClick={onAvatarClick && senderId ? () => onAvatarClick(senderId) : undefined}
+              className={`text-xs font-semibold ${senderColor} ${
+                onAvatarClick && senderId ? "cursor-pointer hover:underline" : ""
+              }`}
+            >
               {senderName}
             </span>
             {formattedYear && (
@@ -152,8 +191,10 @@ export default function MessageBubble({
             <img
               src={media.url}
               alt={media.name || "Sticker"}
-              className="w-28 h-28 sm:w-36 sm:h-36 object-contain hover:scale-105 transition-transform duration-200 drop-shadow-[0_10px_20px_rgba(0,0,0,0.6)]"
+              onClick={() => setIsPhotoZoomOpen(true)}
+              className="w-28 h-28 sm:w-36 sm:h-36 object-contain hover:scale-105 transition-transform duration-200 drop-shadow-[0_10px_20px_rgba(0,0,0,0.6)] cursor-zoom-in"
               loading="lazy"
+              title="Click photo to zoom"
             />
             {timeFormatted && (
               <div className="flex items-center justify-end gap-1 mt-0.5 px-1 text-[10px] text-zinc-500 font-mono">
@@ -163,16 +204,22 @@ export default function MessageBubble({
           </div>
         ) : media.type === "gif" || media.type === "image" ? (
           /* Media Render: GIF or Image */
-          <div className="relative rounded-2xl overflow-hidden border border-white/[0.08] shadow-xl bg-zinc-950/80 max-w-[280px] sm:max-w-[340px] my-1">
+          <div className="relative rounded-2xl overflow-hidden border border-white/[0.08] shadow-xl bg-zinc-950/80 max-w-[280px] sm:max-w-[340px] my-1 group/img">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={media.url}
-              alt="GIF media"
-              className="w-full h-auto max-h-80 object-cover"
+              alt="Media"
+              onClick={() => setIsPhotoZoomOpen(true)}
+              className="w-full h-auto max-h-80 object-cover cursor-zoom-in hover:brightness-105 transition-all"
               loading="lazy"
+              title="Click photo to zoom"
             />
-            <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-[9px] font-mono font-bold text-white tracking-wider uppercase border border-white/10">
-              GIF
+            <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-[9px] font-mono font-bold text-white tracking-wider uppercase border border-white/10 pointer-events-none">
+              {media.type === "gif" ? "GIF" : "PHOTO"}
+            </div>
+            <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-[9px] font-mono font-bold text-emerald-400 opacity-90 sm:opacity-0 sm:group-hover/img:opacity-100 transition-opacity border border-white/10 pointer-events-none flex items-center gap-1">
+              <span>🔍</span>
+              <span>ZOOM</span>
             </div>
             {timeFormatted && (
               <div className="absolute bottom-1.5 right-2 px-1.5 py-0.5 rounded-md bg-black/70 backdrop-blur-md text-[10px] font-mono text-zinc-300 flex items-center gap-1">
@@ -189,7 +236,7 @@ export default function MessageBubble({
                 : "bg-[#181b24] text-zinc-100 rounded-bl-xs border border-white/[0.06] shadow-black/40"
             }`}
           >
-            <p className="whitespace-pre-wrap inline">{message.content}</p>
+            <p className="whitespace-pre-wrap inline">{renderMessageContentWithTags(message.content, currentUserName)}</p>
             {/* Inline subtle timestamp */}
             {timeFormatted && (
               <span
@@ -204,5 +251,16 @@ export default function MessageBubble({
         )}
       </div>
     </div>
+
+    {/* Fullscreen Interactive Lightbox Zoom Modal */}
+    {media.url && (
+      <ImageZoomModal
+        isOpen={isPhotoZoomOpen}
+        onClose={() => setIsPhotoZoomOpen(false)}
+        images={[media.url]}
+        title={media.type === "sticker" ? (media.name || "Sticker") : `${senderName}'s Photo`}
+      />
+    )}
+  </>
   );
 }

@@ -7,8 +7,7 @@ export async function searchUsers(
   excludeId?: number,
   excludeUsername?: string
 ): Promise<UserSearchResult[]> {
-  const trimmed = query.trim();
-  if (!trimmed) return [];
+  const trimmed = (query || "").trim();
 
   try {
     const params = new URLSearchParams({ query: trimmed });

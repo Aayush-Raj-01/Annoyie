@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { CHAT_ROOMS, useChatStore } from "@/store/chatStore";
 import { searchUsers } from "@/lib/api/users";
 import UserAvatar from "./UserAvatar";
+import UserProfileModal from "./UserProfileModal";
 import type { UserSearchResult } from "@/types/chat";
 
 interface ChatSidebarProps {
@@ -78,6 +79,7 @@ function getStoredProfile() {
 }
 
 export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRoom, onSelectDm }: ChatSidebarProps) {
+  const router = useRouter();
   const activeChatType = useChatStore((state) => state.activeChatType);
   const activeRoomId = useChatStore((state) => state.activeRoomId);
   const activeDmUser = useChatStore((state) => state.activeDmUser);
@@ -98,6 +100,7 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
   const [userSearchResults, setUserSearchResults] = useState<UserSearchResult[]>([]);
   const [isSearchingUsers, setIsSearchingUsers] = useState(false);
   const [activeTab, setActiveTab] = useState<"all" | "channels" | "dms">("all");
+  const [profileUserId, setProfileUserId] = useState<number | null>(null);
 
   // Determine current user ID and names for exclusion
   const effectiveMyId = useMemo(() => {
@@ -156,17 +159,28 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
     return () => clearTimeout(timer);
   }, [searchQuery, effectiveMyId, effectiveMyName, isSelfUser]);
 
-  const filteredRooms = CHAT_ROOMS.filter(
-    (room) =>
-      room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (room.description && room.description.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const userYear = currentUser.studentYear || getStoredProfile()?.studentYear;
+
+  const accessibleRooms = useMemo(() => {
+    return CHAT_ROOMS.filter((room) => {
+      if (room.requiredYear) {
+        return userYear === room.requiredYear;
+      }
+      return true;
+    });
+  }, [userYear]);
+
+  const filteredRooms = useMemo(() => {
+    return accessibleRooms.filter(
+      (room) =>
+        room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (room.description && room.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  }, [accessibleRooms, searchQuery]);
 
   const handleStartDm = (user: UserSearchResult) => {
     if (!isLoggedIn) {
-      if (typeof window !== "undefined") {
-        window.location.href = "/authentication";
-      }
+      router.push("/authentication");
       return;
     }
 
@@ -190,6 +204,7 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
   const totalUnreadDms = Object.values(unreadDmCounts).reduce((acc, count) => acc + count, 0);
 
   return (
+    <>
     <aside className="w-full h-full bg-[#08090d] border-r border-white/[0.06] flex flex-col select-none">
       {/* Brand Header */}
       <div className="p-3.5 border-b border-white/[0.06] flex items-center justify-between bg-[#0a0c12]">
@@ -307,10 +322,12 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
                     return (
                       <div
                         key={`user-search-${user.id}`}
-                        onClick={() => handleStartDm(user)}
                         className="w-full text-left px-3 py-2.5 rounded-xl border border-white/[0.04] bg-white/[0.02] hover:bg-white/[0.06] hover:border-emerald-500/30 transition-all flex items-center justify-between gap-2.5 cursor-pointer group"
                       >
-                        <div className="flex items-center gap-2.5 min-w-0">
+                        <div
+                          className="flex items-center gap-2.5 min-w-0 flex-1"
+                          onClick={() => setProfileUserId(user.id)}
+                        >
                           {/* Rich Persona Avatar with image or initials */}
                           <UserAvatar
                             src={user.avatarUrl}
@@ -341,6 +358,7 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
 
                         <button
                           type="button"
+                          onClick={() => handleStartDm(user)}
                           className="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-[10px] font-semibold tracking-wide shrink-0 transition-colors"
                         >
                           Message
@@ -385,7 +403,14 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
                           {room.emoji || "#"}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium truncate text-zinc-200">{room.name}</p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-xs font-medium truncate text-zinc-200">{room.name}</p>
+                            {room.requiredYear && (
+                              <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 font-mono shrink-0">
+                                Yr {room.requiredYear}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-[10px] text-zinc-500 truncate">{room.description}</p>
                         </div>
                       </button>
@@ -454,13 +479,18 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
                             : "border border-transparent hover:bg-white/[0.03] text-zinc-400 hover:text-zinc-200"
                         }`}
                       >
-                        {/* Avatar */}
-                        <UserAvatar
-                          src={dm.avatarUrl}
-                          name={dm.username}
-                          size="md"
-                          isBlocked={isBlocked}
-                        />
+                        {/* Avatar — click opens profile card */}
+                        <div
+                          onClick={(e) => { e.stopPropagation(); setProfileUserId(dm.userId); }}
+                          className="shrink-0"
+                        >
+                          <UserAvatar
+                            src={dm.avatarUrl}
+                            name={dm.username}
+                            size="md"
+                            isBlocked={isBlocked}
+                          />
+                        </div>
 
                         {/* Info */}
                         <div className="flex-1 min-w-0">
@@ -562,13 +592,20 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
                       {/* Channel Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-1 mb-0.5">
-                          <span
-                            className={`text-xs sm:text-sm font-semibold truncate ${
-                              isActive ? "text-white" : "text-zinc-200 group-hover:text-white"
-                            }`}
-                          >
-                            {room.name}
-                          </span>
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span
+                              className={`text-xs sm:text-sm font-semibold truncate ${
+                                isActive ? "text-white" : "text-zinc-200 group-hover:text-white"
+                              }`}
+                            >
+                              {room.name}
+                            </span>
+                            {room.requiredYear && (
+                              <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 font-mono shrink-0">
+                                Yr {room.requiredYear}
+                              </span>
+                            )}
+                          </div>
                           {timeStr && (
                             <span className="text-[10px] font-mono text-zinc-500 shrink-0">
                               {timeStr}
@@ -661,5 +698,28 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
         </div>
       </div>
     </aside>
+
+      {/* User Profile Modal */}
+      <UserProfileModal
+        userId={profileUserId}
+        onClose={() => setProfileUserId(null)}
+        onMessage={(id) => {
+          const found =
+            userSearchResults.find((u) => u.id === id) ||
+            dmConversations.find((d) => d.userId === id) as UserSearchResult | undefined;
+          if (found) {
+            handleStartDm({
+              id,
+              username: (found as any).username ?? "",
+              avatarUrl: (found as any).avatarUrl,
+              tag: (found as any).tag,
+              studentYear: (found as any).studentYear,
+            });
+          } else {
+            openDm({ id, username: "User" });
+          }
+        }}
+      />
+    </>
   );
 }

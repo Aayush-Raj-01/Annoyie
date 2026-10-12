@@ -7,6 +7,7 @@ import UploadModal from "@/components/gallery/UploadModal";
 import { fetchRandomGalleryFeed, GalleryPost } from "@/lib/api/gallery";
 import { getUserProfile, syncUserProfile, UserProfile } from "./lib/auth";
 import { connectSocket, subscribeToGallery } from "@/lib/socket/chatClient";
+import ToastNotification from "@/components/ui/ToastNotification";
 
 export default function HomePage() {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
@@ -56,7 +57,17 @@ export default function HomePage() {
 
     try {
       const feed = await fetchRandomGalleryFeed(48);
-      setPosts(feed);
+      // Deduplicate loaded feed items
+      const uniqueFeed = feed.filter(
+        (post, idx, self) =>
+          idx ===
+          self.findIndex(
+            (p) =>
+              (p.id && post.id && String(p.id) === String(post.id)) ||
+              (p.mediaUrl && post.mediaUrl && p.mediaUrl === post.mediaUrl)
+          )
+      );
+      setPosts(uniqueFeed);
     } catch (err) {
       console.error("Failed to load feed:", err);
     } finally {
@@ -78,12 +89,20 @@ export default function HomePage() {
     const unsubscribe = subscribeToGallery(
       (newPost: GalleryPost) => {
         setPosts((prev) => {
-          if (prev.some((p) => p.id === newPost.id)) return prev;
+          if (
+            prev.some(
+              (p) =>
+                (p.id && newPost.id && String(p.id) === String(newPost.id)) ||
+                (p.mediaUrl && newPost.mediaUrl && p.mediaUrl === newPost.mediaUrl)
+            )
+          ) {
+            return prev;
+          }
           return [newPost, ...prev];
         });
       },
       (deleteInfo: { id: number }) => {
-        setPosts((prev) => prev.filter((p) => p.id !== deleteInfo.id));
+        setPosts((prev) => prev.filter((p) => String(p.id) !== String(deleteInfo.id)));
       }
     );
 
@@ -93,40 +112,56 @@ export default function HomePage() {
   }, []);
 
   const handleUploadSuccess = (newPost: GalleryPost) => {
-    setPosts((prev) => [newPost, ...prev]);
+    setPosts((prev) => {
+      if (
+        prev.some(
+          (p) =>
+            (p.id && newPost.id && String(p.id) === String(newPost.id)) ||
+            (p.mediaUrl && newPost.mediaUrl && p.mediaUrl === newPost.mediaUrl)
+        )
+      ) {
+        return prev;
+      }
+      return [newPost, ...prev];
+    });
     setToast("Photo added");
     setTimeout(() => setToast(null), 3000);
   };
 
   const handlePostDeleted = (id: number) => {
-    setPosts((prev) => prev.filter((p) => p.id !== id));
+    setPosts((prev) => prev.filter((p) => String(p.id) !== String(id)));
     setToast("Photo removed");
     setTimeout(() => setToast(null), 2500);
   };
 
-  const displayedPosts = posts.filter((post) => {
-    if (filterMode === "mine") {
-      if (!currentUser) return false;
-      const isIdMatch = post.uploaderId && currentUser.id === post.uploaderId;
-      const isNameMatch =
-        post.uploaderUsername &&
-        currentUser.anonymousName &&
-        post.uploaderUsername.toLowerCase() === currentUser.anonymousName.toLowerCase();
-      return Boolean(isIdMatch || isNameMatch);
-    }
-    return true;
-  });
+  const displayedPosts = posts
+    .filter(
+      (post, idx, self) =>
+        idx ===
+        self.findIndex(
+          (p) =>
+            (p.id && post.id && String(p.id) === String(post.id)) ||
+            (p.mediaUrl && post.mediaUrl && p.mediaUrl === post.mediaUrl)
+        )
+    )
+    .filter((post) => {
+      if (filterMode === "mine") {
+        if (!currentUser) return false;
+        const isIdMatch = post.uploaderId && currentUser.id === post.uploaderId;
+        const isNameMatch =
+          post.uploaderUsername &&
+          currentUser.anonymousName &&
+          post.uploaderUsername.toLowerCase() === currentUser.anonymousName.toLowerCase();
+        return Boolean(isIdMatch || isNameMatch);
+      }
+      return true;
+    });
 
   return (
     <div className="min-h-screen bg-[#050505] text-zinc-100 flex flex-col relative font-sans selection:bg-white/20 selection:text-white pb-32">
       <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
         {/* Toast */}
-        {toast && (
-          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-3.5 py-1.5 rounded-full bg-zinc-900/90 border border-white/10 text-xs text-zinc-300 backdrop-blur-md shadow-lg animate-fadeIn flex items-center gap-1.5">
-            <span>✓</span>
-            <span>{toast}</span>
-          </div>
-        )}
+        <ToastNotification message={toast} onClose={() => setToast(null)} />
 
         {/* Minimal Clean Top Bar */}
         <div className="flex items-center justify-between py-6 sm:py-8 border-b border-white/[0.06] mb-6">

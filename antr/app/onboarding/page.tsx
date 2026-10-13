@@ -19,12 +19,7 @@ const HOBBY_TAGS = [
   { tag: "Sports" as const, icon: "🏃", desc: "Fitness & athletics" },
 ];
 
-const YEAR_OPTIONS = [
-  { year: 1, label: "1st Year", subtitle: "Freshman" },
-  { year: 2, label: "2nd Year", subtitle: "Sophomore" },
-  { year: 3, label: "3rd Year", subtitle: "Junior" },
-  { year: 4, label: "4th Year", subtitle: "Senior" },
-];
+
 
 type HobbyTag = (typeof HOBBY_TAGS)[number]["tag"];
 
@@ -58,20 +53,7 @@ export default function OnboardingPage() {
     return existing?.gender || "";
   });
 
-  const [studentYear, setStudentYear] = useState<number>(() => {
-    if (typeof window === "undefined") return 1;
-    const pending = getPendingEmail();
-    const existing = getUserProfile();
-    if (pending && existing?.email && pending.toLowerCase() !== existing.email.toLowerCase()) return 1;
-    if (existing?.studentYear && existing.studentYear >= 1 && existing.studentYear <= 4) {
-      return existing.studentYear;
-    }
-    if (existing?.admissionYear) {
-      const calc = new Date().getFullYear() - existing.admissionYear + 1;
-      if (calc >= 1 && calc <= 4) return calc;
-    }
-    return 1;
-  });
+
 
   const [selectedHobbies, setSelectedHobbies] = useState<HobbyTag[]>(() => {
     if (typeof window === "undefined") return ["Coder"];
@@ -113,7 +95,6 @@ export default function OnboardingPage() {
         if (p.email) setEmail(p.email);
         if (p.anonymousName) setAnonymousName(p.anonymousName);
         if (p.gender) setGender(p.gender);
-        if (p.studentYear) setStudentYear(p.studentYear);
         if (p.hobbies?.length) setSelectedHobbies(p.hobbies as HobbyTag[]);
         if (p.bio) setBio(p.bio);
         if (p.avatarUrl) setAvatarUrl(p.avatarUrl);
@@ -196,8 +177,6 @@ export default function OnboardingPage() {
       // Save locally to storage for persistence across profile & chats
       const existing = getUserProfile();
       const isSame = Boolean(existing?.email && existing.email.toLowerCase() === email.toLowerCase());
-      const currentYear = new Date().getFullYear();
-      const admissionYear = currentYear - studentYear + 1;
 
       saveUserProfile({
         id: isSame ? existing?.id : undefined,
@@ -207,8 +186,6 @@ export default function OnboardingPage() {
         hobbies: selectedHobbies,
         bio: bio.trim(),
         avatarUrl: finalAvatarUrl || undefined,
-        studentYear,
-        admissionYear,
       });
 
       // Also notify backend if reachable
@@ -223,8 +200,6 @@ export default function OnboardingPage() {
             gender: gender || null,
             tag: selectedHobbies.join(","),
             avatarUrl: finalAvatarUrl || null,
-            studentYear,
-            admissionYear,
           }),
         });
         if (res.ok) {
@@ -237,8 +212,8 @@ export default function OnboardingPage() {
                 anonymousName: data.username || anonymousName.trim(),
                 gender: data.gender || gender,
                 avatarUrl: data.avatarUrl || finalAvatarUrl,
-                admissionYear: data.admissionYear || admissionYear,
-                studentYear: data.studentYear || studentYear,
+                admissionYear: data.admissionYear,
+                studentYear: data.studentYear,
               });
             }
           } catch {}
@@ -427,35 +402,7 @@ export default function OnboardingPage() {
               </div>
             </div>
 
-            {/* Academic Year Selection */}
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <label className="onboardtext font-medium text-zinc-300 text-xs block tracking-wide">
-                  Academic Year <span className="text-emerald-400">*</span>
-                </label>
-                <span className="text-zinc-500 text-[11px]">College standing</span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                {YEAR_OPTIONS.map((opt) => {
-                  const isSelected = studentYear === opt.year;
-                  return (
-                    <button
-                      key={opt.year}
-                      type="button"
-                      onClick={() => setStudentYear(opt.year)}
-                      className={`py-2.5 px-3 rounded-xl text-center border transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
-                        isSelected
-                          ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.12)]"
-                          : "bg-zinc-900/40 border-zinc-800/80 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200"
-                      }`}
-                    >
-                      <span className="font-semibold text-xs tracking-tight">{opt.label}</span>
-                      <span className="text-[10px] text-zinc-500 font-mono">{opt.subtitle}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+
 
             {/* Gender Preference */}
             <div className="space-y-2">

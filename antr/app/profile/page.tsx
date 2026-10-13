@@ -153,7 +153,24 @@ export default function ProfilePage() {
             style={{ textShadow: "0 0 20px #10B981" }}>Profile</h1>
             <h1 className="text-xl font-semibold tracking-tight text-white profilepg translate-x-1 translate-y-1">Profile</h1>
           </div>
-          
+        </div>
+
+
+
+        {/* Dual Persona Switcher */}
+        <div className="flex items-center justify-between p-2 rounded-2xl bg-zinc-900/60 border border-white/[0.08] backdrop-blur-sm">
+
+          <div className="flex items-center gap-2 pl-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-xs font-semibold text-white">🎭 Anonymous Persona</span>
+          </div>
+          <Link
+            href="/marketplace/profile"
+            className="px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-zinc-300 hover:text-white border border-white/10 text-xs font-medium transition-colors flex items-center gap-1.5"
+          >
+            <span>🏪 Marketplace Profile</span>
+            <span>→</span>
+          </Link>
         </div>
 
         {profile ? (
@@ -269,15 +286,33 @@ export default function ProfilePage() {
             </div>
 
 
+            {/* Marketplace Profile Link Card */}
+            <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-950/30 via-zinc-900/80 to-teal-950/20 border border-emerald-500/20 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <span className="text-lg">🏪</span>
+                <div>
+                  <div className="text-xs font-semibold text-white">Marketplace Profile</div>
+                  <div className="text-[11px] text-zinc-400">Different profile for buying & selling on campus</div>
+                </div>
+              </div>
+              <Link
+                href="/marketplace/profile"
+                className="px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-colors shrink-0"
+              >
+                Manage Store →
+              </Link>
+            </div>
+
             {/* Action Buttons */}
             <div className="pt-2 flex flex-col sm:flex-row gap-2.5">
               <Link
                 href="/onboarding"
                 className="flex-1 text-center py-2.5 px-4 rounded-xl border border-zinc-700 bg-zinc-800/80 hover:bg-zinc-700 text-xs font-medium text-white transition-colors cursor-pointer"
               >
-                Edit Profile
+                Edit Chat Profile
               </Link>
             </div>
+
 
             <button
               type="button"

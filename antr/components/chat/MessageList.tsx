@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import type { Message } from "@/types/chat";
 import MessageBubble from "./MessageBubble";
+import UserProfileModal from "./UserProfileModal";
 
 interface MessageListProps {
   messages: Message[];
@@ -50,6 +51,11 @@ export default function MessageList({
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
+  const [profileUserId, setProfileUserId] = useState<number | null>(null);
+
+  const handleAvatarClick = useCallback((senderId: number) => {
+    setProfileUserId(senderId);
+  }, []);
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -69,6 +75,7 @@ export default function MessageList({
   };
 
   return (
+    <>
     <div className="relative flex-1 min-h-0 bg-[#08090d] flex flex-col overflow-hidden">
       {/* Subtle Dot Grid Background */}
       <div className="absolute inset-0 bg-[radial-gradient(#27272a_1px,transparent_1px)] [background-size:32px_32px] opacity-15 pointer-events-none" />
@@ -218,6 +225,7 @@ export default function MessageList({
                   message={message}
                   isMe={isMe}
                   showSenderHeader={showSenderHeader}
+                  onAvatarClick={!isMe ? handleAvatarClick : undefined}
                 />
               );
             })}
@@ -239,5 +247,12 @@ export default function MessageList({
         </button>
       )}
     </div>
+
+      {/* Profile modal — opens when a message avatar is clicked */}
+      <UserProfileModal
+        userId={profileUserId}
+        onClose={() => setProfileUserId(null)}
+      />
+    </>
   );
 }

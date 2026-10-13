@@ -10,6 +10,7 @@ interface MessageBubbleProps {
   message: Message;
   isMe: boolean;
   showSenderHeader?: boolean;
+  onAvatarClick?: (senderId: number) => void;
 }
 
 // Generate consistent avatar background based on username string
@@ -79,6 +80,7 @@ export default function MessageBubble({
   message,
   isMe,
   showSenderHeader = true,
+  onAvatarClick,
 }: MessageBubbleProps) {
   const timeFormatted = formatMessageTime(message.createdAt);
   const senderName = resolveSenderName(message);
@@ -105,14 +107,25 @@ export default function MessageBubble({
         isMe ? "flex-row-reverse justify-start" : "flex-row justify-start"
       }`}
     >
-      {/* Avatar (shown for other users) */}
+      {/* Avatar (shown for other users, clickable to view profile) */}
       {!isMe ? (
-        <UserAvatar
-          src={avatarUrl}
-          name={senderName}
-          size="sm"
-          className="shrink-0 mb-0.5"
-        />
+        onAvatarClick && message.senderId ? (
+          <button
+            type="button"
+            onClick={() => onAvatarClick(message.senderId!)}
+            className="shrink-0 mb-0.5 cursor-pointer hover:scale-110 transition-transform active:scale-95"
+            title={`View ${senderName}'s profile`}
+          >
+            <UserAvatar src={avatarUrl} name={senderName} size="sm" />
+          </button>
+        ) : (
+          <UserAvatar
+            src={avatarUrl}
+            name={senderName}
+            size="sm"
+            className="shrink-0 mb-0.5"
+          />
+        )
       ) : (
         <div className="w-1" /> // subtle spacer
       )}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CHAT_ROOMS, useChatStore } from "@/store/chatStore";
 import { searchUsers } from "@/lib/api/users";
 import UserAvatar from "./UserAvatar";
+import UserProfileModal from "./UserProfileModal";
 import type { UserSearchResult } from "@/types/chat";
 
 interface ChatSidebarProps {
@@ -98,6 +99,7 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
   const [userSearchResults, setUserSearchResults] = useState<UserSearchResult[]>([]);
   const [isSearchingUsers, setIsSearchingUsers] = useState(false);
   const [activeTab, setActiveTab] = useState<"all" | "channels" | "dms">("all");
+  const [profileUserId, setProfileUserId] = useState<number | null>(null);
 
   // Determine current user ID and names for exclusion
   const effectiveMyId = useMemo(() => {
@@ -190,6 +192,7 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
   const totalUnreadDms = Object.values(unreadDmCounts).reduce((acc, count) => acc + count, 0);
 
   return (
+    <>
     <aside className="w-full h-full bg-[#08090d] border-r border-white/[0.06] flex flex-col select-none">
       {/* Brand Header */}
       <div className="p-3.5 border-b border-white/[0.06] flex items-center justify-between bg-[#0a0c12]">
@@ -307,10 +310,12 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
                     return (
                       <div
                         key={`user-search-${user.id}`}
-                        onClick={() => handleStartDm(user)}
                         className="w-full text-left px-3 py-2.5 rounded-xl border border-white/[0.04] bg-white/[0.02] hover:bg-white/[0.06] hover:border-emerald-500/30 transition-all flex items-center justify-between gap-2.5 cursor-pointer group"
                       >
-                        <div className="flex items-center gap-2.5 min-w-0">
+                        <div
+                          className="flex items-center gap-2.5 min-w-0 flex-1"
+                          onClick={() => setProfileUserId(user.id)}
+                        >
                           {/* Rich Persona Avatar with image or initials */}
                           <UserAvatar
                             src={user.avatarUrl}
@@ -341,6 +346,7 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
 
                         <button
                           type="button"
+                          onClick={() => handleStartDm(user)}
                           className="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-[10px] font-semibold tracking-wide shrink-0 transition-colors"
                         >
                           Message
@@ -454,13 +460,18 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
                             : "border border-transparent hover:bg-white/[0.03] text-zinc-400 hover:text-zinc-200"
                         }`}
                       >
-                        {/* Avatar */}
-                        <UserAvatar
-                          src={dm.avatarUrl}
-                          name={dm.username}
-                          size="md"
-                          isBlocked={isBlocked}
-                        />
+                        {/* Avatar — click opens profile card */}
+                        <div
+                          onClick={(e) => { e.stopPropagation(); setProfileUserId(dm.userId); }}
+                          className="shrink-0"
+                        >
+                          <UserAvatar
+                            src={dm.avatarUrl}
+                            name={dm.username}
+                            size="md"
+                            isBlocked={isBlocked}
+                          />
+                        </div>
 
                         {/* Info */}
                         <div className="flex-1 min-w-0">
@@ -661,5 +672,28 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
         </div>
       </div>
     </aside>
+
+      {/* User Profile Modal */}
+      <UserProfileModal
+        userId={profileUserId}
+        onClose={() => setProfileUserId(null)}
+        onMessage={(id) => {
+          const found =
+            userSearchResults.find((u) => u.id === id) ||
+            dmConversations.find((d) => d.userId === id) as UserSearchResult | undefined;
+          if (found) {
+            handleStartDm({
+              id,
+              username: (found as any).username ?? "",
+              avatarUrl: (found as any).avatarUrl,
+              tag: (found as any).tag,
+              studentYear: (found as any).studentYear,
+            });
+          } else {
+            openDm({ id, username: "User" });
+          }
+        }}
+      />
+    </>
   );
 }

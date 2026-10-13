@@ -37,4 +37,14 @@ ORDER BY m.createdAt
             @org.springframework.data.repository.query.Param("senderId") Long senderId,
             @org.springframework.data.repository.query.Param("cutoff") java.time.LocalDateTime cutoff
     );
+
+    @Query("""
+    SELECT m FROM Message m
+    WHERE (m.sender.id = :userId OR m.receiver.id = :userId)
+      AND m.receiver IS NOT NULL
+    ORDER BY m.createdAt DESC
+    """)
+    List<Message> findDmMessagesForUser(
+            @org.springframework.data.repository.query.Param("userId") Long userId
+    );
 }

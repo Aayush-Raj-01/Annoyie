@@ -23,7 +23,16 @@ public class MarketplaceListing {
 
     private String imageUrl;
 
+    @Column(columnDefinition = "TEXT")
+    private String mediaUrls;
+
     private LocalDateTime createdAt;
+
+    private Boolean bargainAvailable = false;
+
+    private String hostelName;
+
+    private String roomNo;
 
     @ManyToOne
     @JoinColumn(name = "seller_id")
@@ -73,12 +82,44 @@ public class MarketplaceListing {
         this.imageUrl = imageUrl;
     }
 
+    public String getMediaUrls() {
+        return mediaUrls != null ? mediaUrls : (imageUrl != null ? imageUrl : "");
+    }
+
+    public void setMediaUrls(String mediaUrls) {
+        this.mediaUrls = mediaUrls;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Boolean getBargainAvailable() {
+        return bargainAvailable != null ? bargainAvailable : false;
+    }
+
+    public void setBargainAvailable(Boolean bargainAvailable) {
+        this.bargainAvailable = bargainAvailable;
+    }
+
+    public String getHostelName() {
+        return hostelName;
+    }
+
+    public void setHostelName(String hostelName) {
+        this.hostelName = hostelName;
+    }
+
+    public String getRoomNo() {
+        return roomNo;
+    }
+
+    public void setRoomNo(String roomNo) {
+        this.roomNo = roomNo;
     }
 
     public MarketplaceProfile getSeller() {

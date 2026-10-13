@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
-import Link from "next/link";
+import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Navbar from "../components/navbar";
 import { syncUserProfile, setAuthToken, clearUserProfile, setPendingEmail } from "../lib/auth";
+import { fetchMarketplaceProfile } from "@/lib/api/marketplace";
 
 export default function AuthenticationPage() {
 
@@ -21,9 +22,103 @@ export default function AuthenticationPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  // Field-specific validation and error states
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [passwordTouched, setPasswordTouched] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const resetFormErrors = () => {
+    setError(null);
+    setEmailError(null);
+    setPasswordError(null);
+    setEmailTouched(false);
+    setPasswordTouched(false);
+  };
+
+  const validateEmailFormat = (emailVal: string): string | null => {
+    const trimmed = emailVal.trim();
+    if (!trimmed) {
+      return "Email address is required";
+    }
+    if (trimmed.includes(" ")) {
+      return "Email cannot contain spaces";
+    }
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(trimmed)) {
+      if (!trimmed.includes("@")) {
+        return "Email must include an '@' symbol";
+      }
+      const parts = trimmed.split("@");
+      if (!parts[1] || parts[1].length === 0) {
+        return "Please enter a domain after '@'";
+      }
+      if (!parts[1].includes(".")) {
+        return "Please include a domain extension (e.g. .com, .edu)";
+      }
+      return "Please enter a valid email address (e.g. name@gmail.com)";
+    }
+    return null;
+  };
+
+  const handleEmailChange = (val: string) => {
+    setEmail(val);
+
+    // Clear top banner error if it relates to email/user
+    if (
+      error &&
+      (error.toLowerCase().includes("user not found") ||
+        error.toLowerCase().includes("email") ||
+        error.toLowerCase().includes("account"))
+    ) {
+      setError(null);
+    }
+
+    // Provide immediate feedback if the field has been touched or has an active error
+    if (emailTouched || emailError) {
+      const formatErr = validateEmailFormat(val);
+      setEmailError(formatErr);
+    }
+  };
+
+  const handleEmailBlur = () => {
+    setEmailTouched(true);
+    if (!email.trim()) {
+      setEmailError("Email address is required");
+    } else {
+      const formatErr = validateEmailFormat(email);
+      setEmailError(formatErr);
+    }
+  };
+
+  const handlePasswordChange = (val: string) => {
+    setPassword(val);
+    if (passwordError) {
+      setPasswordError(null);
+    }
+    if (
+      error &&
+      (error.toLowerCase().includes("password") ||
+        error.toLowerCase().includes("credentials"))
+    ) {
+      setError(null);
+    }
+    if (passwordTouched && !val) {
+      setPasswordError("Password is required");
+    }
+  };
+
+  const handlePasswordBlur = () => {
+    setPasswordTouched(true);
+    if (!password) {
+      setPasswordError("Password is required");
+    }
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    resetFormErrors();
     setSuccess(null);
 
     const cleanEmail = email.trim().toLowerCase();
@@ -58,14 +153,23 @@ export default function AuthenticationPage() {
         })
       });
       if(!res.ok){
-        const errorText = await res.text();
-        throw new Error(errorText || "failed to register");
+        let msg = "Failed to register";
+        try {
+          const data = await res.json();
+          msg = data?.message || data?.error || msg;
+        } catch {
+          try {
+            const text = await res.text();
+            if (text && !text.startsWith("{")) msg = text;
+          } catch {}
+        }
+        throw new Error(msg);
       }
       localStorage.setItem("annoyms_pending",cleanEmail);
       setSuccess(`A 6-digit verification code has been sent to ${cleanEmail}`);
       setMode("verify-otp");
     }catch(err: any){
-      setError(err.message || "SERVER IS DEAD")
+      setError(err.message || "SERVER IS DEAD");
     }finally{
       setLoading(false);
     }
@@ -74,7 +178,7 @@ export default function AuthenticationPage() {
 
   const handleVerifyOtp = async(e: React.FormEvent)=>{
     e.preventDefault();
-    setError(null);
+    resetFormErrors();
     setSuccess(null);
 
     const cleanOtp = otp.trim();
@@ -94,8 +198,17 @@ export default function AuthenticationPage() {
       });
 
       if(!res.ok){
-        const errorText = await res.text();
-        throw new Error(errorText || "SHAI SAI OTP DE BHAI");
+        let msg = "OTP Verification Failed";
+        try {
+          const data = await res.json();
+          msg = data?.message || data?.error || msg;
+        } catch {
+          try {
+            const text = await res.text();
+            if (text && !text.startsWith("{")) msg = text;
+          } catch {}
+        }
+        throw new Error(msg);
       }
       
       // Wipe any lingering previous session to prevent avatar / profile bleed
@@ -115,14 +228,25 @@ export default function AuthenticationPage() {
 
   const handleSignIn = async(e:React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    resetFormErrors();
     setSuccess(null);
+    setEmailTouched(true);
+    setPasswordTouched(true);
 
-    const cleanEmail = email.trim().toLocaleLowerCase();
-    if(!cleanEmail || !password){
-      setError("Please enter your email and password.")
+    const cleanEmail = email.trim().toLowerCase();
+    const emailFormatErr = validateEmailFormat(cleanEmail);
+    if (emailFormatErr) {
+      setEmailError(emailFormatErr);
+      setError(emailFormatErr);
       return;
     }
+
+    if(!password){
+      setPasswordError("Password is required");
+      setError("Please enter your password");
+      return;
+    }
+
     setLoading(true);
     try{
       const res = await fetch("http://localhost:8080/auth/login",{
@@ -130,16 +254,70 @@ export default function AuthenticationPage() {
         headers:{"Content-Type":"application/json"},
         body: JSON.stringify({email: cleanEmail, password}),
       });
+
       if(!res.ok){
-        const errorText = await res.text();
-        throw new Error(errorText || "Invaild email or password.");
+        let serverMsg = "";
+        try {
+          const errorJson = await res.json();
+          serverMsg = errorJson?.message || errorJson?.error || "";
+        } catch {
+          try {
+            serverMsg = await res.text();
+          } catch {
+            serverMsg = "";
+          }
+        }
+
+        const lowerMsg = (serverMsg || "").toLowerCase();
+
+        if (lowerMsg.includes("user not found") || lowerMsg.includes("no user")) {
+          setEmailError("No account found with this email address.");
+          setError("User not found. No account is registered with this email.");
+          return;
+        }
+
+        if (
+          lowerMsg.includes("wrong password") ||
+          lowerMsg.includes("bad credentials") ||
+          lowerMsg.includes("invalid password") ||
+          lowerMsg.includes("password does not match")
+        ) {
+          setPasswordError("Incorrect password. Please try again.");
+          setError("Incorrect password. Please verify your password and try again.");
+          return;
+        }
+
+        if (lowerMsg.includes("not verified")) {
+          setError("Your email has not been verified yet. Please enter your verification code.");
+          localStorage.setItem("annoyms_pending", cleanEmail);
+          return;
+        }
+
+        if (lowerMsg.includes("email is required")) {
+          setEmailError("Email address is required.");
+          setError("Please enter your email address.");
+          return;
+        }
+
+        const cleanMsg =
+          serverMsg && !serverMsg.startsWith("{") && !serverMsg.startsWith("<")
+            ? serverMsg
+            : "Invalid email or password.";
+        setError(cleanMsg);
+        return;
       }
+
       const data = await res.json();
       if(data.token){
         setAuthToken(data.token);
         localStorage.setItem("annoyms_token", data.token);
         localStorage.setItem("annoyms_email", cleanEmail);
         const userProfile = await syncUserProfile(data.token);
+        if (userProfile?.id) {
+          try {
+            await fetchMarketplaceProfile(userProfile.id);
+          } catch {}
+        }
         setSuccess("Login successful! Redirecting...");
 
         setTimeout(() => {
@@ -151,7 +329,8 @@ export default function AuthenticationPage() {
         }, 600);
       }
     }catch(err:any){
-      setError(err.message || "Invaild Email or Password");
+      console.error("Login request error:", err);
+      setError("Unable to connect to the authentication server. Please verify the backend is running.");
     }finally{
       setLoading(false);
     }
@@ -161,10 +340,12 @@ export default function AuthenticationPage() {
     <div className="min-h-screen w-full bg-[#050505] text-zinc-100 flex flex-col lg:flex-row relative overflow-hidden font-sans selection:bg-emerald-500 selection:text-black">
       {/* Small Display Background: Focused on the bright right-side fluted streaks */}
       <div className="absolute inset-0 lg:hidden pointer-events-none z-0">
-        <img
+        <Image
           src="/emerald-glass.jpg"
           alt="Emerald Glass Mobile Backdrop"
-          className="w-full h-full object-cover object-right sm:object-[80%_center] opacity-45 select-none"
+          fill
+          priority
+          className="object-cover object-right sm:object-[80%_center] opacity-45 select-none pointer-events-none"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/70 to-black/85 backdrop-blur-[1px]" />
       </div>
@@ -222,7 +403,7 @@ export default function AuthenticationPage() {
                   type="button"
                   onClick={() => {
                     setMode("signin");
-                    setError(null);
+                    resetFormErrors();
                     setSuccess(null);
                   }}
                   className={`relative z-10 w-1/2 py-2 text-center text-xs font-mono uppercase tracking-wider transition-colors duration-200 cursor-pointer ${
@@ -237,7 +418,7 @@ export default function AuthenticationPage() {
                   type="button"
                   onClick={() => {
                     setMode("signup");
-                    setError(null);
+                    resetFormErrors();
                     setSuccess(null);
                   }}
                   className={`relative z-10 w-1/2 py-2 text-center text-xs font-mono uppercase tracking-wider transition-colors duration-200 cursor-pointer ${
@@ -254,46 +435,137 @@ export default function AuthenticationPage() {
 
           {/* Status Alerts */}
           {error && (
-            <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-400 font-mono flex items-center gap-2 animate-fadeIn">
-              <span>⚠️</span>
-              <span>{error}</span>
+            <div className="mb-4 p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-300 font-mono flex items-start gap-2.5 animate-fadeIn shadow-[0_0_20px_rgba(244,63,94,0.12)]">
+              <span className="text-sm shrink-0">⚠️</span>
+              <div className="flex-1">
+                <p className="leading-relaxed">{error}</p>
+                {mode === "signin" && error.toLowerCase().includes("user not found") && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode("signup");
+                      resetFormErrors();
+                    }}
+                    className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 underline underline-offset-2 cursor-pointer transition-colors"
+                  >
+                    Create an account with this email &rarr;
+                  </button>
+                )}
+                {mode === "signin" && error.toLowerCase().includes("not verified") && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode("verify-otp");
+                      resetFormErrors();
+                    }}
+                    className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 underline underline-offset-2 cursor-pointer transition-colors"
+                  >
+                    Enter verification code &rarr;
+                  </button>
+                )}
+              </div>
             </div>
           )}
           {success && (
-            <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-400 font-mono flex items-center gap-2 animate-fadeIn">
-              <span>✓</span>
+            <div className="mb-4 p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-300 font-mono flex items-center gap-2 animate-fadeIn shadow-[0_0_20px_rgba(16,185,129,0.12)]">
+              <span className="text-emerald-400 font-bold">✓</span>
               <span>{success}</span>
             </div>
           )}
 
           {/* 1. Sign In Form (Smooth Transition) */}
           {mode === "signin" && (
-            <form key="signin" onSubmit={handleSignIn} className="space-y-4 animate-form-switch">
+            <form key="signin" onSubmit={handleSignIn} noValidate className="space-y-4 animate-form-switch">
               <div>
-                <label className="block text-[10px] font-mono uppercase tracking-widest text-zinc-400 mb-1.5">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@gmail.com"
-                  className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-400 focus:bg-white/[0.05] focus:ring-1 focus:ring-emerald-400/50 transition-all font-mono"
-                />
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-[10px] font-mono uppercase tracking-widest text-zinc-400">
+                    Email Address
+                  </label>
+                  {emailError && (
+                    <span className="text-[10px] font-mono text-rose-400 lowercase flex items-center gap-1 animate-fadeIn">
+                      invalid mail
+                    </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => handleEmailChange(e.target.value)}
+                    onBlur={handleEmailBlur}
+                    placeholder="name@gmail.com"
+                    autoComplete="email"
+                    className={`w-full px-4 py-3 rounded-xl border text-sm text-white placeholder-zinc-600 focus:outline-none transition-all font-mono ${
+                      emailError
+                        ? "bg-rose-500/[0.04] border-rose-500/70 focus:border-rose-400 focus:ring-1 focus:ring-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.15)]"
+                        : "bg-white/[0.03] border-white/10 focus:border-emerald-400 focus:bg-white/[0.05] focus:ring-1 focus:ring-emerald-400/50"
+                    }`}
+                  />
+                  {emailError && (
+                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-rose-400">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+                {emailError && (
+                  <p className="mt-1.5 text-[11px] font-mono text-rose-400 flex items-center gap-1.5 animate-fadeIn">
+                    <span>⚠️</span>
+                    <span>{emailError}</span>
+                  </p>
+                )}
               </div>
               <div>
-                <label className="block text-[10px] font-mono uppercase tracking-widest text-zinc-400 mb-1.5">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-400 focus:bg-white/[0.05] focus:ring-1 focus:ring-emerald-400/50 transition-all font-mono"
-                />
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-[10px] font-mono uppercase tracking-widest text-zinc-400">
+                    Password
+                  </label>
+                  {passwordError && (
+                    <span className="text-[10px] font-mono text-rose-400 lowercase flex items-center gap-1 animate-fadeIn">
+                      wrong password
+                    </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => handlePasswordChange(e.target.value)}
+                    onBlur={handlePasswordBlur}
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    className={`w-full px-4 py-3 pr-11 rounded-xl border text-sm text-white placeholder-zinc-600 focus:outline-none transition-all font-mono ${
+                      passwordError
+                        ? "bg-rose-500/[0.04] border-rose-500/70 focus:border-rose-400 focus:ring-1 focus:ring-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.15)]"
+                        : "bg-white/[0.03] border-white/10 focus:border-emerald-400 focus:bg-white/[0.05] focus:ring-1 focus:ring-emerald-400/50"
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 transition-colors p-1 cursor-pointer"
+                    title={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                {passwordError && (
+                  <p className="mt-1.5 text-[11px] font-mono text-rose-400 flex items-center gap-1.5 animate-fadeIn">
+                    <span>⚠️</span>
+                    <span>{passwordError}</span>
+                  </p>
+                )}
               </div>
               <button
                 type="submit"
@@ -391,7 +663,7 @@ export default function AuthenticationPage() {
                 type="button"
                 onClick={() => {
                   setMode("signup");
-                  setError(null);
+                  resetFormErrors();
                 }}
                 className="w-full text-xs font-mono text-zinc-500 hover:text-zinc-300 pt-1 text-center cursor-pointer"
               >
@@ -408,10 +680,12 @@ export default function AuthenticationPage() {
       <div className="hidden lg:flex w-full lg:w-1/2 xl:w-5/12 min-h-[420px] lg:min-h-screen relative bg-black items-center justify-center overflow-hidden border-t lg:border-t-0 lg:border-l border-white/5">
         
         {/* The Exact Fluted Glass Artwork */}
-        <img
+        <Image
           src="/emerald-glass.jpg"
           alt="HAOS Emerald Fluted Glass"
-          className="absolute inset-0 w-full h-full object-cover object-center select-none pointer-events-none opacity-50"
+          fill
+          priority
+          className="absolute inset-0 object-cover object-center select-none pointer-events-none opacity-50"
         />
 
         {/* Subtle Dark Vignette & Edge Blending */}

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { CHAT_ROOMS, useChatStore } from "@/store/chatStore";
 import { searchUsers } from "@/lib/api/users";
 import UserAvatar from "./UserAvatar";
@@ -79,6 +79,7 @@ function getStoredProfile() {
 }
 
 export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRoom, onSelectDm }: ChatSidebarProps) {
+  const router = useRouter();
   const activeChatType = useChatStore((state) => state.activeChatType);
   const activeRoomId = useChatStore((state) => state.activeRoomId);
   const activeDmUser = useChatStore((state) => state.activeDmUser);
@@ -158,17 +159,28 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
     return () => clearTimeout(timer);
   }, [searchQuery, effectiveMyId, effectiveMyName, isSelfUser]);
 
-  const filteredRooms = CHAT_ROOMS.filter(
-    (room) =>
-      room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (room.description && room.description.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const userYear = currentUser.studentYear || getStoredProfile()?.studentYear;
+
+  const accessibleRooms = useMemo(() => {
+    return CHAT_ROOMS.filter((room) => {
+      if (room.requiredYear) {
+        return userYear === room.requiredYear;
+      }
+      return true;
+    });
+  }, [userYear]);
+
+  const filteredRooms = useMemo(() => {
+    return accessibleRooms.filter(
+      (room) =>
+        room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (room.description && room.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  }, [accessibleRooms, searchQuery]);
 
   const handleStartDm = (user: UserSearchResult) => {
     if (!isLoggedIn) {
-      if (typeof window !== "undefined") {
-        window.location.href = "/authentication";
-      }
+      router.push("/authentication");
       return;
     }
 
@@ -391,7 +403,14 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
                           {room.emoji || "#"}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium truncate text-zinc-200">{room.name}</p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-xs font-medium truncate text-zinc-200">{room.name}</p>
+                            {room.requiredYear && (
+                              <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 font-mono shrink-0">
+                                Yr {room.requiredYear}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-[10px] text-zinc-500 truncate">{room.description}</p>
                         </div>
                       </button>
@@ -573,13 +592,20 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
                       {/* Channel Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-1 mb-0.5">
-                          <span
-                            className={`text-xs sm:text-sm font-semibold truncate ${
-                              isActive ? "text-white" : "text-zinc-200 group-hover:text-white"
-                            }`}
-                          >
-                            {room.name}
-                          </span>
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span
+                              className={`text-xs sm:text-sm font-semibold truncate ${
+                                isActive ? "text-white" : "text-zinc-200 group-hover:text-white"
+                              }`}
+                            >
+                              {room.name}
+                            </span>
+                            {room.requiredYear && (
+                              <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 font-mono shrink-0">
+                                Yr {room.requiredYear}
+                              </span>
+                            )}
+                          </div>
                           {timeStr && (
                             <span className="text-[10px] font-mono text-zinc-500 shrink-0">
                               {timeStr}

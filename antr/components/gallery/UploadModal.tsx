@@ -18,6 +18,7 @@ export default function UploadModal({
   currentUser,
 }: UploadModalProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isSubmittingRef = useRef(false);
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
@@ -80,11 +81,15 @@ export default function UploadModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmittingRef.current || isUploading) {
+      return;
+    }
     if (!file) {
       setError("Please select a photo");
       return;
     }
 
+    isSubmittingRef.current = true;
     setIsUploading(true);
     setError(null);
 
@@ -102,6 +107,7 @@ export default function UploadModal({
       setError(err.message || "Failed to upload photo. Please try again.");
     } finally {
       setIsUploading(false);
+      isSubmittingRef.current = false;
     }
   };
 

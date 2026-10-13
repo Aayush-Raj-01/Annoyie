@@ -34,7 +34,7 @@ export default function ChatHeader({ onBack, onRefresh, isFetching }: ChatHeader
 
   return (
     <>
-    <header className="h-16 px-3.5 sm:px-5 border-b border-white/[0.06] bg-[#090b10]/90 backdrop-blur-xl flex items-center justify-between z-10 shrink-0 select-none">
+    <header className="h-16 px-3.5 sm:px-6 border-b border-white/[0.06] bg-[#090b10]/90 backdrop-blur-xl flex items-center justify-between z-10 shrink-0 select-none">
       <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
         {/* Mobile Back Button */}
         {onBack && (
@@ -100,6 +100,11 @@ export default function ChatHeader({ onBack, onRefresh, isFetching }: ChatHeader
                 <h1 className="text-sm sm:text-base font-semibold text-white tracking-tight truncate">
                   {activeRoom.name}
                 </h1>
+                {activeRoom.requiredYear && (
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 font-medium font-mono shrink-0">
+                    🔒 Year {activeRoom.requiredYear} Only
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-2 text-[11px] text-zinc-400 truncate">
                 <span className="truncate max-w-xs sm:max-w-md">

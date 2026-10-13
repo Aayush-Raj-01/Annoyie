@@ -60,6 +60,7 @@ export default function ChatsPage() {
         });
         if (profile.id) {
           setCurrentUserId(profile.id);
+          useChatStore.getState().syncDmConversationsFromBackend(profile.id);
         }
         return true;
       }
@@ -118,7 +119,7 @@ export default function ChatsPage() {
       isMounted = false;
       window.removeEventListener("annoyms_profile_updated", handleProfileUpdate);
     };
-  }, [setCurrentUserId]);
+  }, [setCurrentUserId, router]);
 
   return (
     <QueryProvider>

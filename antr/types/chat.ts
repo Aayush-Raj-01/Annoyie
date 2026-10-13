@@ -37,6 +37,7 @@ export interface ChatRoom {
   emoji?: string;
   category?: string;
   memberCount?: number;
+  requiredYear?: number;
 }
 
 // ─── User Search Result Model ────────────────────────────────────────────────

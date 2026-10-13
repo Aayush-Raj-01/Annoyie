@@ -133,8 +133,12 @@ public class AuthService {
             user.setTag(request.tag());
         }
 
-        if(request.avatarUrl() != null && !request.avatarUrl().isBlank()) {
-            user.setAvatarUrl(request.avatarUrl().trim());
+        if(request.avatarUrl() != null) {
+            if (request.avatarUrl().trim().isEmpty() || "REMOVE".equalsIgnoreCase(request.avatarUrl().trim()) || "null".equalsIgnoreCase(request.avatarUrl().trim())) {
+                user.setAvatarUrl(null);
+            } else {
+                user.setAvatarUrl(request.avatarUrl().trim());
+            }
         }
         User saved = userRepository.save(user);
 

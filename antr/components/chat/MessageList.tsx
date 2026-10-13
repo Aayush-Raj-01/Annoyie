@@ -19,6 +19,8 @@ interface MessageListProps {
   dmUsername?: string;
   isBlocked?: boolean;
   onUnblock?: () => void;
+  isYearRestricted?: boolean;
+  requiredYear?: number;
 }
 
 function resolveSenderString(sender: unknown, fallback?: unknown): string {
@@ -47,6 +49,8 @@ export default function MessageList({
   dmUsername,
   isBlocked = false,
   onUnblock,
+  isYearRestricted = false,
+  requiredYear,
 }: MessageListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -104,11 +108,26 @@ export default function MessageList({
       <div
         ref={containerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-3 sm:px-6 py-5 scrollbar-thin scrollbar-thumb-zinc-800 relative z-10"
+        className="flex-1 overflow-y-auto px-3 sm:px-6 py-5 scrollbar-thin scrollbar-thumb-zinc-800 relative z-10 flex flex-col"
       >
+        {/* Year-Restricted Group Notice */}
+        {isYearRestricted && (
+          <div className="flex-1 flex items-center justify-center py-16 px-4 text-center my-auto">
+            <div className="max-w-md p-6 rounded-3xl bg-zinc-900/60 border border-white/[0.08] backdrop-blur-xl shadow-2xl">
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center text-2xl mx-auto mb-3.5 shadow-inner">
+                🔒
+              </div>
+              <h3 className="text-base font-semibold text-white">Year-Restricted Group</h3>
+              <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
+                This channel is strictly reserved for {requiredYear ? `Year ${requiredYear}` : "cohort"} students. Members of other academic years cannot view conversation history or chat here.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Loading Skeleton */}
-        {isLoading && (
-          <div className="space-y-4 py-8 animate-pulse max-w-2xl mx-auto">
+        {!isYearRestricted && isLoading && (
+          <div className="space-y-4 py-8 animate-pulse w-full max-w-2xl mx-auto">
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-full bg-zinc-800" />
               <div className="space-y-2 flex-1">
@@ -126,7 +145,7 @@ export default function MessageList({
         )}
 
         {/* Error State */}
-        {isError && (
+        {!isYearRestricted && isError && (
           <div className="text-center py-8 px-4 bg-rose-950/20 border border-rose-500/20 rounded-2xl my-4 max-w-md mx-auto">
             <div className="text-2xl mb-2">⚠️</div>
             <p className="text-sm font-semibold text-rose-300">Could not retrieve messages</p>
@@ -145,8 +164,8 @@ export default function MessageList({
         )}
 
         {/* Empty State */}
-        {!isLoading && !isError && messages.length === 0 && (
-          <div className="text-center py-12 text-zinc-500 space-y-1.5 max-w-md mx-auto">
+        {!isYearRestricted && !isLoading && !isError && messages.length === 0 && (
+          <div className="text-center py-12 text-zinc-500 space-y-1.5 max-w-md mx-auto my-auto">
             <div className="text-3xl mb-1 opacity-70">
               {isDm ? "🔒" : "💬"}
             </div>
@@ -164,8 +183,8 @@ export default function MessageList({
         )}
 
         {/* Messages Feed with Sender Clustering */}
-        <div className="max-w-4xl mx-auto">
-          {!isLoading &&
+        <div className="w-full flex-1 flex flex-col space-y-1">
+          {!isYearRestricted && !isLoading &&
             messages.map((message, index) => {
               const msgSenderId =
                 typeof message.senderId === "number"
@@ -226,6 +245,7 @@ export default function MessageList({
                   isMe={isMe}
                   showSenderHeader={showSenderHeader}
                   onAvatarClick={!isMe ? handleAvatarClick : undefined}
+                  currentUserName={currentUserName}
                 />
               );
             })}

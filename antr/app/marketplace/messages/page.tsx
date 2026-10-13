@@ -1,11 +1,18 @@
 "use client";
 
-import React, { useEffect, useState, useRef, Suspense } from "react";
+import React, { useEffect, useState, useRef, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/app/components/navbar";
-import { getUserProfile, syncUserProfile, UserProfile } from "@/app/lib/auth";
-import { MarketplaceProfile, fetchMarketplaceProfile } from "@/lib/api/marketplace";
+import { getUserProfile, syncUserProfile } from "@/app/lib/auth";
+import ConfirmModal, { ConfirmVariant } from "@/components/ui/ConfirmModal";
+import ToastNotification, { ToastVariant } from "@/components/ui/ToastNotification";
+import {
+  MarketplaceProfile,
+  fetchMarketplaceProfile,
+  getCachedMarketplaceProfile,
+  subscribeMarketplaceProfileChange,
+} from "@/lib/api/marketplace";
 import {
   MarketplaceMessage,
   MarketplaceThread,
@@ -13,6 +20,14 @@ import {
   fetchMarketplaceThreads,
   sendMarketplaceMessage,
 } from "@/lib/api/marketplaceChat";
+import {
+  MarketplaceBlockStatus,
+  checkMarketplaceBlockStatus,
+  blockMarketplaceProfile,
+  unblockMarketplaceProfile,
+  fetchBlockedMarketplaceProfiles,
+  subscribeMarketplaceBlockChange,
+} from "@/lib/api/marketplaceBlock";
 
 function MarketplaceChatContent() {
   const router = useRouter();
@@ -20,8 +35,10 @@ function MarketplaceChatContent() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auth & Profile
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
-  const [myProfile, setMyProfile] = useState<MarketplaceProfile | null>(null);
+  const [myProfile, setMyProfile] = useState<MarketplaceProfile | null>(() => {
+    const user = getUserProfile();
+    return getCachedMarketplaceProfile(user?.id);
+  });
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
   // Chat Data
@@ -39,6 +56,81 @@ function MarketplaceChatContent() {
   const [inputText, setInputText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+
+  // Blocking State
+  const [blockStatus, setBlockStatus] = useState<MarketplaceBlockStatus>({
+    isBlockedByMe: false,
+    isBlockedByThem: false,
+    isBlockedEitherWay: false,
+  });
+  const [isBlockingAction, setIsBlockingAction] = useState(false);
+  const [blockedPartnerIds, setBlockedPartnerIds] = useState<Set<number>>(new Set());
+
+  // Modern Dialog & Notification states
+  const [toast, setToast] = useState<{ message: string; variant: ToastVariant } | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    confirmText: string;
+    variant: ConfirmVariant;
+    isLoading?: boolean;
+    onConfirm: () => void | Promise<void>;
+  }>({
+    isOpen: false,
+    title: "",
+    description: "",
+    confirmText: "Confirm",
+    variant: "warning",
+    onConfirm: () => {},
+  });
+
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
+
+  const loadThreads = useCallback(async (profileId: number) => {
+    try {
+      const data = await fetchMarketplaceThreads(profileId);
+      setThreads(data);
+    } catch (err) {
+      console.warn("Failed to load threads:", err);
+    }
+  }, []);
+
+  const loadBlockedList = useCallback(async (profileId: number) => {
+    try {
+      const list = await fetchBlockedMarketplaceProfiles(profileId);
+      setBlockedPartnerIds(new Set(list.map((b) => b.blockedProfileId)));
+    } catch (err) {
+      console.warn("Failed to load blocked list:", err);
+    }
+  }, []);
+
+  // Synchronize marketplace profile updates across tabs and other pages
+  useEffect(() => {
+    const unsub = subscribeMarketplaceProfileChange((p) => {
+      setMyProfile(p);
+      if (p?.id) {
+        loadThreads(p.id);
+        loadBlockedList(p.id);
+      }
+    });
+    return unsub;
+  }, [loadThreads, loadBlockedList]);
+
+  // Subscribe to block events
+  useEffect(() => {
+    const unsub = subscribeMarketplaceBlockChange(() => {
+      if (myProfile?.id) {
+        loadBlockedList(myProfile.id);
+      }
+      if (myProfile?.id && selectedPartnerId) {
+        checkMarketplaceBlockStatus(myProfile.id, selectedPartnerId).then(setBlockStatus);
+      }
+    });
+    return unsub;
+  }, [myProfile?.id, selectedPartnerId, loadBlockedList]);
 
   // 1. Initial Load: Authenticate and fetch marketplace profile
   useEffect(() => {
@@ -58,14 +150,20 @@ function MarketplaceChatContent() {
           return;
         }
 
-        setCurrentUser(user);
-
         if (user.id) {
+          const cached = getCachedMarketplaceProfile(user.id);
+          if (cached && isMounted) {
+            setMyProfile(cached);
+            loadThreads(cached.id);
+            loadBlockedList(cached.id);
+          }
+
           const profile = await fetchMarketplaceProfile(user.id);
           if (isMounted) {
             setMyProfile(profile);
             if (profile) {
               loadThreads(profile.id);
+              loadBlockedList(profile.id);
             }
           }
         }
@@ -83,17 +181,7 @@ function MarketplaceChatContent() {
     return () => {
       isMounted = false;
     };
-  }, [router]);
-
-  // Load threads
-  const loadThreads = async (profileId: number) => {
-    try {
-      const data = await fetchMarketplaceThreads(profileId);
-      setThreads(data);
-    } catch (err) {
-      console.warn("Failed to load threads:", err);
-    }
-  };
+  }, [router, loadThreads, loadBlockedList]);
 
   // 2. Handle Query Params: if URL has ?with=123&name=...&listingId=...
   useEffect(() => {
@@ -117,17 +205,25 @@ function MarketplaceChatContent() {
     }
   }, [searchParams]);
 
-  // 3. Load conversation when selectedPartnerId changes
+  // 3. Load conversation and block status when selectedPartnerId changes
   useEffect(() => {
-    if (!myProfile || !selectedPartnerId) return;
+    const partnerId = selectedPartnerId;
+    if (!myProfile || partnerId == null) return;
 
     let isMounted = true;
+
+    // Check block status
+    checkMarketplaceBlockStatus(myProfile.id, partnerId)
+      .then((status) => {
+        if (isMounted) setBlockStatus(status);
+      })
+      .catch(() => {});
 
     async function loadConv() {
       setIsLoadingMessages(true);
       try {
-        if (myProfile) {
-          const conv = await fetchMarketplaceConversation(myProfile.id, selectedPartnerId);
+        if (myProfile && partnerId != null) {
+          const conv = await fetchMarketplaceConversation(myProfile.id, partnerId);
           if (isMounted) {
             setMessages(conv);
             scrollToBottom();
@@ -159,7 +255,7 @@ function MarketplaceChatContent() {
             });
           }
         } catch {
-          // ignore polling errors
+          // ignore
         }
       }
     }, 3500);
@@ -168,16 +264,22 @@ function MarketplaceChatContent() {
       isMounted = false;
       clearInterval(interval);
     };
-  }, [myProfile, selectedPartnerId]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  }, [myProfile, selectedPartnerId, scrollToBottom]);
 
   // Handle Send Message
   const handleSendMessage = async (textToSend?: string) => {
     const messageContent = (textToSend || inputText).trim();
     if (!messageContent || !myProfile || !selectedPartnerId || isSending) return;
+
+    if (blockStatus.isBlockedEitherWay) {
+      setToast({
+        message: blockStatus.isBlockedByMe
+          ? "You have blocked this user. Unblock them before sending messages."
+          : "Cannot send message. Communication between these profiles is blocked.",
+        variant: "warning",
+      });
+      return;
+    }
 
     try {
       setIsSending(true);
@@ -201,9 +303,68 @@ function MarketplaceChatContent() {
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to send message";
-      alert(msg);
+      setToast({ message: msg, variant: "error" });
     } finally {
       setIsSending(false);
+    }
+  };
+
+  // Block / Unblock action handler
+  const handleToggleBlock = async () => {
+    if (!myProfile || !selectedPartnerId) return;
+
+    const partnerName = selectedPartnerInfo?.displayName || "this user";
+
+    if (blockStatus.isBlockedByMe) {
+      // Unblock
+      try {
+        setIsBlockingAction(true);
+        await unblockMarketplaceProfile(myProfile.id, selectedPartnerId);
+        setBlockStatus((prev) => ({
+          ...prev,
+          isBlockedByMe: false,
+          isBlockedEitherWay: prev.isBlockedByThem,
+        }));
+        setBlockedPartnerIds((prev) => {
+          const copy = new Set(prev);
+          copy.delete(selectedPartnerId);
+          return copy;
+        });
+        setToast({ message: `Unblocked ${partnerName}`, variant: "success" });
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Failed to unblock user";
+        setToast({ message: msg, variant: "error" });
+      } finally {
+        setIsBlockingAction(false);
+      }
+    } else {
+      // Block Confirmation Modal
+      setConfirmDialog({
+        isOpen: true,
+        title: `Block ${partnerName}?`,
+        description: `Are you sure you want to block ${partnerName}? They will no longer be able to message you or see your listings.`,
+        confirmText: "Block user",
+        variant: "warning",
+        onConfirm: async () => {
+          setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+          try {
+            setIsBlockingAction(true);
+            await blockMarketplaceProfile(myProfile.id, selectedPartnerId);
+            setBlockStatus((prev) => ({
+              ...prev,
+              isBlockedByMe: true,
+              isBlockedEitherWay: true,
+            }));
+            setBlockedPartnerIds((prev) => new Set(prev).add(selectedPartnerId));
+            setToast({ message: `Blocked ${partnerName}`, variant: "success" });
+          } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : "Failed to block user";
+            setToast({ message: msg, variant: "error" });
+          } finally {
+            setIsBlockingAction(false);
+          }
+        },
+      });
     }
   };
 
@@ -316,6 +477,8 @@ function MarketplaceChatContent() {
 
                 {threads.map((t) => {
                   const isSelected = selectedPartnerId === t.otherProfileId;
+                  const isPartnerBlocked = blockedPartnerIds.has(t.otherProfileId);
+
                   return (
                     <button
                       key={t.otherProfileId}
@@ -344,7 +507,14 @@ function MarketplaceChatContent() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-1">
-                          <span className="text-xs font-semibold text-white truncate">{t.otherDisplayName}</span>
+                          <div className="flex items-center gap-1.5 truncate">
+                            <span className="text-xs font-semibold text-white truncate">{t.otherDisplayName}</span>
+                            {isPartnerBlocked && (
+                              <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-rose-500/15 text-rose-400 border border-rose-500/30 shrink-0">
+                                Blocked
+                              </span>
+                            )}
+                          </div>
                           {t.unreadCount > 0 && (
                             <span className="w-4 h-4 rounded-full bg-emerald-500 text-zinc-950 font-bold text-[9px] flex items-center justify-center">
                               {t.unreadCount}
@@ -382,7 +552,7 @@ function MarketplaceChatContent() {
                 </div>
               ) : (
                 <>
-                  {/* Chat Partner Header */}
+                  {/* Chat Partner Header with Block/Unblock Action */}
                   <div className="p-3.5 px-4 border-b border-white/[0.08] flex items-center justify-between bg-zinc-950/60 backdrop-blur-md">
                     <div className="flex items-center gap-3 min-w-0">
                       {/* Mobile back button */}
@@ -411,18 +581,66 @@ function MarketplaceChatContent() {
                           <span className="text-emerald-400 text-[10px]" title="Campus Verified">
                             ✓
                           </span>
+                          {blockStatus.isBlockedByMe && (
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                              Blocked by you
+                            </span>
+                          )}
                         </div>
                         <span className="text-[10px] text-zinc-400 font-mono">Marketplace Seller</span>
                       </div>
                     </div>
 
-                    <Link
-                      href={`/marketplace/profile`}
-                      className="text-[11px] font-mono text-zinc-400 hover:text-emerald-300 transition-colors"
-                    >
-                      Store Profile
-                    </Link>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {/* Block / Unblock Button */}
+                      <button
+                        type="button"
+                        onClick={handleToggleBlock}
+                        disabled={isBlockingAction}
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1 ${
+                          blockStatus.isBlockedByMe
+                            ? "bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-white/10"
+                            : "bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/20"
+                        }`}
+                        title={blockStatus.isBlockedByMe ? "Unblock this user" : "Block this user"}
+                      >
+                        <span>{blockStatus.isBlockedByMe ? "🔓" : "🚫"}</span>
+                        <span>{blockStatus.isBlockedByMe ? "Unblock" : "Block"}</span>
+                      </button>
+
+                      <Link
+                        href={`/marketplace/profile`}
+                        className="text-[11px] font-mono text-zinc-400 hover:text-emerald-300 transition-colors hidden sm:inline"
+                      >
+                        Store Profile
+                      </Link>
+                    </div>
                   </div>
+
+                  {/* Block Alert Banner (if user is blocked) */}
+                  {blockStatus.isBlockedByMe && (
+                    <div className="p-3 px-4 bg-rose-500/15 border-b border-rose-500/25 flex items-center justify-between gap-3 text-xs text-rose-200">
+                      <div className="flex items-center gap-2">
+                        <span className="text-rose-400">🚫</span>
+                        <span>You have blocked this user. Unblock them to send or receive marketplace messages.</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleToggleBlock}
+                        disabled={isBlockingAction}
+                        className="px-3 py-1 rounded-full bg-rose-500 hover:bg-rose-400 text-zinc-950 font-bold text-[11px] transition-colors cursor-pointer shrink-0"
+                      >
+                        Unblock Now
+                      </button>
+                    </div>
+                  )}
+
+                  {!blockStatus.isBlockedByMe && blockStatus.isBlockedByThem && (
+                    <div className="p-3 px-4 bg-zinc-900/90 border-b border-white/10 flex items-center gap-2 text-xs text-zinc-400">
+                      <span>🔒</span>
+                      <span>This user has blocked communication in the marketplace.</span>
+                    </div>
+                  )}
 
                   {/* Listing Context Bar (if chatting about an item) */}
                   {selectedPartnerInfo?.listingTitle && (
@@ -482,19 +700,21 @@ function MarketplaceChatContent() {
                     <div ref={messagesEndRef} />
                   </div>
 
-                  {/* Quick Preset Chips */}
-                  <div className="px-4 py-1.5 flex items-center gap-1.5 overflow-x-auto scrollbar-none border-t border-white/[0.04] bg-zinc-950/40">
-                    {quickPrompts.map((prompt) => (
-                      <button
-                        key={prompt}
-                        type="button"
-                        onClick={() => handleSendMessage(prompt)}
-                        className="px-2.5 py-1 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-white/[0.08] text-[10px] text-zinc-300 hover:text-white transition-colors shrink-0 cursor-pointer"
-                      >
-                        {prompt}
-                      </button>
-                    ))}
-                  </div>
+                  {/* Quick Preset Chips (hidden when blocked) */}
+                  {!blockStatus.isBlockedEitherWay && (
+                    <div className="px-4 py-1.5 flex items-center gap-1.5 overflow-x-auto scrollbar-none border-t border-white/[0.04] bg-zinc-950/40">
+                      {quickPrompts.map((prompt) => (
+                        <button
+                          key={prompt}
+                          type="button"
+                          onClick={() => handleSendMessage(prompt)}
+                          className="px-2.5 py-1 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-white/[0.08] text-[10px] text-zinc-300 hover:text-white transition-colors shrink-0 cursor-pointer"
+                        >
+                          {prompt}
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Message Input Bar */}
                   <form
@@ -506,14 +726,21 @@ function MarketplaceChatContent() {
                   >
                     <input
                       type="text"
+                      disabled={blockStatus.isBlockedEitherWay}
                       value={inputText}
                       onChange={(e) => setInputText(e.target.value)}
-                      placeholder="Type message to seller/buyer..."
-                      className="flex-1 px-4 py-2.5 rounded-full bg-zinc-900 border border-zinc-700/80 focus:border-emerald-500 text-white placeholder-zinc-500 text-xs sm:text-sm outline-none transition-all"
+                      placeholder={
+                        blockStatus.isBlockedByMe
+                          ? "Messaging disabled (User is blocked by you)"
+                          : blockStatus.isBlockedByThem
+                          ? "Messaging disabled (User blocked communication)"
+                          : "Type message to seller/buyer..."
+                      }
+                      className="flex-1 px-4 py-2.5 rounded-full bg-zinc-900 border border-zinc-700/80 focus:border-emerald-500 text-white placeholder-zinc-500 text-xs sm:text-sm outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                     <button
                       type="submit"
-                      disabled={!inputText.trim() || isSending}
+                      disabled={!inputText.trim() || isSending || blockStatus.isBlockedEitherWay}
                       className="px-5 py-2.5 rounded-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 text-zinc-950 font-bold text-xs transition-all cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.2)] shrink-0"
                     >
                       {isSending ? "..." : "Send"}
@@ -525,6 +752,26 @@ function MarketplaceChatContent() {
           </div>
         </div>
       </div>
+
+      {/* Modern Floating Toast Notification */}
+      <ToastNotification
+        message={toast?.message ?? null}
+        variant={toast?.variant}
+        onClose={() => setToast(null)}
+      />
+
+      {/* Modern Confirm Modal */}
+      <ConfirmModal
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        description={confirmDialog.description}
+        confirmText={confirmDialog.confirmText}
+        cancelText="Cancel"
+        variant={confirmDialog.variant}
+        isLoading={confirmDialog.isLoading}
+        onConfirm={confirmDialog.onConfirm}
+        onClose={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
+      />
 
       <Navbar />
     </div>

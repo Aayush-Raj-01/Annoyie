@@ -20,9 +20,13 @@ public class AnnoyioApplication {
 	CommandLineRunner initChatRooms(ChatRoomRepository repository) {
 		return args -> {
 			createRoomIfMissing(repository, 1L, "All Year");
-			createRoomIfMissing(repository, 2L, "Coders & Tech");
-			createRoomIfMissing(repository, 3L, "Off-Topic & Chill");
-			createRoomIfMissing(repository, 4L, "Anonymous Confessions");
+			createRoomIfMissing(repository, 2L, "1st Year");
+			createRoomIfMissing(repository, 3L, "2nd Year");
+			createRoomIfMissing(repository, 4L, "3rd Year");
+			createRoomIfMissing(repository, 5L, "4th Year");
+			createRoomIfMissing(repository, 6L, "Coding");
+			createRoomIfMissing(repository, 7L, "Creative");
+			createRoomIfMissing(repository, 8L, "Study");
 		};
 	}
 

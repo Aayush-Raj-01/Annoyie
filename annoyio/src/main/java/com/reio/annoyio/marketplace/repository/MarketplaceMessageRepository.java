@@ -36,4 +36,9 @@ public interface MarketplaceMessageRepository extends JpaRepository<MarketplaceM
 
     @Query("SELECT COUNT(m) FROM MarketplaceMessage m WHERE m.receiver.id = :profileId AND m.isRead = false")
     long countUnreadMessages(@Param("profileId") Long profileId);
+
+    @Transactional
+    @Modifying
+    @Query("UPDATE MarketplaceMessage m SET m.listing = null WHERE m.listing.id = :listingId")
+    void detachListingFromMessages(@Param("listingId") Long listingId);
 }

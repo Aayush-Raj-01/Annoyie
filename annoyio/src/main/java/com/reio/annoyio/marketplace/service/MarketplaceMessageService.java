@@ -22,17 +22,20 @@ public class MarketplaceMessageService {
     private final MarketplaceProfileRepository profileRepository;
     private final MarketplaceListingRepository listingRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final com.reio.annoyio.marketplace.repository.MarketplaceBlockRepository blockRepository;
 
     public MarketplaceMessageService(
             MarketplaceMessageRepository messageRepository,
             MarketplaceProfileRepository profileRepository,
             MarketplaceListingRepository listingRepository,
-            SimpMessagingTemplate messagingTemplate
+            SimpMessagingTemplate messagingTemplate,
+            com.reio.annoyio.marketplace.repository.MarketplaceBlockRepository blockRepository
     ) {
         this.messageRepository = messageRepository;
         this.profileRepository = profileRepository;
         this.listingRepository = listingRepository;
         this.messagingTemplate = messagingTemplate;
+        this.blockRepository = blockRepository;
     }
 
     public MarketplaceMessageResponse sendMessage(SendMarketplaceMessageRequest request) {
@@ -41,6 +44,9 @@ public class MarketplaceMessageService {
         }
         if (request.senderProfileId().equals(request.receiverProfileId())) {
             throw new IllegalArgumentException("Cannot send a marketplace message to yourself");
+        }
+        if (blockRepository.isBlockedEitherWay(request.senderProfileId(), request.receiverProfileId())) {
+            throw new IllegalArgumentException("Cannot send message. Communication between these marketplace profiles is blocked.");
         }
         if (request.content() == null || request.content().trim().isEmpty()) {
             throw new IllegalArgumentException("Message content cannot be empty");

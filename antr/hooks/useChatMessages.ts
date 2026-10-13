@@ -3,13 +3,14 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMessages, fetchDmMessages } from "@/lib/api/messages";
-import { useChatStore } from "@/store/chatStore";
+import { CHAT_ROOMS, useChatStore } from "@/store/chatStore";
 
 export function useChatMessages(
   activeChatType: "channel" | "dm",
   roomId: number,
   myUserId?: number,
-  dmUserId?: number
+  dmUserId?: number,
+  myStudentYear?: number
 ) {
   const setMessages = useChatStore((state) => state.setMessages);
   const setDmMessages = useChatStore((state) => state.setDmMessages);
@@ -19,10 +20,13 @@ export function useChatMessages(
   const isChannel = activeChatType === "channel";
   const isDm = activeChatType === "dm" && Boolean(myUserId && dmUserId);
 
+  const targetRoom = isChannel ? CHAT_ROOMS.find((r) => r.id === roomId) : null;
+  const isPermitted = !targetRoom?.requiredYear || (myStudentYear === targetRoom.requiredYear);
+
   const channelQuery = useQuery({
     queryKey: ["messages", roomId],
     queryFn: () => fetchMessages(roomId),
-    enabled: isChannel && typeof roomId === "number" && !isNaN(roomId),
+    enabled: isChannel && typeof roomId === "number" && !isNaN(roomId) && isPermitted,
     staleTime: 1000 * 60 * 3,
   });
 
@@ -34,10 +38,10 @@ export function useChatMessages(
   });
 
   useEffect(() => {
-    if (isChannel && channelQuery.data && Array.isArray(channelQuery.data)) {
+    if (isChannel && isPermitted && channelQuery.data && Array.isArray(channelQuery.data)) {
       setMessages(roomId, channelQuery.data);
     }
-  }, [isChannel, channelQuery.data, roomId, setMessages]);
+  }, [isChannel, isPermitted, channelQuery.data, roomId, setMessages]);
 
   useEffect(() => {
     if (isDm && dmUserId && dmQuery.data && Array.isArray(dmQuery.data)) {
@@ -46,7 +50,7 @@ export function useChatMessages(
   }, [isDm, dmUserId, dmQuery.data, setDmMessages]);
 
   const activeMessages = isChannel
-    ? (messagesByRoom[roomId] ?? channelQuery.data ?? [])
+    ? (isPermitted ? (messagesByRoom[roomId] ?? channelQuery.data ?? []) : [])
     : (dmUserId ? (messagesByDm[dmUserId] ?? dmQuery.data ?? []) : []);
 
   const activeQuery = isChannel ? channelQuery : dmQuery;
@@ -58,5 +62,6 @@ export function useChatMessages(
     isError: activeQuery.isError,
     error: activeQuery.error,
     refetch: activeQuery.refetch,
+    isPermitted,
   };
 }

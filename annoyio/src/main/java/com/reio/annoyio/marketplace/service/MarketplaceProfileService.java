@@ -22,9 +22,15 @@ public class MarketplaceProfileService {
     public MarketplaceProfileResponse createProfile(Long userId, CreateMarketplaceProfileRequest request){
         User user = userRepository.findById(userId).orElseThrow(()-> new RuntimeException("User not Found"));
 
-        if(profileRepository.findByUser(user).isPresent()){
-            throw new RuntimeException("Marketplace profile already exists");
+        // If user already has a marketplace profile, update and return it instead of throwing an error
+        java.util.Optional<MarketplaceProfile> existingOpt = profileRepository.findByUserId(userId);
+        if (existingOpt.isEmpty()) {
+            existingOpt = profileRepository.findByUser(user);
         }
+        if (existingOpt.isPresent()) {
+            return updateProfile(userId, request);
+        }
+
         if(request.displayName() != null && profileRepository.existsByDisplayName(request.displayName().trim())){
             throw new RuntimeException("Display name already taken");
         }
@@ -34,7 +40,7 @@ public class MarketplaceProfileService {
         profile.setUser(user);
         profile.setDisplayName(request.displayName() != null ? request.displayName().trim() : null);
         profile.setBio(request.bio());
-        profile.setphoneNumber(request.phoneNumber());
+        profile.setPhoneNumber(request.phoneNumber());
         if (request.profileImage() != null && !request.profileImage().isBlank()) {
             profile.setProfileImage(request.profileImage().trim());
         }
@@ -44,8 +50,11 @@ public class MarketplaceProfileService {
     }
 
     public MarketplaceProfileResponse getProfileByUserId(Long userId){
-        User user = userRepository.findById(userId).orElseThrow(()-> new RuntimeException("User not Found"));
-        MarketplaceProfile profile = profileRepository.findByUser(user)
+        MarketplaceProfile profile = profileRepository.findByUserId(userId)
+                .or(() -> {
+                    User user = userRepository.findById(userId).orElse(null);
+                    return user != null ? profileRepository.findByUser(user) : java.util.Optional.empty();
+                })
                 .orElseThrow(() -> new RuntimeException("Marketplace profile not found"));
         return mapToResponse(profile);
     }
@@ -58,7 +67,8 @@ public class MarketplaceProfileService {
 
     public MarketplaceProfileResponse updateProfile(Long userId, CreateMarketplaceProfileRequest request){
         User user = userRepository.findById(userId).orElseThrow(()-> new RuntimeException("User not Found"));
-        MarketplaceProfile profile = profileRepository.findByUser(user)
+        MarketplaceProfile profile = profileRepository.findByUserId(userId)
+                .or(() -> profileRepository.findByUser(user))
                 .orElseThrow(() -> new RuntimeException("Marketplace profile not found"));
 
         if(request.displayName() != null && !request.displayName().trim().equalsIgnoreCase(profile.getDisplayName())){
@@ -72,10 +82,14 @@ public class MarketplaceProfileService {
             profile.setBio(request.bio());
         }
         if(request.phoneNumber() != null){
-            profile.setphoneNumber(request.phoneNumber());
+            profile.setPhoneNumber(request.phoneNumber());
         }
         if(request.profileImage() != null){
-            profile.setProfileImage(request.profileImage().trim());
+            if (request.profileImage().trim().isEmpty() || "REMOVE".equalsIgnoreCase(request.profileImage().trim())) {
+                profile.setProfileImage(null);
+            } else {
+                profile.setProfileImage(request.profileImage().trim());
+            }
         }
 
         MarketplaceProfile saved = profileRepository.save(profile);
@@ -90,13 +104,14 @@ public class MarketplaceProfileService {
     }
 
     private MarketplaceProfileResponse mapToResponse(MarketplaceProfile profile) {
+        Long ownerUserId = (profile.getUser() != null) ? profile.getUser().getId() : null;
         return new MarketplaceProfileResponse(
                 profile.getId(),
                 profile.getDisplayName(),
                 profile.getProfileImage(),
                 profile.getBio(),
-                profile.getphoneNumber()
+                profile.getPhoneNumber(),
+                ownerUserId
         );
     }
 }
-

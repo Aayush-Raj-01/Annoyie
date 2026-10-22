@@ -27,6 +27,7 @@ const PENDING_EMAIL_KEY = "annoyms_pending_email";
 const TOKEN_KEY = "annoyms_auth_token";
 
 import { clearCachedMarketplaceProfile, fetchMarketplaceProfile } from "@/lib/api/marketplace";
+import { apiUrl } from "@/lib/config/api";
 
 export function getPendingEmail(): string {
   if (typeof window === "undefined") return "";
@@ -159,7 +160,7 @@ export async function syncUserProfile(token?: string): Promise<UserProfile | nul
   if (!authToken) return null;
 
   try {
-    const res = await fetch("http://localhost:8080/auth/me", {
+    const res = await fetch(apiUrl("/auth/me"), {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -207,7 +208,7 @@ export async function uploadAvatarImage(file: File, email?: string): Promise<str
     formData.append("email", email);
   }
 
-  const res = await fetch("http://localhost:8080/auth/upload-avatar", {
+  const res = await fetch(apiUrl("/auth/upload-avatar"), {
     method: "POST",
     body: formData,
   });

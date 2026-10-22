@@ -1,6 +1,5 @@
 import type { UserSearchResult } from "@/types/chat";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+import { apiUrl } from "@/lib/config/api";
 
 export async function searchUsers(
   query: string,
@@ -16,7 +15,7 @@ export async function searchUsers(
       params.append("excludeUsername", excludeUsername.trim());
     }
 
-    const res = await fetch(`${API_BASE_URL}/api/users/search?${params.toString()}`, {
+    const res = await fetch(apiUrl(`/api/users/search?${params.toString()}`), {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -48,7 +47,7 @@ export async function searchUsers(
 export async function getUserById(id: number): Promise<UserSearchResult | null> {
   if (!id) return null;
   try {
-    const res = await fetch(`${API_BASE_URL}/api/users/${id}`, {
+    const res = await fetch(apiUrl(`/api/users/${id}`), {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

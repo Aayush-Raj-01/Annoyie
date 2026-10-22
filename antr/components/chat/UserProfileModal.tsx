@@ -3,8 +3,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import UserAvatar from "./UserAvatar";
 import { useChatStore } from "@/store/chatStore";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+import { apiUrl } from "@/lib/config/api";
 
 interface UserProfile {
   id: number;
@@ -46,7 +45,7 @@ export default function UserProfileModal({ userId, onClose, onMessage }: UserPro
   const fetchUser = useCallback(async (id: number) => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/users/${id}`, { cache: "no-store" });
+      const res = await fetch(apiUrl(`/api/users/${id}`), { cache: "no-store" });
       if (!res.ok) throw new Error("not found");
       const data = await res.json();
       setUser({

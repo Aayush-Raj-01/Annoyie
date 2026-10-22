@@ -13,7 +13,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/marketplace/listings")
-@CrossOrigin(origins = "*")
 public class MarketplaceListingController {
 
     private final MarketplaceListingService service;

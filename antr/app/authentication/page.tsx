@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Navbar from "../components/navbar";
 import { syncUserProfile, setAuthToken, clearUserProfile, setPendingEmail } from "../lib/auth";
 import { fetchMarketplaceProfile } from "@/lib/api/marketplace";
+import { apiUrl } from "@/lib/config/api";
 
 export default function AuthenticationPage() {
 
@@ -142,7 +143,7 @@ export default function AuthenticationPage() {
 
     setLoading(true);
     try{
-      const res = await fetch("http://localhost:8080/auth/register", {
+      const res = await fetch(apiUrl("/auth/register"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -191,7 +192,7 @@ export default function AuthenticationPage() {
 
     setLoading(true);
     try{
-      const res = await fetch("http://localhost:8080/auth/verify", {
+      const res = await fetch(apiUrl("/auth/verify"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: cleanEmail, otp: cleanOtp }),
@@ -249,7 +250,7 @@ export default function AuthenticationPage() {
 
     setLoading(true);
     try{
-      const res = await fetch("http://localhost:8080/auth/login",{
+      const res = await fetch(apiUrl("/auth/login"),{
         method: "POST",
         headers:{"Content-Type":"application/json"},
         body: JSON.stringify({email: cleanEmail, password}),

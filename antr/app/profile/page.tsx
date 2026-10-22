@@ -14,6 +14,7 @@ import {
   formatStudentYear,
   UserProfile,
 } from "../lib/auth";
+import { apiUrl } from "@/lib/config/api";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -77,7 +78,7 @@ export default function ProfilePage() {
 
       // Sync avatar to backend user record
       if (profile.email) {
-        fetch("http://localhost:8080/auth/profile", {
+        fetch(apiUrl("/auth/profile"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -112,7 +113,7 @@ export default function ProfilePage() {
       setProfile(updated);
 
       if (profile.email) {
-        await fetch("http://localhost:8080/auth/profile", {
+        await fetch(apiUrl("/auth/profile"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

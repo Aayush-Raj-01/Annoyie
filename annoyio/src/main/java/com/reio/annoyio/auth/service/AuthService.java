@@ -252,7 +252,7 @@ public class AuthService {
             java.nio.file.Path targetPath = uploadDir.resolve(filename);
             java.nio.file.Files.copy(file.getInputStream(), targetPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 
-            String avatarUrl = "http://localhost:8080/uploads/avatars/" + filename;
+            String avatarUrl = "/uploads/avatars/" + filename;
 
             if (email != null && !email.isBlank()) {
                 userRepository.findByEmail(email.trim().toLowerCase()).ifPresent(user -> {

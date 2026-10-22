@@ -33,4 +33,8 @@ cloudinary:
   api-key: 533927548543211
   api-secret: o5woUcDwz9F-3Qm78mNKL_lNSbI
 
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+
 

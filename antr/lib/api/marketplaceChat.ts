@@ -1,3 +1,5 @@
+import { apiUrl } from "@/lib/config/api";
+
 export interface MarketplaceMessage {
   id: number;
   senderProfileId: number;
@@ -33,14 +35,12 @@ export interface SendMarketplaceMessagePayload {
   content: string;
 }
 
-const BACKEND_BASE = "http://localhost:8080";
-
 export async function fetchMarketplaceConversation(
   myProfileId: number,
   otherProfileId: number
 ): Promise<MarketplaceMessage[]> {
   try {
-    const res = await fetch(`${BACKEND_BASE}/marketplace/messages/${myProfileId}/${otherProfileId}`, {
+    const res = await fetch(apiUrl(`/marketplace/messages/${myProfileId}/${otherProfileId}`), {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
@@ -55,7 +55,7 @@ export async function fetchMarketplaceConversation(
 
 export async function fetchMarketplaceThreads(profileId: number): Promise<MarketplaceThread[]> {
   try {
-    const res = await fetch(`${BACKEND_BASE}/marketplace/messages/threads/${profileId}`, {
+    const res = await fetch(apiUrl(`/marketplace/messages/threads/${profileId}`), {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
@@ -71,7 +71,7 @@ export async function fetchMarketplaceThreads(profileId: number): Promise<Market
 export async function sendMarketplaceMessage(
   payload: SendMarketplaceMessagePayload
 ): Promise<MarketplaceMessage> {
-  const res = await fetch(`${BACKEND_BASE}/marketplace/messages`, {
+  const res = await fetch(apiUrl("/marketplace/messages"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -94,7 +94,7 @@ export async function sendMarketplaceMessage(
 
 export async function fetchMarketplaceUnreadCount(profileId: number): Promise<number> {
   try {
-    const res = await fetch(`${BACKEND_BASE}/marketplace/messages/unread-count/${profileId}`, {
+    const res = await fetch(apiUrl(`/marketplace/messages/unread-count/${profileId}`), {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",

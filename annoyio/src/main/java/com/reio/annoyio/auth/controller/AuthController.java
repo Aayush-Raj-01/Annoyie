@@ -5,7 +5,6 @@ import com.reio.annoyio.auth.dto.*;
 import com.reio.annoyio.auth.service.AuthService;
 import org.springframework.web.bind.annotation.*;
 
-@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/auth")
 public class AuthController {

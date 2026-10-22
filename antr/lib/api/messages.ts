@@ -1,7 +1,6 @@
 import type { Message, DMConversation } from "@/types/chat";
 import { getAuthToken } from "@/app/lib/auth";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+import { apiUrl } from "@/lib/config/api";
 
 function extractSenderName(sender: any, fallbackEmail?: any): string {
   if (typeof sender === "string" && sender.trim()) {
@@ -89,7 +88,7 @@ export async function fetchMessages(roomId: number): Promise<Message[]> {
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}/messages/${roomId}`, {
+  const response = await fetch(apiUrl(`/messages/${roomId}`), {
     method: "GET",
     headers,
     cache: "no-store",
@@ -110,7 +109,7 @@ export async function fetchMessages(roomId: number): Promise<Message[]> {
 export async function fetchDmMessages(user1Id: number, user2Id: number): Promise<Message[]> {
   if (!user1Id || !user2Id) return [];
 
-  const response = await fetch(`${API_BASE_URL}/messages/dm/${user1Id}/${user2Id}`, {
+  const response = await fetch(apiUrl(`/messages/dm/${user1Id}/${user2Id}`), {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -140,8 +139,8 @@ export async function fetchDmConversations(userId?: number): Promise<DMConversat
   }
 
   const url = userId
-    ? `${API_BASE_URL}/messages/dm-conversations/${userId}`
-    : `${API_BASE_URL}/messages/dm-conversations`;
+    ? apiUrl(`/messages/dm-conversations/${userId}`)
+    : apiUrl("/messages/dm-conversations");
 
   try {
     const response = await fetch(url, {

@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import Navbar from "../components/navbar";
 import { getPendingEmail, getUserProfile, saveUserProfile, uploadAvatarImage, syncUserProfile } from "../lib/auth";
+import { apiUrl } from "@/lib/config/api";
 
 const GENDER_OPTIONS = [
   { label: "Male", icon: "♂" },
@@ -190,7 +191,7 @@ export default function OnboardingPage() {
 
       // Also notify backend if reachable
       try {
-        const res = await fetch("http://localhost:8080/auth/profile", {
+        const res = await fetch(apiUrl("/auth/profile"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

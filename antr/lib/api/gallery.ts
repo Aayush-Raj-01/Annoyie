@@ -1,3 +1,5 @@
+import { apiUrl } from "@/lib/config/api";
+
 export interface GalleryPost {
   id: number;
   mediaUrl: string;
@@ -10,11 +12,9 @@ export interface GalleryPost {
   uploaderTag?: string | null;
 }
 
-const BACKEND_BASE = "http://localhost:8080";
-
 export async function fetchRandomGalleryFeed(limit = 40): Promise<GalleryPost[]> {
   try {
-    const res = await fetch(`${BACKEND_BASE}/api/gallery?limit=${limit}&t=${Date.now()}`, {
+    const res = await fetch(apiUrl(`/api/gallery?limit=${limit}&t=${Date.now()}`), {
       method: "GET",
       headers: {
         "Cache-Control": "no-cache",
@@ -48,7 +48,7 @@ export async function uploadGalleryPhoto(
     formData.append("username", username.trim());
   }
 
-  const res = await fetch(`${BACKEND_BASE}/api/gallery/upload`, {
+  const res = await fetch(apiUrl("/api/gallery/upload"), {
     method: "POST",
     body: formData,
   });
@@ -77,7 +77,7 @@ export async function deleteGalleryPhoto(
   if (email) params.append("email", email);
   if (username) params.append("username", username);
 
-  const res = await fetch(`${BACKEND_BASE}/api/gallery/${id}?${params.toString()}`, {
+  const res = await fetch(apiUrl(`/api/gallery/${id}?${params.toString()}`), {
     method: "DELETE",
   });
   return res.ok;

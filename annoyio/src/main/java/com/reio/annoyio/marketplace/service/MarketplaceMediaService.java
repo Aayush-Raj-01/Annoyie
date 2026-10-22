@@ -82,7 +82,7 @@ public class MarketplaceMediaService {
                 Path targetPath = uploadDir.resolve(filename);
                 Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
 
-                mediaUrl = "http://localhost:8080/uploads/marketplace/" + filename;
+                mediaUrl = "/uploads/marketplace/" + filename;
             } catch (IOException e) {
                 throw new RuntimeException("Failed to save media file: " + e.getMessage(), e);
             }

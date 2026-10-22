@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/marketplace/profile")
-@CrossOrigin(origins = "*")
 public class MarketplaceProfileController {
 
     private final MarketplaceProfileService service;

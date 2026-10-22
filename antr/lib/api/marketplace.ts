@@ -1,3 +1,5 @@
+import { apiUrl } from "@/lib/config/api";
+
 export interface MarketplaceProfile {
   id: number;
   displayName: string;
@@ -52,7 +54,6 @@ export interface CreateMarketplaceListingPayload {
   roomNo: string;
 }
 
-const BACKEND_BASE = "http://localhost:8080";
 const MARKETPLACE_PROFILE_KEY = "annoyms_marketplace_profile";
 
 export function getCachedMarketplaceProfile(userId?: number): MarketplaceProfile | null {
@@ -116,7 +117,7 @@ export async function fetchMarketplaceProfile(userId: number): Promise<Marketpla
   const numUserId = Number(userId);
 
   try {
-    const res = await fetch(`${BACKEND_BASE}/marketplace/profile/${numUserId}`, {
+    const res = await fetch(apiUrl(`/marketplace/profile/${numUserId}`), {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -145,7 +146,7 @@ export async function fetchMarketplaceProfile(userId: number): Promise<Marketpla
 
 export async function fetchMarketplaceProfileById(profileId: number): Promise<MarketplaceProfile | null> {
   try {
-    const res = await fetch(`${BACKEND_BASE}/marketplace/profile/view/${profileId}`, {
+    const res = await fetch(apiUrl(`/marketplace/profile/view/${profileId}`), {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -168,7 +169,7 @@ export async function createMarketplaceProfile(
   payload: CreateMarketplaceProfilePayload
 ): Promise<MarketplaceProfile> {
   const numUserId = Number(userId);
-  const res = await fetch(`${BACKEND_BASE}/marketplace/profile/${numUserId}`, {
+  const res = await fetch(apiUrl(`/marketplace/profile/${numUserId}`), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -199,7 +200,7 @@ export async function updateMarketplaceProfile(
   payload: UpdateMarketplaceProfilePayload
 ): Promise<MarketplaceProfile> {
   const numUserId = Number(userId);
-  const res = await fetch(`${BACKEND_BASE}/marketplace/profile/${numUserId}`, {
+  const res = await fetch(apiUrl(`/marketplace/profile/${numUserId}`), {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -227,7 +228,7 @@ export async function updateMarketplaceProfile(
 
 export async function checkMarketplaceDisplayName(name: string): Promise<boolean> {
   try {
-    const res = await fetch(`${BACKEND_BASE}/marketplace/profile/check-name?name=${encodeURIComponent(name.trim())}`, {
+    const res = await fetch(apiUrl(`/marketplace/profile/check-name?name=${encodeURIComponent(name.trim())}`), {
       method: "GET",
     });
     if (!res.ok) return false;
@@ -241,7 +242,7 @@ export async function checkMarketplaceDisplayName(name: string): Promise<boolean
 
 export async function fetchMarketplaceListings(): Promise<MarketplaceListing[]> {
   try {
-    const res = await fetch(`${BACKEND_BASE}/marketplace/listings?t=${Date.now()}`, {
+    const res = await fetch(apiUrl(`/marketplace/listings?t=${Date.now()}`), {
       method: "GET",
       headers: {
         "Cache-Control": "no-cache",
@@ -259,7 +260,7 @@ export async function fetchMarketplaceListings(): Promise<MarketplaceListing[]> 
 
 export async function fetchUserMarketplaceListings(userId: number): Promise<MarketplaceListing[]> {
   try {
-    const res = await fetch(`${BACKEND_BASE}/marketplace/listings/user/${userId}?t=${Date.now()}`, {
+    const res = await fetch(apiUrl(`/marketplace/listings/user/${userId}?t=${Date.now()}`), {
       method: "GET",
       headers: {
         "Cache-Control": "no-cache",
@@ -277,7 +278,7 @@ export async function fetchUserMarketplaceListings(userId: number): Promise<Mark
 
 export async function fetchSellerMarketplaceListings(sellerProfileId: number): Promise<MarketplaceListing[]> {
   try {
-    const res = await fetch(`${BACKEND_BASE}/marketplace/listings/seller/${sellerProfileId}?t=${Date.now()}`, {
+    const res = await fetch(apiUrl(`/marketplace/listings/seller/${sellerProfileId}?t=${Date.now()}`), {
       method: "GET",
       headers: {
         "Cache-Control": "no-cache",
@@ -297,7 +298,7 @@ export async function createMarketplaceListing(
   userId: number,
   payload: CreateMarketplaceListingPayload
 ): Promise<MarketplaceListing> {
-  const res = await fetch(`${BACKEND_BASE}/marketplace/listings/${userId}`, {
+  const res = await fetch(apiUrl(`/marketplace/listings/${userId}`), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -332,8 +333,8 @@ export async function deleteMarketplaceListing(listingId: number, userId?: numbe
     }
 
     const url = userId
-      ? `${BACKEND_BASE}/marketplace/listings/${listingId}?userId=${userId}`
-      : `${BACKEND_BASE}/marketplace/listings/${listingId}`;
+      ? apiUrl(`/marketplace/listings/${listingId}?userId=${userId}`)
+      : apiUrl(`/marketplace/listings/${listingId}`);
     const res = await fetch(url, {
       method: "DELETE",
       headers,
@@ -353,7 +354,7 @@ export async function uploadMarketplaceMedia(file: File): Promise<{ url: string;
   const formData = new FormData();
   formData.append("file", file);
 
-  const res = await fetch(`${BACKEND_BASE}/marketplace/listings/upload-media`, {
+  const res = await fetch(apiUrl("/marketplace/listings/upload-media"), {
     method: "POST",
     body: formData,
   });

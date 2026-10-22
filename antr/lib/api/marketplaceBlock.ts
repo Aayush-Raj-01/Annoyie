@@ -1,6 +1,5 @@
 // API and Reactive State for Marketplace Blocking
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+import { apiUrl } from "@/lib/config/api";
 
 export interface MarketplaceBlockedProfile {
   blockId: number;
@@ -73,7 +72,7 @@ export async function fetchBlockedMarketplaceProfiles(
   profileId: number
 ): Promise<MarketplaceBlockedProfile[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/marketplace/blocks/${profileId}`);
+    const res = await fetch(apiUrl(`/marketplace/blocks/${profileId}`));
     if (!res.ok) {
       return getCachedBlockedProfiles(profileId);
     }
@@ -92,7 +91,7 @@ export async function checkMarketplaceBlockStatus(
 ): Promise<MarketplaceBlockStatus> {
   try {
     const res = await fetch(
-      `${API_BASE_URL}/marketplace/blocks/status/${myProfileId}/${targetProfileId}`
+      apiUrl(`/marketplace/blocks/status/${myProfileId}/${targetProfileId}`)
     );
     if (!res.ok) {
       // Fallback to checking local cache
@@ -114,7 +113,7 @@ export async function blockMarketplaceProfile(
   targetProfileId: number
 ): Promise<MarketplaceBlockedProfile> {
   const res = await fetch(
-    `${API_BASE_URL}/marketplace/blocks/${myProfileId}/${targetProfileId}`,
+    apiUrl(`/marketplace/blocks/${myProfileId}/${targetProfileId}`),
     {
       method: "POST",
     }
@@ -146,7 +145,7 @@ export async function unblockMarketplaceProfile(
   targetProfileId: number
 ): Promise<boolean> {
   const res = await fetch(
-    `${API_BASE_URL}/marketplace/blocks/${myProfileId}/${targetProfileId}`,
+    apiUrl(`/marketplace/blocks/${myProfileId}/${targetProfileId}`),
     {
       method: "DELETE",
     }

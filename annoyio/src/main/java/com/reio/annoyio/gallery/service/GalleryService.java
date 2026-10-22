@@ -97,7 +97,7 @@ public class GalleryService {
                 Path targetPath = uploadDir.resolve(filename);
                 Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
 
-                mediaUrl = "http://localhost:8080/uploads/gallery/" + filename;
+                mediaUrl = "/uploads/gallery/" + filename;
                 publicId = filename;
             } catch (IOException ioException) {
                 throw new RuntimeException("Failed to store gallery media: " + ioException.getMessage(), ioException);

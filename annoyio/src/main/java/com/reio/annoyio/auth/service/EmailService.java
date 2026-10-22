@@ -11,7 +11,8 @@ public class EmailService {
     public EmailService(JavaMailSender mailSender) {
         this.mailSender = mailSender;
     }
-    public void sendotp(String email, String otp){
+
+    public void sendotp(String email, String otp) {
         SimpleMailMessage message = new SimpleMailMessage();
 
         message.setFrom("dwx1110804@gmail.com");

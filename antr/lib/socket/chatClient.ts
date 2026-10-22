@@ -1,8 +1,7 @@
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import type { SendMessageDTO } from "@/types/chat";
-
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "http://localhost:8080/chat";
+import { apiUrl } from "@/lib/config/api";
 
 let stompClient: Client | null = null;
 let currentMessageCallback: ((msg: any) => void) | null = null;
@@ -59,7 +58,7 @@ export function connectSocket(
   }
 
   stompClient = new Client({
-    webSocketFactory: () => new SockJS(WS_URL),
+    webSocketFactory: () => new SockJS(apiUrl("/chat")),
     reconnectDelay: 3000,
     heartbeatIncoming: 4000,
     heartbeatOutgoing: 4000,
@@ -156,7 +155,7 @@ export async function sendMessage(payload: SendMessageDTO): Promise<void> {
 
   // Fallback to HTTP POST so messages are NEVER lost even when socket is reconnecting
   try {
-    const res = await fetch("http://localhost:8080/messages", {
+    const res = await fetch(apiUrl("/messages"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),

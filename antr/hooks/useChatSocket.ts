@@ -2,6 +2,7 @@
 
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
+import { apiUrl } from "@/lib/config/api";
 
 let client: Client | null = null;
 
@@ -17,7 +18,7 @@ export function connectSocket(onMessage: (message: ChatMessage) => void) {
   if (client?.active) return; // already connected
 
   client = new Client({
-    webSocketFactory: () => new SockJS("http://localhost:8080/chat"),
+    webSocketFactory: () => new SockJS(apiUrl("/chat")),
     reconnectDelay: 5000,
     onConnect: () => {
       console.log("[Socket] Connected to chat server");

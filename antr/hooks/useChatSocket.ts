@@ -3,6 +3,7 @@
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import { apiUrl } from "@/lib/config/api";
+import { getAuthToken, getUserProfile } from "@/app/lib/auth";
 
 let client: Client | null = null;
 
@@ -19,16 +20,24 @@ export function connectSocket(onMessage: (message: ChatMessage) => void) {
 
   client = new Client({
     webSocketFactory: () => new SockJS(apiUrl("/chat")),
+    connectHeaders: { Authorization: `Bearer ${getAuthToken()}` },
     reconnectDelay: 5000,
     onConnect: () => {
       console.log("[Socket] Connected to chat server");
-      client?.subscribe("/topic/messages", (frame) => {
+      const receiveMessage = (frame: any) => {
         try {
           onMessage(JSON.parse(frame.body));
         } catch {
           console.warn("[Socket] Failed to parse message:", frame.body);
         }
-      });
+      };
+      const roomIds = [1, 6, 7, 8];
+      const studentYear = getUserProfile()?.studentYear;
+      if (studentYear != null && studentYear >= 1 && studentYear <= 4) roomIds.push(studentYear + 1);
+      for (const roomId of roomIds) {
+        client?.subscribe(`/topic/room/${roomId}`, receiveMessage);
+      }
+      client?.subscribe("/user/queue/messages", receiveMessage);
     },
     onStompError: (frame) => {
       console.error("[Socket] STOMP error:", frame.headers["message"]);

@@ -15,6 +15,7 @@ import {
   UserProfile,
 } from "../lib/auth";
 import { apiUrl } from "@/lib/config/api";
+import { getAuthHeaders } from "@/app/lib/auth";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -80,7 +81,7 @@ export default function ProfilePage() {
       if (profile.email) {
         fetch(apiUrl("/auth/profile"), {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...getAuthHeaders() },
           body: JSON.stringify({
             email: profile.email,
             username: profile.anonymousName,
@@ -115,7 +116,7 @@ export default function ProfilePage() {
       if (profile.email) {
         await fetch(apiUrl("/auth/profile"), {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...getAuthHeaders() },
           body: JSON.stringify({
             email: profile.email,
             username: profile.anonymousName,

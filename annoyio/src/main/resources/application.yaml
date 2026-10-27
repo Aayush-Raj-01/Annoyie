@@ -1,22 +1,24 @@
+server:
+  port: ${PORT:8080}
 spring:
   servlet:
     multipart:
       max-file-size: 50MB
       max-request-size: 50MB
   datasource:
-    url: jdbc:postgresql://localhost:5432/annoyie
-    username: postgres
-    password: 123123@123AA
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/annoyie}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
 
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
+    show-sql: ${SPRING_JPA_SHOW_SQL:false}
   mail:
     host: smtp.gmail.com
-    port: 587
-    username: dwx1110804@gmail.com
-    password: xgjb zcpd vnhi itgp
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
 
     properties:
       mail:
@@ -25,15 +27,16 @@ spring:
           starttls:
             enable: true
 jwt:
-  secret: 8St7npi80n21m0nU060a8NU89123gIJf
+  secret: ${JWT_SECRET}
   expiration: 604800000
 
 cloudinary:
-  cloud-name: rkid98eu
-  api-key: 533927548543211
-  api-secret: o5woUcDwz9F-3Qm78mNKL_lNSbI
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:}
+  api-key: ${CLOUDINARY_API_KEY:}
+  api-secret: ${CLOUDINARY_API_SECRET:}
 
 app:
+  upload-dir: ${UPLOAD_DIR:uploads}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
 

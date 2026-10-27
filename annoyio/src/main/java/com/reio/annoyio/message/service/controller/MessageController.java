@@ -6,6 +6,7 @@ import com.reio.annoyio.auth.service.AuthService;
 import com.reio.annoyio.message.service.MessageService;
 import com.reio.annoyio.websocket.ChatMessage;
 import com.reio.annoyio.websocket.entity.Message;
+import com.reio.annoyio.security.CurrentUser;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,13 +17,13 @@ import java.util.List;
 public class MessageController {
 
     private final MessageService service;
-    private final SimpMessagingTemplate messagingTemplate;
     private final AuthService authService;
+    private final CurrentUser currentUser;
 
-    public MessageController(MessageService service, SimpMessagingTemplate messagingTemplate, AuthService authService){
+    public MessageController(MessageService service, AuthService authService, CurrentUser currentUser){
         this.service = service;
-        this.messagingTemplate = messagingTemplate;
         this.authService = authService;
+        this.currentUser = currentUser;
     }
 
     @GetMapping("/{roomId}")
@@ -51,12 +52,14 @@ public class MessageController {
 
     @PostMapping
     public ChatMessage sendMessage(@RequestBody ChatMessage message) {
-        ChatMessage saved = service.save(message);
-        try {
-            messagingTemplate.convertAndSend("/topic/messages", saved);
-        } catch (Exception ignored) {
-        }
-        return saved;
+        var user = currentUser.get();
+        message.setSenderId(user.getId());
+        message.setSenderEmail(user.getEmail());
+        message.setSender(user.getUsername());
+        message.setTag(user.getTag());
+        message.setAvatarUrl(user.getAvatarUrl());
+        message.setStudentYear(user.getStudentYear());
+        return service.save(message);
     }
 
     @GetMapping("/dm/{user1Id}/{user2Id}")
@@ -64,6 +67,10 @@ public class MessageController {
             @PathVariable Long user1Id,
             @PathVariable Long user2Id
     ) {
+        Long myId = currentUser.get().getId();
+        if (!myId.equals(user1Id) && !myId.equals(user2Id)) {
+            throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
+        }
         return service.getConversation(
                 user1Id,
                 user2Id
@@ -74,6 +81,7 @@ public class MessageController {
     public List<com.reio.annoyio.message.dto.DMConversationResponse> getDmConversations(
             @PathVariable Long userId
     ) {
+        currentUser.requireUserId(userId);
         return service.getDmConversations(userId);
     }
 

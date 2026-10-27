@@ -13,12 +13,15 @@ import java.util.Arrays;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
+    @Value("${app.upload-dir:uploads}")
+    private String uploadDirectory;
+
     @Value("${app.cors.allowed-origins:http://localhost:3000}")
     private String allowedOrigins;
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        Path uploadDir = Paths.get("uploads");
+        Path uploadDir = Paths.get(uploadDirectory);
         String uploadPath = uploadDir.toFile().getAbsolutePath();
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:" + uploadPath + "/");

@@ -1,5 +1,5 @@
 import type { Message, DMConversation } from "@/types/chat";
-import { getAuthToken } from "@/app/lib/auth";
+import { getAuthHeaders, getAuthToken } from "@/app/lib/auth";
 import { apiUrl } from "@/lib/config/api";
 
 function extractSenderName(sender: any, fallbackEmail?: any): string {
@@ -113,6 +113,7 @@ export async function fetchDmMessages(user1Id: number, user2Id: number): Promise
     method: "GET",
     headers: {
       "Content-Type": "application/json",
+      ...getAuthHeaders(),
     },
     cache: "no-store",
   });

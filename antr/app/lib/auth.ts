@@ -55,6 +55,11 @@ export function getAuthToken(): string {
   );
 }
 
+export function getAuthHeaders(): Record<string, string> {
+  const token = getAuthToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export function syncTokenCookie(): void {
   if (typeof window === "undefined" || typeof document === "undefined") return;
   const token = getAuthToken();
@@ -210,6 +215,7 @@ export async function uploadAvatarImage(file: File, email?: string): Promise<str
 
   const res = await fetch(apiUrl("/auth/upload-avatar"), {
     method: "POST",
+    headers: getAuthHeaders(),
     body: formData,
   });
 

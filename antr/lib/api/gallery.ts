@@ -1,4 +1,5 @@
 import { apiUrl } from "@/lib/config/api";
+import { getAuthHeaders } from "@/app/lib/auth";
 
 export interface GalleryPost {
   id: number;
@@ -50,6 +51,7 @@ export async function uploadGalleryPhoto(
 
   const res = await fetch(apiUrl("/api/gallery/upload"), {
     method: "POST",
+    headers: getAuthHeaders(),
     body: formData,
   });
 
@@ -79,6 +81,7 @@ export async function deleteGalleryPhoto(
 
   const res = await fetch(apiUrl(`/api/gallery/${id}?${params.toString()}`), {
     method: "DELETE",
+    headers: getAuthHeaders(),
   });
   return res.ok;
 }

@@ -6,6 +6,7 @@ import com.reio.annoyio.user.entity.User;
 import com.reio.annoyio.user.repository.UserRepository;
 import jakarta.validation.constraints.Email;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -21,6 +22,8 @@ public class AuthService {
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final MessageRepository messageRepository;
+    @Value("${app.upload-dir:uploads}")
+    private String uploadDirectory;
 
     public AuthService(UserRepository userRepository, EmailService emailService, JwtService jwtService, PasswordEncoder passwordEncoder, MessageRepository messageRepository) {
         this.userRepository = userRepository;
@@ -72,7 +75,7 @@ public class AuthService {
         emailService.sendotp(cleanEmail, otp);
     }
 
-    public void verifyOtp(VerifyOtpRequest request){
+    public LoginResponse verifyOtp(VerifyOtpRequest request){
         if (request.email() == null || request.email().isBlank()) {
             throw new RuntimeException("Email is required");
         }
@@ -91,6 +94,7 @@ public class AuthService {
         user.setOtp(null);
         user.setOtpExpiry(null);
         userRepository.save(user);
+        return new LoginResponse(jwtService.generateToken(user.getEmail()));
     }
 
     public UserResponse updateProfile(ProfileRequest request){
@@ -244,7 +248,7 @@ public class AuthService {
             }
 
             String filename = java.util.UUID.randomUUID().toString() + ext;
-            java.nio.file.Path uploadDir = java.nio.file.Paths.get("uploads", "avatars");
+            java.nio.file.Path uploadDir = java.nio.file.Paths.get(uploadDirectory, "avatars");
             if (!java.nio.file.Files.exists(uploadDir)) {
                 java.nio.file.Files.createDirectories(uploadDir);
             }

@@ -7,6 +7,7 @@ import com.reio.annoyio.gallery.repository.GalleryRepository;
 import com.reio.annoyio.user.entity.User;
 import com.reio.annoyio.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,6 +26,8 @@ public class GalleryService {
     private final GalleryRepository galleryRepository;
     private final UserRepository userRepository;
     private final Cloudinary cloudinary;
+    @Value("${app.upload-dir:uploads}")
+    private String uploadDirectory;
 
     @Autowired
     public GalleryService(GalleryRepository galleryRepository,
@@ -89,7 +92,7 @@ public class GalleryService {
                 }
 
                 String filename = UUID.randomUUID().toString() + ext;
-                Path uploadDir = Paths.get("uploads", "gallery");
+                Path uploadDir = Paths.get(uploadDirectory, "gallery");
                 if (!Files.exists(uploadDir)) {
                     Files.createDirectories(uploadDir);
                 }
@@ -150,12 +153,13 @@ public class GalleryService {
 
         GalleryPost post = optionalPost.get();
         // If post has an uploader, check ownership
-        if (post.getUploadedBy() != null) {
-            boolean matchesEmail = email != null && email.equalsIgnoreCase(post.getUploadedBy().getEmail());
-            boolean matchesUsername = username != null && username.equalsIgnoreCase(post.getUploadedBy().getUsername());
-            if (!matchesEmail && !matchesUsername) {
-                throw new RuntimeException("You are not authorized to delete this photo");
-            }
+        if (post.getUploadedBy() == null) {
+            throw new RuntimeException("This photo has no owner and cannot be deleted");
+        }
+        boolean matchesEmail = email != null && email.equalsIgnoreCase(post.getUploadedBy().getEmail());
+        boolean matchesUsername = username != null && username.equalsIgnoreCase(post.getUploadedBy().getUsername());
+        if (!matchesEmail && !matchesUsername) {
+            throw new RuntimeException("You are not authorized to delete this photo");
         }
 
         galleryRepository.delete(post);

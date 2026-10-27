@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import Navbar from "../components/navbar";
-import { getPendingEmail, getUserProfile, saveUserProfile, uploadAvatarImage, syncUserProfile } from "../lib/auth";
+import { getAuthHeaders, getPendingEmail, getUserProfile, saveUserProfile, uploadAvatarImage, syncUserProfile } from "../lib/auth";
 import { apiUrl } from "@/lib/config/api";
 
 const GENDER_OPTIONS = [
@@ -193,7 +193,7 @@ export default function OnboardingPage() {
       try {
         const res = await fetch(apiUrl("/auth/profile"), {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...getAuthHeaders() },
           body: JSON.stringify({
             email,
             username: anonymousName.trim(),

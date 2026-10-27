@@ -3,6 +3,7 @@ package com.reio.annoyio.marketplace.controller;
 import com.reio.annoyio.marketplace.dto.MarketplaceBlockStatusResponse;
 import com.reio.annoyio.marketplace.dto.MarketplaceBlockedProfileResponse;
 import com.reio.annoyio.marketplace.service.MarketplaceBlockService;
+import com.reio.annoyio.security.CurrentUser;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,9 +15,11 @@ import java.util.Map;
 public class MarketplaceBlockController {
 
     private final MarketplaceBlockService blockService;
+    private final CurrentUser currentUser;
 
-    public MarketplaceBlockController(MarketplaceBlockService blockService) {
+    public MarketplaceBlockController(MarketplaceBlockService blockService, CurrentUser currentUser) {
         this.blockService = blockService;
+        this.currentUser = currentUser;
     }
 
     @PostMapping("/{blockerProfileId}/{targetProfileId}")
@@ -24,6 +27,7 @@ public class MarketplaceBlockController {
             @PathVariable Long blockerProfileId,
             @PathVariable Long targetProfileId
     ) {
+        currentUser.requireMarketplaceProfileId(blockerProfileId);
         try {
             MarketplaceBlockedProfileResponse res = blockService.blockProfile(blockerProfileId, targetProfileId);
             return ResponseEntity.ok(res);
@@ -39,6 +43,7 @@ public class MarketplaceBlockController {
             @PathVariable Long blockerProfileId,
             @PathVariable Long targetProfileId
     ) {
+        currentUser.requireMarketplaceProfileId(blockerProfileId);
         try {
             blockService.unblockProfile(blockerProfileId, targetProfileId);
             return ResponseEntity.ok(Map.of("success", true, "message", "Profile unblocked successfully"));
@@ -49,6 +54,7 @@ public class MarketplaceBlockController {
 
     @GetMapping("/{profileId}")
     public ResponseEntity<List<MarketplaceBlockedProfileResponse>> getBlockedProfiles(@PathVariable Long profileId) {
+        currentUser.requireMarketplaceProfileId(profileId);
         return ResponseEntity.ok(blockService.getBlockedProfiles(profileId));
     }
 
@@ -57,6 +63,7 @@ public class MarketplaceBlockController {
             @PathVariable Long myProfileId,
             @PathVariable Long targetProfileId
     ) {
+        currentUser.requireMarketplaceProfileId(myProfileId);
         return ResponseEntity.ok(blockService.getBlockStatus(myProfileId, targetProfileId));
     }
 
@@ -66,6 +73,7 @@ public class MarketplaceBlockController {
             @PathVariable Long userId,
             @PathVariable Long targetProfileId
     ) {
+        currentUser.requireUserId(userId);
         try {
             MarketplaceBlockedProfileResponse res = blockService.blockByUserId(userId, targetProfileId);
             return ResponseEntity.ok(res);
@@ -81,6 +89,7 @@ public class MarketplaceBlockController {
             @PathVariable Long userId,
             @PathVariable Long targetProfileId
     ) {
+        currentUser.requireUserId(userId);
         try {
             blockService.unblockByUserId(userId, targetProfileId);
             return ResponseEntity.ok(Map.of("success", true, "message", "Profile unblocked successfully"));
@@ -91,6 +100,7 @@ public class MarketplaceBlockController {
 
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<MarketplaceBlockedProfileResponse>> getBlockedProfilesByUserId(@PathVariable Long userId) {
+        currentUser.requireUserId(userId);
         return ResponseEntity.ok(blockService.getBlockedProfilesByUserId(userId));
     }
 
@@ -99,6 +109,7 @@ public class MarketplaceBlockController {
             @PathVariable Long userId,
             @PathVariable Long targetProfileId
     ) {
+        currentUser.requireUserId(userId);
         return ResponseEntity.ok(blockService.getBlockStatusByUserId(userId, targetProfileId));
     }
 }

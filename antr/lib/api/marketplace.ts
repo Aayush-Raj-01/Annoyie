@@ -1,4 +1,5 @@
 import { apiUrl } from "@/lib/config/api";
+import { getAuthHeaders } from "@/app/lib/auth";
 
 export interface MarketplaceProfile {
   id: number;
@@ -121,6 +122,7 @@ export async function fetchMarketplaceProfile(userId: number): Promise<Marketpla
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        ...getAuthHeaders(),
       },
     });
 
@@ -173,6 +175,7 @@ export async function createMarketplaceProfile(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...getAuthHeaders(),
     },
     body: JSON.stringify(payload),
   });
@@ -204,6 +207,7 @@ export async function updateMarketplaceProfile(
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
+      ...getAuthHeaders(),
     },
     body: JSON.stringify(payload),
   });
@@ -302,6 +306,7 @@ export async function createMarketplaceListing(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...getAuthHeaders(),
     },
     body: JSON.stringify(payload),
   });
@@ -323,14 +328,7 @@ export async function createMarketplaceListing(
 
 export async function deleteMarketplaceListing(listingId: number, userId?: number | null): Promise<boolean> {
   try {
-    let token = "";
-    if (typeof window !== "undefined") {
-      token = localStorage.getItem("annoyms_token") || localStorage.getItem("annoyms_auth_token") || "";
-    }
-    const headers: Record<string, string> = {};
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
+    const headers = getAuthHeaders();
 
     const url = userId
       ? apiUrl(`/marketplace/listings/${listingId}?userId=${userId}`)
@@ -356,6 +354,7 @@ export async function uploadMarketplaceMedia(file: File): Promise<{ url: string;
 
   const res = await fetch(apiUrl("/marketplace/listings/upload-media"), {
     method: "POST",
+    headers: getAuthHeaders(),
     body: formData,
   });
 

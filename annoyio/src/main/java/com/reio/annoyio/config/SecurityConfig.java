@@ -3,9 +3,12 @@ package com.reio.annoyio.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
+import com.reio.annoyio.security.JwtAuthenticationFilter;
+import com.reio.annoyio.security.JwtService;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -21,14 +24,21 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(
-            HttpSecurity http) throws Exception {
+            HttpSecurity http, JwtService jwtService) throws Exception {
 
         http
-                .cors(Customizer.withDefaults())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll())
-                .formLogin(form -> form.disable());
+                        .requestMatchers("/auth/register", "/auth/verify", "/auth/login", "/chat/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET,
+                                "/api/users/**", "/api/gallery/**", "/marketplace/listings/**",
+                                "/marketplace/profile/view/**", "/marketplace/profile/check-name").permitAll()
+                        .anyRequest().authenticated())
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable())
+                .addFilterBefore(new JwtAuthenticationFilter(jwtService), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

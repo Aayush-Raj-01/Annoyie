@@ -2,6 +2,7 @@ package com.reio.annoyio.gallery.controller;
 
 import com.reio.annoyio.gallery.dto.GalleryPostResponse;
 import com.reio.annoyio.gallery.service.GalleryService;
+import com.reio.annoyio.security.CurrentUser;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -17,10 +18,12 @@ public class GalleryController {
 
     private final GalleryService galleryService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final CurrentUser currentUser;
 
-    public GalleryController(GalleryService galleryService, SimpMessagingTemplate messagingTemplate) {
+    public GalleryController(GalleryService galleryService, SimpMessagingTemplate messagingTemplate, CurrentUser currentUser) {
         this.galleryService = galleryService;
         this.messagingTemplate = messagingTemplate;
+        this.currentUser = currentUser;
     }
 
     /**
@@ -51,7 +54,8 @@ public class GalleryController {
             @RequestParam(value = "email", required = false) String email,
             @RequestParam(value = "username", required = false) String username
     ) {
-        GalleryPostResponse response = galleryService.uploadPost(file, caption, email, username);
+        var user = currentUser.get();
+        GalleryPostResponse response = galleryService.uploadPost(file, caption, user.getEmail(), user.getUsername());
         try {
             messagingTemplate.convertAndSend("/topic/gallery", response);
         } catch (Exception ex) {
@@ -69,6 +73,9 @@ public class GalleryController {
             @RequestParam(value = "email", required = false) String email,
             @RequestParam(value = "username", required = false) String username
     ) {
+        var user = currentUser.get();
+        email = user.getEmail();
+        username = user.getUsername();
         boolean deleted = galleryService.deletePost(id, email, username);
         if (deleted) {
             try {

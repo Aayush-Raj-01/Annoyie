@@ -1,4 +1,5 @@
 import { apiUrl } from "@/lib/config/api";
+import { getAuthHeaders } from "@/app/lib/auth";
 
 export interface MarketplaceMessage {
   id: number;
@@ -42,7 +43,7 @@ export async function fetchMarketplaceConversation(
   try {
     const res = await fetch(apiUrl(`/marketplace/messages/${myProfileId}/${otherProfileId}`), {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
       cache: "no-store",
     });
     if (!res.ok) return [];
@@ -57,7 +58,7 @@ export async function fetchMarketplaceThreads(profileId: number): Promise<Market
   try {
     const res = await fetch(apiUrl(`/marketplace/messages/threads/${profileId}`), {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
       cache: "no-store",
     });
     if (!res.ok) return [];
@@ -73,7 +74,7 @@ export async function sendMarketplaceMessage(
 ): Promise<MarketplaceMessage> {
   const res = await fetch(apiUrl("/marketplace/messages"), {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
     body: JSON.stringify(payload),
   });
 
@@ -96,7 +97,7 @@ export async function fetchMarketplaceUnreadCount(profileId: number): Promise<nu
   try {
     const res = await fetch(apiUrl(`/marketplace/messages/unread-count/${profileId}`), {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
       cache: "no-store",
     });
     if (!res.ok) return 0;

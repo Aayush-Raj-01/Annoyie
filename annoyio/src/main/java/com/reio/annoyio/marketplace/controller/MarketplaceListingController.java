@@ -1,9 +1,9 @@
 package com.reio.annoyio.marketplace.controller;
 
-import com.reio.annoyio.auth.service.AuthService;
 import com.reio.annoyio.marketplace.dto.CreateMarketplaceListingRequest;
 import com.reio.annoyio.marketplace.service.MarketplaceListingService;
 import com.reio.annoyio.marketplace.service.MarketplaceMediaService;
+import com.reio.annoyio.security.CurrentUser;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,20 +17,21 @@ public class MarketplaceListingController {
 
     private final MarketplaceListingService service;
     private final MarketplaceMediaService mediaService;
-    private final AuthService authService;
+    private final CurrentUser currentUser;
 
     public MarketplaceListingController(
             MarketplaceListingService service,
             MarketplaceMediaService mediaService,
-            AuthService authService
+            CurrentUser currentUser
     ) {
         this.service = service;
         this.mediaService = mediaService;
-        this.authService = authService;
+        this.currentUser = currentUser;
     }
 
     @PostMapping(value = "/upload-media", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadMedia(@RequestParam("file") MultipartFile file) {
+        currentUser.get();
         try {
             return ResponseEntity.ok(mediaService.uploadMedia(file));
         } catch (IllegalArgumentException e) {
@@ -45,6 +46,7 @@ public class MarketplaceListingController {
             @PathVariable Long userId,
             @RequestBody CreateMarketplaceListingRequest request
     ) {
+        currentUser.requireUserId(userId);
         try {
             return ResponseEntity.ok(service.createListing(userId, request));
         } catch (IllegalArgumentException e) {
@@ -84,22 +86,10 @@ public class MarketplaceListingController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteListing(
-            @PathVariable Long id,
-            @RequestParam(required = false) Long userId,
-            @RequestHeader(value = "Authorization", required = false) String authHeader
+            @PathVariable Long id
     ) {
+        Long resolvedUserId = currentUser.get().getId();
         try {
-            Long resolvedUserId = userId;
-            if (resolvedUserId == null && authHeader != null && authHeader.startsWith("Bearer ")) {
-                try {
-                    String token = authHeader.replace("Bearer ", "").trim();
-                    var me = authService.me(token);
-                    if (me != null) {
-                        resolvedUserId = me.id();
-                    }
-                } catch (Exception ignored) {
-                }
-            }
             service.deleteListing(id, resolvedUserId);
             return ResponseEntity.ok(Map.of("message", "Listing deleted successfully", "id", id));
         } catch (RuntimeException e) {

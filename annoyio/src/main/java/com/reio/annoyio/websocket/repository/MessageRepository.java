@@ -12,6 +12,8 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     List<Message> findByRoomIdOrderByCreatedAt(
             Long roomId
     );
+
+    List<Message> findByRoomIdAndReceiverIsNullOrderByCreatedAt(Long roomId);
     @Query("""
 SELECT m
 FROM Message m

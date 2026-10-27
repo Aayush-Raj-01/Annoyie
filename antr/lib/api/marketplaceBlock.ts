@@ -1,5 +1,6 @@
 // API and Reactive State for Marketplace Blocking
 import { apiUrl } from "@/lib/config/api";
+import { getAuthHeaders } from "@/app/lib/auth";
 
 export interface MarketplaceBlockedProfile {
   blockId: number;
@@ -72,7 +73,7 @@ export async function fetchBlockedMarketplaceProfiles(
   profileId: number
 ): Promise<MarketplaceBlockedProfile[]> {
   try {
-    const res = await fetch(apiUrl(`/marketplace/blocks/${profileId}`));
+    const res = await fetch(apiUrl(`/marketplace/blocks/${profileId}`), { headers: getAuthHeaders() });
     if (!res.ok) {
       return getCachedBlockedProfiles(profileId);
     }
@@ -91,7 +92,8 @@ export async function checkMarketplaceBlockStatus(
 ): Promise<MarketplaceBlockStatus> {
   try {
     const res = await fetch(
-      apiUrl(`/marketplace/blocks/status/${myProfileId}/${targetProfileId}`)
+      apiUrl(`/marketplace/blocks/status/${myProfileId}/${targetProfileId}`),
+      { headers: getAuthHeaders() }
     );
     if (!res.ok) {
       // Fallback to checking local cache
@@ -116,6 +118,7 @@ export async function blockMarketplaceProfile(
     apiUrl(`/marketplace/blocks/${myProfileId}/${targetProfileId}`),
     {
       method: "POST",
+      headers: getAuthHeaders(),
     }
   );
 
@@ -148,6 +151,7 @@ export async function unblockMarketplaceProfile(
     apiUrl(`/marketplace/blocks/${myProfileId}/${targetProfileId}`),
     {
       method: "DELETE",
+      headers: getAuthHeaders(),
     }
   );
 

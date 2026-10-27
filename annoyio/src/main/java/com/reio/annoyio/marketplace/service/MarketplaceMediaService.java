@@ -2,6 +2,7 @@ package com.reio.annoyio.marketplace.service;
 
 import com.cloudinary.Cloudinary;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,6 +19,8 @@ import java.util.UUID;
 public class MarketplaceMediaService {
 
     private final Cloudinary cloudinary;
+    @Value("${app.upload-dir:uploads}")
+    private String uploadDirectory;
 
     @Autowired
     public MarketplaceMediaService(@Autowired(required = false) Cloudinary cloudinary) {
@@ -74,7 +77,7 @@ public class MarketplaceMediaService {
                 }
 
                 String filename = UUID.randomUUID().toString() + ext;
-                Path uploadDir = Paths.get("uploads", "marketplace");
+                Path uploadDir = Paths.get(uploadDirectory, "marketplace");
                 if (!Files.exists(uploadDir)) {
                     Files.createDirectories(uploadDir);
                 }

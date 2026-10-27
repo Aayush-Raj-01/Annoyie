@@ -213,7 +213,9 @@ export default function AuthenticationPage() {
       }
       
       // Wipe any lingering previous session to prevent avatar / profile bleed
+      const { token } = await res.json();
       clearUserProfile();
+      setAuthToken(token);
       setPendingEmail(cleanEmail);
       setSuccess("Email Verified Yep !!!");
 

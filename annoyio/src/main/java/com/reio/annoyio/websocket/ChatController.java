@@ -2,7 +2,6 @@ package com.reio.annoyio.websocket;
 
 import com.reio.annoyio.message.service.MessageService;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
 
 @Controller
@@ -14,8 +13,10 @@ public class ChatController {
         this.messageService = messageService;
     }
     @MessageMapping("/sendMessage")
-    @SendTo("/topic/messages")
-    public ChatMessage sendMessage(ChatMessage message) {
+    public ChatMessage sendMessage(ChatMessage message, java.security.Principal principal) {
+        message.setSenderEmail(principal.getName());
+        message.setSenderId(null);
+        message.setSender(null);
         return messageService.save(message);
     }
 }

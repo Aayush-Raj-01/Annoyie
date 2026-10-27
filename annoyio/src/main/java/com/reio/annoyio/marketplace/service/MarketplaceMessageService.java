@@ -73,10 +73,14 @@ public class MarketplaceMessageService {
         MarketplaceMessage saved = messageRepository.save(message);
         MarketplaceMessageResponse response = mapToResponse(saved);
 
-        // Broadcast to WebSocket broker for live updates
+        // Private messages are only sent to the two authenticated participants.
         try {
-            messagingTemplate.convertAndSend("/topic/marketplace-messages", response);
-            messagingTemplate.convertAndSend("/topic/marketplace-messages/" + receiver.getId(), response);
+            if (sender.getUser() != null) {
+                messagingTemplate.convertAndSendToUser(sender.getUser().getEmail(), "/queue/marketplace-messages", response);
+            }
+            if (receiver.getUser() != null) {
+                messagingTemplate.convertAndSendToUser(receiver.getUser().getEmail(), "/queue/marketplace-messages", response);
+            }
         } catch (Exception ignored) {
         }
 

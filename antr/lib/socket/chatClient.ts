@@ -2,6 +2,7 @@ import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import type { SendMessageDTO } from "@/types/chat";
 import { apiUrl } from "@/lib/config/api";
+import { getAuthToken, getUserProfile } from "@/app/lib/auth";
 
 let stompClient: Client | null = null;
 let currentMessageCallback: ((msg: any) => void) | null = null;
@@ -12,7 +13,8 @@ type GalleryDeleteCallback = (deleteInfo: { id: number }) => void;
 
 const galleryCallbacks: Set<GalleryCallback> = new Set();
 const galleryDeleteCallbacks: Set<GalleryDeleteCallback> = new Set();
-let messagesSubscription: any = null;
+let roomSubscriptions: any[] = [];
+let dmMessagesSubscription: any = null;
 let gallerySubscription: any = null;
 let galleryDeleteSubscription: any = null;
 
@@ -59,6 +61,7 @@ export function connectSocket(
 
   stompClient = new Client({
     webSocketFactory: () => new SockJS(apiUrl("/chat")),
+    connectHeaders: { Authorization: `Bearer ${getAuthToken()}` },
     reconnectDelay: 3000,
     heartbeatIncoming: 4000,
     heartbeatOutgoing: 4000,
@@ -68,8 +71,12 @@ export function connectSocket(
       currentStatusCallback?.(true, false);
 
       // Clean up previous subscriptions if any before re-subscribing
-      if (messagesSubscription) {
-        try { messagesSubscription.unsubscribe(); } catch {}
+      roomSubscriptions.forEach((subscription) => {
+        try { subscription.unsubscribe(); } catch {}
+      });
+      roomSubscriptions = [];
+      if (dmMessagesSubscription) {
+        try { dmMessagesSubscription.unsubscribe(); } catch {}
       }
       if (gallerySubscription) {
         try { gallerySubscription.unsubscribe(); } catch {}
@@ -78,18 +85,23 @@ export function connectSocket(
         try { galleryDeleteSubscription.unsubscribe(); } catch {}
       }
 
-      // Subscribe to global chat messages topic
-      messagesSubscription = stompClient?.subscribe("/topic/messages", (messageFrame) => {
+      const receiveMessage = (messageFrame: any) => {
         try {
           const payload = JSON.parse(messageFrame.body);
-          console.log("[STOMP] Incoming message:", payload);
           if (currentMessageCallback) {
             currentMessageCallback(payload);
           }
         } catch (err) {
           console.error("[STOMP] Failed to parse message frame:", err);
         }
-      });
+      };
+      const roomIds = [1, 6, 7, 8];
+      const studentYear = getUserProfile()?.studentYear;
+      if (studentYear != null && studentYear >= 1 && studentYear <= 4) roomIds.push(studentYear + 1);
+      roomSubscriptions = roomIds
+        .map((roomId) => stompClient?.subscribe(`/topic/room/${roomId}`, receiveMessage))
+        .filter(Boolean);
+      dmMessagesSubscription = stompClient?.subscribe("/user/queue/messages", receiveMessage);
 
       // Subscribe to real-time gallery upload topic
       gallerySubscription = stompClient?.subscribe("/topic/gallery", (frame) => {
@@ -157,7 +169,7 @@ export async function sendMessage(payload: SendMessageDTO): Promise<void> {
   try {
     const res = await fetch(apiUrl("/messages"), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${getAuthToken()}` },
       body: JSON.stringify(payload),
     });
 

@@ -8,6 +8,7 @@ import com.reio.annoyio.websocket.entity.ChatRoom;
 import com.reio.annoyio.websocket.entity.Message;
 import com.reio.annoyio.websocket.repository.ChatRoomRepository;
 import com.reio.annoyio.websocket.repository.MessageRepository;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import com.reio.annoyio.message.dto.DMConversationResponse;
@@ -20,12 +21,14 @@ public class MessageService {
     private final MessageRepository repository;
     private final ChatRoomRepository roomRepository;
     private final UserRepository userRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     public MessageService(MessageRepository repository, ChatRoomRepository roomRepository,
-                          UserRepository userRepository) {
+                          UserRepository userRepository, SimpMessagingTemplate messagingTemplate) {
         this.repository = repository;
         this.roomRepository = roomRepository;
         this.userRepository = userRepository;
+        this.messagingTemplate = messagingTemplate;
     }
 
     public ChatMessage save(ChatMessage dto) {
@@ -93,6 +96,7 @@ public class MessageService {
 
         if(dto.getReceiverId() != null){
             receiverUser = userRepository.findById(dto.getReceiverId()).orElse(null);
+            if (receiverUser == null) throw new IllegalArgumentException("Recipient not found");
             if (senderUser != null && receiverUser != null && senderUser.getId().equals(receiverUser.getId())) {
                 throw new IllegalArgumentException("Cannot send direct message to yourself");
             }
@@ -158,6 +162,13 @@ public class MessageService {
         dto.setAvatarUrl(avatarUrl);
         dto.setStudentYear(senderUser.getStudentYear() != null ? senderUser.getStudentYear() : studentYear);
 
+        if (receiverUser == null) {
+            messagingTemplate.convertAndSend("/topic/room/" + roomId, dto);
+        } else {
+            messagingTemplate.convertAndSendToUser(senderUser.getEmail(), "/queue/messages", dto);
+            messagingTemplate.convertAndSendToUser(receiverUser.getEmail(), "/queue/messages", dto);
+        }
+
         return dto;
     }
 
@@ -207,7 +218,7 @@ public class MessageService {
     }
 
     public List<Message> getMessages(Long roomId) {
-        return repository.findByRoomIdOrderByCreatedAt(roomId);
+        return repository.findByRoomIdAndReceiverIsNullOrderByCreatedAt(roomId);
     }
 
     public List<Message> getConversation(

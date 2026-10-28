@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import AuthGuard from "@/components/auth/AuthGuard";
+import AppNotificationBanner from "@/components/chat/ChatNotificationBanner";
 
 export const viewport: Viewport = {
   themeColor: "#121316",
@@ -124,6 +125,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-full flex flex-col bg-[#050505] text-zinc-100">
+        <AppNotificationBanner />
         <AuthGuard>{children}</AuthGuard>
       </body>
     </html>

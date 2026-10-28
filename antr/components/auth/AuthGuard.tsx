@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { isUserLoggedIn, getPendingEmail, syncTokenCookie, getUserProfile, getAuthToken } from "@/app/lib/auth";
 import { connectSocket } from "@/lib/socket/chatClient";
 import { apiUrl } from "@/lib/config/api";
+import { requestNotificationPermission } from "@/lib/notifications/chatNotifier";
 
 import LoadingAnimation from "@/components/ui/LoadingAnimation";
 
@@ -139,6 +140,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
     // Connect socket so backend registers this session
     connectSocket();
+
+    // Request browser notification permission site-wide (once user is logged in)
+    requestNotificationPermission().catch(() => {});
 
     const pingHeartbeat = () => {
       const token = getAuthToken();

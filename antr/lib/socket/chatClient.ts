@@ -3,6 +3,11 @@ import SockJS from "sockjs-client";
 import type { SendMessageDTO } from "@/types/chat";
 import { apiUrl } from "@/lib/config/api";
 import { getAuthToken, getUserProfile } from "@/app/lib/auth";
+import {
+  triggerInAppNotification,
+  playNotificationSound,
+  showDesktopNotification,
+} from "@/lib/notifications/chatNotifier";
 
 let stompClient: Client | null = null;
 let currentMessageCallback: ((msg: any) => void) | null = null;

@@ -1,4 +1,4 @@
-// Chat notification audio synthesizer & browser notification helper
+﻿// Chat notification audio synthesizer & browser notification helper
 
 let audioCtx: AudioContext | null = null;
 
@@ -120,7 +120,7 @@ export function showDesktopNotification(
 
 export interface InAppNotification {
   id: string;
-  type: "dm" | "group_tag";
+  type: "dm" | "group_tag" | "marketplace_new" | "gallery_new" | "message_room";
   senderName: string;
   senderAvatar?: string;
   roomName?: string;
@@ -128,6 +128,11 @@ export interface InAppNotification {
   senderId?: number;
   content: string;
   createdAt: number;
+  /** Marketplace / gallery extras */
+  imageUrl?: string;
+  listingTitle?: string;
+  listingPrice?: number;
+  actionUrl?: string;
 }
 
 type NotificationListener = (notif: InAppNotification) => void;

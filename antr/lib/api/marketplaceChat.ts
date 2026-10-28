@@ -41,7 +41,7 @@ export async function fetchMarketplaceConversation(
   otherProfileId: number
 ): Promise<MarketplaceMessage[]> {
   try {
-    const res = await fetch(apiUrl(`/marketplace/messages/${myProfileId}/${otherProfileId}`), {
+    const res = await fetch(apiUrl(`/api/marketplace/messages/${myProfileId}/${otherProfileId}`), {
       method: "GET",
       headers: { "Content-Type": "application/json", ...getAuthHeaders() },
       cache: "no-store",
@@ -56,7 +56,7 @@ export async function fetchMarketplaceConversation(
 
 export async function fetchMarketplaceThreads(profileId: number): Promise<MarketplaceThread[]> {
   try {
-    const res = await fetch(apiUrl(`/marketplace/messages/threads/${profileId}`), {
+    const res = await fetch(apiUrl(`/api/marketplace/messages/threads/${profileId}`), {
       method: "GET",
       headers: { "Content-Type": "application/json", ...getAuthHeaders() },
       cache: "no-store",
@@ -72,7 +72,7 @@ export async function fetchMarketplaceThreads(profileId: number): Promise<Market
 export async function sendMarketplaceMessage(
   payload: SendMarketplaceMessagePayload
 ): Promise<MarketplaceMessage> {
-  const res = await fetch(apiUrl("/marketplace/messages"), {
+  const res = await fetch(apiUrl("/api/marketplace/messages"), {
     method: "POST",
     headers: { "Content-Type": "application/json", ...getAuthHeaders() },
     body: JSON.stringify(payload),
@@ -95,7 +95,7 @@ export async function sendMarketplaceMessage(
 
 export async function fetchMarketplaceUnreadCount(profileId: number): Promise<number> {
   try {
-    const res = await fetch(apiUrl(`/marketplace/messages/unread-count/${profileId}`), {
+    const res = await fetch(apiUrl(`/api/marketplace/messages/unread-count/${profileId}`), {
       method: "GET",
       headers: { "Content-Type": "application/json", ...getAuthHeaders() },
       cache: "no-store",

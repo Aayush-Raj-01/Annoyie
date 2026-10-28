@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/marketplace/messages")
+@RequestMapping({"/marketplace/messages", "/api/marketplace/messages"})
 public class MarketplaceMessageController {
 
     private final MarketplaceMessageService messageService;

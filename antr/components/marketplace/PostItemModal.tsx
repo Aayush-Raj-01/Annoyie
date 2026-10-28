@@ -24,7 +24,16 @@ interface SelectedMedia {
   type: "image" | "video";
 }
 
-const CATEGORIES = ["Textbooks", "Electronics", "Cycles", "Hostel", "Lab Kits", "Other"];
+const CATEGORIES = [
+  { id: "Textbooks", label: "Textbooks", icon: "📚" },
+  { id: "Electronics", label: "Electronics", icon: "💻" },
+  { id: "Cycles", label: "Cycles", icon: "🚲" },
+  { id: "Hostel", label: "Hostel Gear", icon: "🛏️" },
+  { id: "Lab Kits", label: "Lab Kits", icon: "🔬" },
+  { id: "Other", label: "Other", icon: "📦" },
+];
+
+const CONDITION_PRESETS = ["Brand New", "Like New", "Gently Used", "Fair Condition"];
 const MAX_SLOTS = 6;
 
 export default function PostItemModal({
@@ -62,8 +71,13 @@ export default function PostItemModal({
     };
     if (isOpen) {
       window.addEventListener("keydown", handleKeyDown);
+      // Lock body scroll on mobile when modal is open
+      document.body.style.overflow = "hidden";
     }
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "unset";
+    };
   }, [isOpen, isSubmitting, onClose]);
 
   // Clean up object URLs on unmount / change
@@ -86,7 +100,7 @@ export default function PostItemModal({
       const isImage = file.type.startsWith("image/");
       const isVideo = file.type.startsWith("video/");
       if (!isImage && !isVideo) {
-        setError("Only images or videos are supported.");
+        setError("Only images (JPG, PNG, WebP) or videos (MP4) are supported.");
         return;
       }
       if (file.size > 60 * 1024 * 1024) {
@@ -140,7 +154,7 @@ export default function PostItemModal({
     }
 
     if (filesArray.length > remainingSlots) {
-      setError(`Added ${validNewMedia.length} files. Maximum ${MAX_SLOTS} photos/videos allowed.`);
+      setError(`Added ${validNewMedia.length} files. Maximum ${MAX_SLOTS} media allowed.`);
     }
 
     setMediaList((prev) => [...prev, ...validNewMedia]);
@@ -193,6 +207,14 @@ export default function PostItemModal({
     }
   };
 
+  const handleApplyCondition = (cond: string) => {
+    if (!description.trim()) {
+      setDescription(`Condition: ${cond}. `);
+    } else if (!description.toLowerCase().includes(cond.toLowerCase())) {
+      setDescription((prev) => `Condition: ${cond}. ${prev.replace(/^Condition:\s*[^.]+\.\s*/i, "")}`);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -229,7 +251,7 @@ export default function PostItemModal({
         }
       }
 
-      setUploadStatusText("Publishing listing...");
+      setUploadStatusText("Publishing listing to campus...");
 
       const createdListing = await createMarketplaceListing(userId, {
         title: title.trim(),
@@ -269,26 +291,34 @@ export default function PostItemModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/85 backdrop-blur-md animate-fadeIn select-none">
       {/* Outer Click Backdrop */}
       <div
         className="absolute inset-0"
         onClick={!isSubmitting ? onClose : undefined}
       />
 
-      <div className="relative w-full max-w-xl bg-[#090b10] border border-white/10 rounded-3xl p-5 sm:p-6 shadow-[0_24px_70px_rgba(0,0,0,0.9)] z-10 animate-scaleUp max-h-[94vh] overflow-y-auto scrollbar-thin">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between pb-3.5 border-b border-white/[0.08]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-sm">
+      {/* Sheet Container: Full/bottom-sheet on mobile, centered modal on desktop */}
+      <div className="relative w-full sm:max-w-xl bg-[#0c0e15] border-t sm:border border-white/10 rounded-t-[28px] sm:rounded-3xl shadow-[0_24px_70px_rgba(0,0,0,0.95)] z-10 flex flex-col max-h-[92dvh] sm:max-h-[88vh] overflow-hidden animate-slideUp sm:animate-scaleUp">
+        {/* Top Mobile Drag Grabber Indicator */}
+        <div className="sm:hidden pt-3 pb-1 flex justify-center shrink-0">
+          <span className="w-10 h-1 bg-white/20 rounded-full" />
+        </div>
+
+        {/* Modal Header (Sticky Top) */}
+        <div className="px-4 sm:px-6 py-3 sm:py-3.5 border-b border-white/[0.08] flex items-center justify-between shrink-0 bg-[#0c0e15]/95 backdrop-blur-md">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-sm shrink-0">
               🏷️
             </div>
-            <div>
-              <h2 className="text-base font-bold text-white tracking-tight">Sell on Campus</h2>
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight truncate">
+                Sell on Campus
+              </h2>
               {sellerName && (
-                <span className="text-[11px] text-zinc-400">
-                  Seller: <strong className="text-emerald-400 font-medium">{sellerName}</strong>
-                </span>
+                <p className="text-[11px] text-zinc-400 truncate">
+                  Listing as: <strong className="text-emerald-400 font-medium">@{sellerName}</strong>
+                </p>
               )}
             </div>
           </div>
@@ -297,66 +327,68 @@ export default function PostItemModal({
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="w-7 h-7 rounded-full bg-zinc-900 border border-white/10 text-zinc-400 hover:text-white hover:bg-zinc-800 flex items-center justify-center text-xs transition-colors cursor-pointer disabled:opacity-50"
+            className="w-8 h-8 rounded-full bg-white/[0.06] hover:bg-white/[0.12] text-zinc-400 hover:text-white flex items-center justify-center text-xs transition-colors cursor-pointer active:scale-90 disabled:opacity-50 shrink-0"
+            aria-label="Close"
           >
             ✕
           </button>
         </div>
 
-        {/* Error notification */}
+        {/* Error notification banner */}
         {error && (
-          <div className="mt-3.5 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2 animate-fadeIn">
-            <span>⚠️</span>
-            <span>{error}</span>
+          <div className="mx-4 sm:mx-6 mt-3 p-3 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2 shrink-0 animate-fadeIn">
+            <span className="shrink-0 text-sm">⚠️</span>
+            <span className="flex-1">{error}</span>
+            <button
+              type="button"
+              onClick={() => setError(null)}
+              className="text-rose-400 hover:text-white text-xs px-1"
+            >
+              ✕
+            </button>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-          {/* Multi-Part Media Upload Showcase (6 Dedicated Slots) */}
+        {/* Hidden File Input */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileInputChange}
+          accept="image/*,video/*"
+          multiple
+          className="hidden"
+        />
+
+        {/* Scrollable Form Body */}
+        <form
+          id="post-item-form"
+          onSubmit={handleSubmit}
+          className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4 overscroll-contain scrollbar-thin"
+        >
+          {/* Section 1: Photos & Videos (Mobile Ergonomics) */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-zinc-200">Photos & Videos</span>
-                {/* Visual Dot Progress */}
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: MAX_SLOTS }).map((_, i) => (
-                    <span
-                      key={i}
-                      className={`w-1.5 h-1.5 rounded-full transition-all ${
-                        i < mediaList.length
-                          ? "bg-emerald-400 scale-110"
-                          : "bg-zinc-700"
-                      }`}
-                    />
-                  ))}
-                </div>
-                <span className="text-[10px] font-mono text-zinc-400">
+                <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">
+                  Photos &amp; Videos
+                </span>
+                <span className="text-[11px] font-mono text-zinc-400">
                   ({mediaList.length}/{MAX_SLOTS})
                 </span>
               </div>
 
               <span
                 className={`text-[10px] font-mono px-2 py-0.5 rounded-full border transition-colors ${
-                  mediaList.length >= 4 && mediaList.length <= 6
-                    ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-bold"
-                    : "bg-zinc-900 text-zinc-400 border-zinc-800"
+                  mediaList.length > 0
+                    ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+                    : "bg-white/[0.04] text-zinc-400 border-white/[0.08]"
                 }`}
               >
-                {mediaList.length >= 4 ? "✓ 4-6 Media Ready" : "4-6 Photos recommended"}
+                {mediaList.length === 0 ? "Photos recommended" : "1st is Cover"}
               </span>
             </div>
 
-            {/* Hidden File Input */}
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileInputChange}
-              accept="image/*,video/*"
-              multiple
-              className="hidden"
-            />
-
-            {/* 6-Part Multi-Slot Visual Grid */}
+            {/* Media Grid: 3 cols on mobile, 6 on desktop */}
             <div
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -364,10 +396,10 @@ export default function PostItemModal({
               className={`p-2.5 rounded-2xl border transition-all ${
                 isDragging
                   ? "border-emerald-500 bg-emerald-950/20"
-                  : "border-white/[0.08] bg-zinc-900/40"
+                  : "border-white/[0.08] bg-white/[0.02]"
               }`}
             >
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-2.5">
                 {Array.from({ length: MAX_SLOTS }).map((_, slotIdx) => {
                   const mediaItem = mediaList[slotIdx];
                   const isCover = slotIdx === 0;
@@ -375,14 +407,18 @@ export default function PostItemModal({
                   return (
                     <div
                       key={slotIdx}
-                      className={`relative aspect-square rounded-xl overflow-hidden transition-all group ${
+                      className={`relative aspect-square rounded-2xl overflow-hidden transition-all select-none ${
                         mediaItem
                           ? "bg-zinc-900 border border-white/15 shadow-sm"
-                          : "border-2 border-dashed border-zinc-700/60 hover:border-emerald-500/50 bg-zinc-900/30 hover:bg-zinc-800/40 cursor-pointer"
+                          : slotIdx === mediaList.length
+                          ? "border-2 border-dashed border-emerald-500/50 hover:border-emerald-400 bg-emerald-500/[0.04] hover:bg-emerald-500/[0.08] cursor-pointer"
+                          : "border-2 border-dashed border-white/[0.08] bg-white/[0.01] hover:bg-white/[0.03] cursor-pointer"
                       }`}
                       onClick={() => {
                         if (!mediaItem && !isSubmitting) {
                           triggerUpload();
+                        } else if (mediaItem && !isSubmitting) {
+                          triggerUpload(slotIdx);
                         }
                       }}
                     >
@@ -396,11 +432,11 @@ export default function PostItemModal({
                                 muted
                               />
                               <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                                <span className="w-5 h-5 rounded-full bg-emerald-500 text-zinc-950 flex items-center justify-center text-[10px] font-bold pl-0.5">
+                                <span className="w-6 h-6 rounded-full bg-emerald-500 text-zinc-950 flex items-center justify-center text-xs font-bold pl-0.5">
                                   ▶
                                 </span>
                               </div>
-                              <span className="absolute bottom-1 left-1 px-1 py-0.2 rounded text-[7px] font-mono bg-black/80 text-white font-bold">
+                              <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded text-[8px] font-mono bg-black/80 text-white font-bold">
                                 VID
                               </span>
                             </div>
@@ -408,54 +444,47 @@ export default function PostItemModal({
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
                               src={mediaItem.previewUrl}
-                              alt={`Slot ${slotIdx + 1}`}
+                              alt={`Item photo ${slotIdx + 1}`}
                               className="w-full h-full object-cover"
                             />
                           )}
 
                           {/* Cover Badge on Slot 1 */}
                           {isCover && (
-                            <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded text-[8px] font-mono font-bold bg-emerald-500 text-zinc-950 shadow-md">
-                              Cover
+                            <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded-md text-[9px] font-mono font-bold bg-emerald-500 text-zinc-950 shadow-md">
+                              ★ Cover
                             </span>
                           )}
 
-                          {/* Hover Overlay with Remove / Replace buttons */}
-                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                triggerUpload(slotIdx);
-                              }}
-                              disabled={isSubmitting}
-                              className="w-6 h-6 rounded-full bg-zinc-800 hover:bg-zinc-700 text-white flex items-center justify-center text-[10px] transition-colors"
-                              title="Replace file"
-                            >
-                              ✎
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRemoveMedia(slotIdx);
-                              }}
-                              disabled={isSubmitting}
-                              className="w-6 h-6 rounded-full bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center text-[10px] transition-colors"
-                              title="Remove file"
-                            >
-                              ✕
-                            </button>
-                          </div>
+                          {/* Permanent Mobile-Friendly Delete Button */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveMedia(slotIdx);
+                            }}
+                            disabled={isSubmitting}
+                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/85 hover:bg-rose-600 text-zinc-300 hover:text-white border border-white/20 shadow-md flex items-center justify-center text-[10px] font-bold active:scale-90 transition-all cursor-pointer z-10"
+                            title="Remove file"
+                            aria-label="Remove photo"
+                          >
+                            ✕
+                          </button>
                         </>
                       ) : (
                         /* Empty Slot Box */
                         <div className="w-full h-full flex flex-col items-center justify-center p-1 text-center select-none">
-                          <span className="w-5 h-5 rounded-full bg-white/[0.05] group-hover:bg-emerald-500/20 group-hover:text-emerald-400 text-zinc-400 flex items-center justify-center text-xs font-bold transition-colors">
+                          <span
+                            className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
+                              slotIdx === mediaList.length
+                                ? "bg-emerald-500/20 text-emerald-400"
+                                : "bg-white/[0.05] text-zinc-400"
+                            }`}
+                          >
                             +
                           </span>
-                          <span className="text-[9px] font-mono text-zinc-500 mt-1">
-                            {isCover ? "1. Cover" : `#${slotIdx + 1}`}
+                          <span className="text-[10px] font-mono text-zinc-400 mt-1 font-medium">
+                            {isCover ? "Cover" : `#${slotIdx + 1}`}
                           </span>
                         </div>
                       )}
@@ -464,157 +493,220 @@ export default function PostItemModal({
                 })}
               </div>
 
-              {/* Bottom Quick-Action Bar */}
-              <div className="mt-2.5 pt-2 border-t border-white/[0.04] flex items-center justify-between text-[11px] text-zinc-400">
-                <span className="hidden sm:inline">
-                  Drag & drop multiple files
+              {/* Fast Mobile Action Button */}
+              <div className="mt-2.5 pt-2 border-t border-white/[0.04] flex items-center justify-between">
+                <span className="text-[11px] text-zinc-400 font-mono">
+                  {mediaList.length === 0 ? "Select from camera or files" : `${MAX_SLOTS - mediaList.length} slots left`}
                 </span>
                 <button
                   type="button"
                   onClick={() => triggerUpload()}
                   disabled={isSubmitting || mediaList.length >= MAX_SLOTS}
-                  className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white font-medium transition-colors cursor-pointer disabled:opacity-40 text-[11px] ml-auto flex items-center gap-1.5"
+                  className="px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] active:scale-95 text-emerald-300 hover:text-emerald-200 border border-emerald-500/30 text-xs font-semibold transition-all cursor-pointer disabled:opacity-40 flex items-center gap-1.5"
                 >
-                  <span>+</span>
-                  <span>Add {mediaList.length === 0 ? "Photos / Videos" : "More"}</span>
+                  <span>📷</span>
+                  <span>{mediaList.length === 0 ? "+ Add Photos" : "+ Add More"}</span>
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Streamlined Details Section ("Make Details Less") */}
-          <div className="space-y-3 pt-1">
-            {/* 1. Item Name */}
-            <div>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="What are you selling?"
-                maxLength={100}
-                required
-                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900/80 border border-white/10 focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/30 text-white placeholder-zinc-500 text-xs sm:text-sm outline-none transition-all font-medium"
-              />
+          {/* Section 2: Title */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-white uppercase tracking-wider font-mono">
+              Item Title <span className="text-emerald-400">*</span>
+            </label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Engineering Mathematics Book, Avon Cycle"
+              maxLength={100}
+              required
+              className="w-full h-12 px-4 rounded-2xl bg-white/[0.04] border border-white/10 focus:border-emerald-500/60 focus:bg-white/[0.06] text-white placeholder-zinc-500 text-base sm:text-sm font-medium outline-none transition-all shadow-inner"
+            />
+          </div>
+
+          {/* Section 3: Category Pills (Horizontal Scroll Carousel on Mobile) */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold text-white uppercase tracking-wider font-mono">
+                Category <span className="text-emerald-400">*</span>
+              </label>
+              <span className="text-[11px] font-mono text-zinc-400 sm:hidden">Swipe to select</span>
             </div>
 
-            {/* 2. Compact Price + Bargain Toggle (Side by Side) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {/* Price */}
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-1 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap">
+              {CATEGORIES.map((cat) => {
+                const isSelected = category === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setCategory(cat.id)}
+                    className={`px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all shrink-0 cursor-pointer active:scale-95 flex items-center gap-1.5 ${
+                      isSelected
+                        ? "bg-emerald-500 text-zinc-950 font-bold shadow-md shadow-emerald-500/20 border border-emerald-400"
+                        : "bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/10"
+                    }`}
+                  >
+                    <span>{cat.icon}</span>
+                    <span>{cat.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Section 4: Price & Negotiation Toggle */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Price */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-white uppercase tracking-wider font-mono">
+                Price (₹) <span className="text-emerald-400">*</span>
+              </label>
               <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-400 font-mono font-bold text-sm">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-400 font-mono font-bold text-base">
                   ₹
                 </span>
                 <input
                   type="number"
+                  inputMode="decimal"
                   min="0"
                   step="1"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  placeholder="Price (₹0 for free) *"
+                  placeholder="0 (₹0 for free)"
                   required
-                  className="w-full pl-8 pr-3.5 py-2.5 rounded-xl bg-zinc-900/80 border border-white/10 focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/30 text-white placeholder-zinc-500 text-xs sm:text-sm font-mono outline-none transition-all"
+                  className="w-full h-12 pl-9 pr-4 rounded-2xl bg-white/[0.04] border border-white/10 focus:border-emerald-500/60 focus:bg-white/[0.06] text-white placeholder-zinc-500 text-base sm:text-sm font-mono font-bold outline-none transition-all shadow-inner"
                 />
               </div>
+            </div>
 
-              {/* Bargain Negotiable Toggle Button */}
+            {/* Negotiation Toggle Button */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-white uppercase tracking-wider font-mono">
+                Price Flexibility
+              </label>
               <button
                 type="button"
                 onClick={() => setBargainAvailable(!bargainAvailable)}
-                className={`px-3 py-2.5 rounded-xl border flex items-center justify-between text-xs font-medium transition-all cursor-pointer ${
+                className={`w-full h-12 px-4 rounded-2xl border flex items-center justify-between text-xs transition-all cursor-pointer active:scale-95 ${
                   bargainAvailable
-                    ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300"
-                    : "bg-zinc-200 text-zinc-900 "
+                    ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300 font-semibold"
+                    : "bg-white/[0.04] border-white/10 text-zinc-400 hover:text-zinc-200"
                 }`}
               >
-                <div className="flex items-center gap-1.5">
-                  <span>{bargainAvailable ? "🤝" : "🔒"}</span>
-                  <span className="font-semibold">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">{bargainAvailable ? "🤝" : "🔒"}</span>
+                  <span className="font-semibold text-xs sm:text-sm">
                     {bargainAvailable ? "Bargain Negotiable" : "Fixed Price"}
                   </span>
                 </div>
-                <span className="text-[10px] font-mono opacity-80"></span>
-              </button>
-            </div>
-
-            {/* 3. Category Pills */}
-            <div className="flex flex-wrap gap-1.5 items-center">
-              <span className="text-[11px] font-medium text-zinc-400 mr-1">Category:</span>
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setCategory(cat)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${
-                    category === cat
-                      ? "bg-zinc-200 text-zinc-900 font-bold "
-                      : "bg-zinc-900/80 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-white/[0.06]"
+                <span
+                  className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${
+                    bargainAvailable ? "bg-emerald-500 text-zinc-950 font-bold" : "bg-zinc-800 text-zinc-400"
                   }`}
                 >
-                  {cat}
+                  {bargainAvailable ? "✓" : "–"}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* Section 5: Campus Handover Location */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-white uppercase tracking-wider font-mono">
+              Campus Handover Location <span className="text-emerald-400">*</span>
+            </label>
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={hostelName}
+                  onChange={(e) => setHostelName(e.target.value)}
+                  placeholder="Hostel / Block"
+                  maxLength={40}
+                  required
+                  className="w-full h-12 px-3.5 rounded-2xl bg-white/[0.04] border border-white/10 focus:border-emerald-500/60 focus:bg-white/[0.06] text-white placeholder-zinc-500 text-base sm:text-sm outline-none transition-all shadow-inner font-medium"
+                />
+              </div>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={roomNo}
+                  onChange={(e) => setRoomNo(e.target.value)}
+                  placeholder="Room No"
+                  maxLength={25}
+                  required
+                  className="w-full h-12 px-3.5 rounded-2xl bg-white/[0.04] border border-white/10 focus:border-emerald-500/60 focus:bg-white/[0.06] text-white placeholder-zinc-500 text-base sm:text-sm outline-none transition-all shadow-inner font-medium"
+                />
+              </div>
+            </div>
+            <p className="text-[10px] text-zinc-500 font-mono">
+              Buyers will meet you at this campus hostel/room for physical handover
+            </p>
+          </div>
+
+          {/* Section 6: Note & Item Condition */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold text-white uppercase tracking-wider font-mono">
+                Condition &amp; Details <span className="text-zinc-500 font-normal">(Optional)</span>
+              </label>
+            </div>
+
+            {/* Quick condition tags */}
+            <div className="flex flex-wrap gap-1.5 pb-1">
+              {CONDITION_PRESETS.map((cond) => (
+                <button
+                  key={cond}
+                  type="button"
+                  onClick={() => handleApplyCondition(cond)}
+                  className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-emerald-500/10 hover:border-emerald-500/30 text-zinc-300 hover:text-emerald-300 border border-white/[0.06] text-[11px] font-mono transition-all cursor-pointer active:scale-95"
+                >
+                  + {cond}
                 </button>
               ))}
             </div>
 
-            {/* 4. Campus Location: Hostel & Room (Inline Row) */}
-            <div className="grid grid-cols-2 gap-2.5">
-              <input
-                type="text"
-                value={hostelName}
-                onChange={(e) => setHostelName(e.target.value)}
-                placeholder="Hostel (e.g. Block 4) *"
-                maxLength={40}
-                required
-                className="w-full px-3 py-2 rounded-xl bg-zinc-900/80 border border-white/10 focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/30 text-white placeholder-zinc-500 text-xs outline-none transition-all"
-              />
-              <input
-                type="text"
-                value={roomNo}
-                onChange={(e) => setRoomNo(e.target.value)}
-                placeholder="Room No (e.g. 302) *"
-                maxLength={25}
-                required
-                className="w-full px-3 py-2 rounded-xl bg-zinc-900/80 border border-white/10 focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/30 text-white placeholder-zinc-500 text-xs outline-none transition-all"
-              />
-            </div>
-
-            {/* 5. Short Note (Optional) */}
-            <div>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={2}
-                placeholder="Short note / item condition (optional)..."
-                className="w-full px-3 py-2 rounded-xl bg-zinc-900/60 border border-white/10 focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/30 text-white placeholder-zinc-500 text-xs outline-none transition-all resize-none"
-              />
-            </div>
-          </div>
-
-          {/* Modal Action Buttons */}
-          <div className="pt-2 border-t border-white/[0.08] flex items-center justify-end gap-2.5">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isSubmitting}
-              className="px-4 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-white/10 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-xs font-bold transition-all shadow-sm hover:shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="w-3.5 h-3.5 border-2 border-zinc-950 border-t-transparent rounded-full animate-spin" />
-                  <span>{uploadStatusText || "Publishing..."}</span>
-                </>
-              ) : (
-                <span>Publish Item →</span>
-              )}
-            </button>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              placeholder="e.g. Bought last semester, clean pages with notes, ready for immediate pickup."
+              className="w-full p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 focus:border-emerald-500/60 focus:bg-white/[0.06] text-white placeholder-zinc-500 text-base sm:text-sm outline-none transition-all resize-none shadow-inner"
+            />
           </div>
         </form>
+
+        {/* Sticky Bottom Footer (Thumb Zone) */}
+        <div className="sticky bottom-0 z-20 bg-[#0c0e15]/98 backdrop-blur-xl border-t border-white/[0.08] p-3.5 sm:px-6 sm:py-4 flex items-center gap-2.5 shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isSubmitting}
+            className="w-1/3 sm:w-auto sm:px-5 h-12 rounded-2xl bg-white/[0.05] hover:bg-white/[0.1] active:scale-95 text-zinc-300 hover:text-white border border-white/10 text-xs sm:text-sm font-semibold transition-all cursor-pointer disabled:opacity-50"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            form="post-item-form"
+            disabled={isSubmitting}
+            className="flex-1 h-12 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-xs sm:text-sm font-bold transition-all shadow-lg shadow-emerald-500/25 active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+          >
+            {isSubmitting ? (
+              <>
+                <div className="w-4 h-4 border-2 border-zinc-950 border-t-transparent rounded-full animate-spin" />
+                <span className="truncate">{uploadStatusText || "Publishing..."}</span>
+              </>
+            ) : (
+              <span>Publish Listing →</span>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

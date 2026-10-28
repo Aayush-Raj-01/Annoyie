@@ -186,7 +186,7 @@ export default function MediaPicker({
   return (
     <div
       ref={pickerRef}
-      className="fixed inset-x-3 bottom-20 z-50 sm:absolute sm:inset-x-auto sm:left-2 sm:bottom-full sm:mb-2.5 sm:w-[420px] max-w-sm sm:max-w-md h-[440px] max-h-[80vh] rounded-2xl bg-[#0c0e14]/98 backdrop-blur-2xl border border-white/[0.1] shadow-[0_20px_50px_rgba(0,0,0,0.85)] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-150"
+      className="fixed inset-x-2 sm:inset-x-auto bottom-[calc(3.75rem+env(safe-area-inset-bottom))] z-50 sm:absolute sm:left-2 sm:bottom-full sm:mb-2.5 sm:w-[420px] max-w-[calc(100vw-1rem)] sm:max-w-md h-[420px] max-h-[65vh] sm:max-h-[80vh] rounded-2xl bg-[#0c0e14]/98 backdrop-blur-2xl border border-white/[0.1] shadow-[0_20px_50px_rgba(0,0,0,0.85)] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-150"
     >
       {/* Header with Navigation Tabs */}
       <div className="flex items-center justify-between p-2.5 border-b border-white/[0.06] bg-zinc-950/70">

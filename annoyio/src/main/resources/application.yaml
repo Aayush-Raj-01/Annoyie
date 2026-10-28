@@ -8,17 +8,20 @@ spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/annoyie}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:}
+    password: ${SPRING_DATASOURCE_PASSWORD:123123@123AA}
 
   jpa:
     hibernate:
       ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
     show-sql: ${SPRING_JPA_SHOW_SQL:false}
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
   mail:
     host: smtp.gmail.com
     port: ${SPRING_MAIL_PORT:587}
-    username: ${SPRING_MAIL_USERNAME:}
-    password: ${SPRING_MAIL_PASSWORD:}
+    username: ${SPRING_MAIL_USERNAME:dwx1110804@gmail.com}
+    password: ${SPRING_MAIL_PASSWORD:xgjb zcpd vnhi itgp}
 
     properties:
       mail:
@@ -27,17 +30,18 @@ spring:
           starttls:
             enable: true
 jwt:
-  secret: ${JWT_SECRET}
+  secret: ${JWT_SECRET:8St7npi80n21m0nU060a8NU89123gIJf}
   expiration: 604800000
 
 cloudinary:
-  cloud-name: ${CLOUDINARY_CLOUD_NAME:}
-  api-key: ${CLOUDINARY_API_KEY:}
-  api-secret: ${CLOUDINARY_API_SECRET:}
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:rkid98eu}
+  api-key: ${CLOUDINARY_API_KEY:533927548543211}
+  api-secret: ${CLOUDINARY_API_SECRET:o5woUcDwz9F-3Qm78mNKL_lNSbI}
 
 app:
   upload-dir: ${UPLOAD_DIR:uploads}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+
 
 

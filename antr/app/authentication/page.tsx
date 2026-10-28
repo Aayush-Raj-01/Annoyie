@@ -7,6 +7,7 @@ import Navbar from "../components/navbar";
 import { syncUserProfile, setAuthToken, clearUserProfile, setPendingEmail } from "../lib/auth";
 import { fetchMarketplaceProfile } from "@/lib/api/marketplace";
 import { apiUrl } from "@/lib/config/api";
+import PinterestBackground from "@/components/ui/PinterestBackground";
 
 export default function AuthenticationPage() {
 
@@ -39,26 +40,22 @@ export default function AuthenticationPage() {
   };
 
   const validateEmailFormat = (emailVal: string): string | null => {
-    const trimmed = emailVal.trim();
+    const trimmed = emailVal.trim().toLowerCase();
     if (!trimmed) {
       return "Email address is required";
     }
     if (trimmed.includes(" ")) {
       return "Email cannot contain spaces";
     }
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!trimmed.includes("@")) {
+      return "Email must include '@imsec.ac.in'";
+    }
+    if (!trimmed.endsWith("@imsec.ac.in")) {
+      return "Only official @imsec.ac.in campus email addresses are allowed";
+    }
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@imsec\.ac\.in$/i;
     if (!emailRegex.test(trimmed)) {
-      if (!trimmed.includes("@")) {
-        return "Email must include an '@' symbol";
-      }
-      const parts = trimmed.split("@");
-      if (!parts[1] || parts[1].length === 0) {
-        return "Please enter a domain after '@'";
-      }
-      if (!parts[1].includes(".")) {
-        return "Please include a domain extension (e.g. .com, .edu)";
-      }
-      return "Please enter a valid email address (e.g. name@gmail.com)";
+      return "Please enter a valid username before @imsec.ac.in (e.g. name@imsec.ac.in)";
     }
     return null;
   };
@@ -126,6 +123,11 @@ export default function AuthenticationPage() {
 
     if(!cleanEmail || !password || !confirmPassword){
       setError("Please fill all the fields");
+      return;
+    }
+    if (!cleanEmail.endsWith("@imsec.ac.in")) {
+      setError("Access restricted: Only official IMSEC college email addresses (@imsec.ac.in) are allowed.");
+      setEmailError("Only @imsec.ac.in allowed");
       return;
     }
     if(password.length < 8){
@@ -353,9 +355,8 @@ export default function AuthenticationPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/70 to-black/85 backdrop-blur-[1px]" />
       </div>
 
-      {/* Desktop Background ambient lighting & cyber matrix */}
-      <div className="hidden lg:block absolute top-0 left-0 w-[550px] h-[550px] bg-emerald-500/10 rounded-full blur-[140px] pointer-events-none z-0" />
-      <div className="hidden lg:block absolute bottom-0 left-1/4 w-[450px] h-[450px] bg-teal-500/10 rounded-full blur-[150px] pointer-events-none z-0" />
+      {/* Editorial Pinterest Drafting / Blueprint Background */}
+      <PinterestBackground variant="blueprint" />
 
       {/* LEFT COLUMN: Editorial & Authentication Forms */}
       <div className="w-full lg:w-1/2 xl:w-7/12 flex flex-col justify-between p-4 sm:p-10 lg:p-14 z-10 min-h-screen relative overflow-hidden">
@@ -365,8 +366,8 @@ export default function AuthenticationPage() {
 
         {/* Faint Giant Background Watermark */}
         <div className="hidden lg:flex absolute inset-0 items-center justify-center pointer-events-none select-none z-0 overflow-hidden">
-          <span className="text-[17vw] font-black text-white/[0.02] font-mono tracking-tighter leading-none whitespace-nowrap">
-            ANNOYOI
+          <span className="text-[12vw] font-black text-white/[0.02] font-mono tracking-tighter leading-none whitespace-nowrap">
+            ANNOYOI /IMSEC
           </span>
         </div>
 
@@ -375,25 +376,25 @@ export default function AuthenticationPage() {
         {/* Center: Sign In / Auth Form Container */}
         <div className="my-auto w-full max-w-md mx-auto py-6 flex flex-col justify-center relative z-10">
           
-          {/* Glassmorphic Cyber Halo Card */}
-          <div className="rounded-3xl border border-white/10 bg-zinc-950/50 backdrop-blur-2xl p-6 sm:p-8 shadow-[0_0_70px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(255,255,255,0.06)] relative overflow-hidden group">
-            {/* Top Emerald Laser Glow Line */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-[2px] bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_15px_#10b981]" />
+          {/* Solid Editorial Card */}
+          <div className="rounded-3xl border border-zinc-800 bg-[#0c0d12] p-5 sm:p-8 shadow-2xl relative overflow-hidden group">
+            {/* Top Crisp Hairline */}
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-emerald-500/40" />
 
             {/* Mobile Brandmark (Only shown on small screens) */}
             <div className="lg:hidden text-center mb-6">
-              <h2 className="authtext ext-4xl sm:text-5xl font-bold text-white uppercase drop-shadow-[0_4px_20px_rgba(0,0,0,0.95)] tracking-[0.65rem]">
-                ANNOYOI
+              <h2 className="authtext text-3xl sm:text-4xl font-bold text-white uppercase drop-shadow-[0_4px_20px_rgba(0,0,0,0.95)] tracking-[0.18rem] sm:tracking-[0.25rem]">
+                ANNOYOI /IMSEC
               </h2>
               <p className="text-[10px] font-mono tracking-widest text-emerald-400 uppercase mt-1.5">
-                EVEN WE DONT KNOW OUR USERS
+                EVEN WE DONT KNOW OUR USERS // IMSEC CAMPUS
               </p>
             </div>
 
             {/* Centered Tab Switcher with Animated Sliding Pill */}
           {mode !== "verify-otp" && (
-            <div className="flex justify-center mb-6">
-              <div className="relative flex w-72 p-1 bg-zinc-900/80 rounded-xl border border-white/10 backdrop-blur-md shadow-lg shadow-black/40">
+            <div className="flex justify-center mb-6 w-full">
+              <div className="relative flex w-full max-w-xs sm:w-72 p-1 bg-zinc-900/80 rounded-xl border border-white/10 backdrop-blur-md shadow-lg shadow-black/40">
                 {/* Sliding active background pill */}
                 <div
                   className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-lg transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
@@ -481,9 +482,14 @@ export default function AuthenticationPage() {
             <form key="signin" onSubmit={handleSignIn} noValidate className="space-y-4 animate-form-switch">
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-[10px] font-mono uppercase tracking-widest text-zinc-400">
-                    Email Address
-                  </label>
+                  <div className="flex items-center gap-2">
+                    <label className="block text-[10px] font-mono uppercase tracking-widest text-zinc-400">
+                      Email Address
+                    </label>
+                    <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-semibold">
+                      @imsec.ac.in only
+                    </span>
+                  </div>
                   {emailError && (
                     <span className="text-[10px] font-mono text-rose-400 lowercase flex items-center gap-1 animate-fadeIn">
                       invalid mail
@@ -496,7 +502,7 @@ export default function AuthenticationPage() {
                     value={email}
                     onChange={(e) => handleEmailChange(e.target.value)}
                     onBlur={handleEmailBlur}
-                    placeholder="name@gmail.com"
+                    placeholder="student@imsec.ac.in"
                     autoComplete="email"
                     className={`w-full px-4 py-3 rounded-xl border text-sm text-white placeholder-zinc-600 focus:outline-none transition-all font-mono ${
                       emailError
@@ -573,7 +579,7 @@ export default function AuthenticationPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full mt-2 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 active:scale-[0.99] text-black text-xs font-bold font-mono tracking-widest uppercase transition-all shadow-[0_0_25px_rgba(16,185,129,0.3)] disabled:opacity-50 cursor-pointer"
+                className="w-full mt-2 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] text-black text-xs font-bold font-mono tracking-widest uppercase transition-all shadow-sm hover:shadow-md disabled:opacity-50 cursor-pointer"
               >
                 {loading ? "Authenticating..." : "Sign In"}
               </button>
@@ -584,15 +590,20 @@ export default function AuthenticationPage() {
           {mode === "signup" && (
             <form key="signup" onSubmit={handleSignUp} className="space-y-4 animate-form-switch">
               <div>
-                <label className="block text-[10px] font-mono uppercase tracking-widest text-zinc-400 mb-1.5">
-                  Email Address
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-[10px] font-mono uppercase tracking-widest text-zinc-400">
+                    Email Address
+                  </label>
+                  <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-semibold">
+                    @imsec.ac.in only
+                  </span>
+                </div>
                 <input
                   type="email"
                   required
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="student@college.edu or name@gmail.com"
+                  onChange={(e) => handleEmailChange(e.target.value)}
+                  placeholder="student@imsec.ac.in"
                   className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-400 focus:bg-white/[0.05] focus:ring-1 focus:ring-emerald-400/50 transition-all font-mono"
                 />
               </div>
@@ -625,7 +636,7 @@ export default function AuthenticationPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full mt-2 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 active:scale-[0.99] text-black text-xs font-bold font-mono tracking-widest uppercase transition-all shadow-[0_0_25px_rgba(16,185,129,0.3)] disabled:opacity-50 cursor-pointer"
+                className="w-full mt-2 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] text-black text-xs font-bold font-mono tracking-widest uppercase transition-all shadow-sm hover:shadow-md disabled:opacity-50 cursor-pointer"
               >
                 {loading ? "Generating OTP..." : "Register // Send 6-Digit Code"}
               </button>
@@ -658,7 +669,7 @@ export default function AuthenticationPage() {
               <button
                 type="submit"
                 disabled={loading || otp.length !== 6}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 active:scale-[0.99] text-black text-xs font-bold font-mono tracking-widest uppercase transition-all shadow-[0_0_25px_rgba(16,185,129,0.3)] disabled:opacity-50 cursor-pointer"
+                className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] text-black text-xs font-bold font-mono tracking-widest uppercase transition-all shadow-sm hover:shadow-md disabled:opacity-50 cursor-pointer"
               >
                 {loading ? "Verifying..." : "Confirm & Proceed"}
               </button>
@@ -696,12 +707,12 @@ export default function AuthenticationPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent pointer-events-none" />
 
         {/* Center Cyber Brandmark */}
-        <div className="relative z-10 text-center px-4">
-          <h2 className="authtext text-4xl sm:text-6xl font-black tracking-[0.35em] text-white uppercase drop-shadow-[0_4px_25px_rgba(0,0,0,0.95)] ">
-            ANNOYOI
+        <div className="relative z-10 text-center px-4 flex flex-col items-center">
+          <h2 className="authtext text-4xl sm:text-5xl lg:text-6xl font-black tracking-[0.16em] text-white uppercase drop-shadow-[0_4px_25px_rgba(0,0,0,0.95)]">
+            ANNOYOI /IMSEC
           </h2>
           <p className="text-[11px] font-mono tracking-widest text-zinc-300 uppercase mt-3 drop-shadow-md">
-            EVEN WE DONT KNOW OUR USERS
+            EVEN WE DONT KNOW OUR USERS // IMSEC CAMPUS EXCLUSIVE
           </p>
         </div>
       </div>

@@ -40,11 +40,10 @@ public class AuthService {
         }
         String cleanEmail = request.email().trim().toLowerCase();
 
-        boolean isGmail = cleanEmail.endsWith("@imsec.ac.in");
-        boolean isCollegeMail = cleanEmail.endsWith(".edu") || cleanEmail.endsWith(".ac.in") || cleanEmail.endsWith(".edu.in");
+        boolean isImsecMail = cleanEmail.endsWith("@imsec.ac.in");
 
-        if (!isGmail && !isCollegeMail) {
-            throw new RuntimeException("Please use a valid @gmail.com or college email address (.edu / .ac.in)");
+        if (!isImsecMail) {
+            throw new RuntimeException("Only official IMSEC college email addresses (@imsec.ac.in) are allowed");
         }
 
         java.util.Optional<User> existingUserOpt = userRepository.findByEmail(cleanEmail);

@@ -145,20 +145,16 @@ function MarketplaceChatContent() {
 
         if (!isMounted) return;
 
-        if (!user || !user.anonymousName || user.anonymousName.startsWith("Guest_")) {
-          router.replace("/authentication");
-          return;
-        }
-
-        if (user.id) {
-          const cached = getCachedMarketplaceProfile(user.id);
+        const resolvedUserId = user?.id;
+        if (resolvedUserId) {
+          const cached = getCachedMarketplaceProfile(resolvedUserId);
           if (cached && isMounted) {
             setMyProfile(cached);
             loadThreads(cached.id);
             loadBlockedList(cached.id);
           }
 
-          const profile = await fetchMarketplaceProfile(user.id);
+          const profile = await fetchMarketplaceProfile(resolvedUserId);
           if (isMounted) {
             setMyProfile(profile);
             if (profile) {

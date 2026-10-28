@@ -324,7 +324,7 @@ export default function PostItemModal({
                       key={i}
                       className={`w-1.5 h-1.5 rounded-full transition-all ${
                         i < mediaList.length
-                          ? "bg-emerald-400 scale-110 shadow-[0_0_6px_rgba(16,185,129,0.5)]"
+                          ? "bg-emerald-400 scale-110"
                           : "bg-zinc-700"
                       }`}
                     />
@@ -363,7 +363,7 @@ export default function PostItemModal({
               onDrop={handleDrop}
               className={`p-2.5 rounded-2xl border transition-all ${
                 isDragging
-                  ? "border-emerald-500 bg-emerald-950/20 shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+                  ? "border-emerald-500 bg-emerald-950/20"
                   : "border-white/[0.08] bg-zinc-900/40"
               }`}
             >
@@ -522,7 +522,7 @@ export default function PostItemModal({
                 onClick={() => setBargainAvailable(!bargainAvailable)}
                 className={`px-3 py-2.5 rounded-xl border flex items-center justify-between text-xs font-medium transition-all cursor-pointer ${
                   bargainAvailable
-                    ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.15)]"
+                    ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-300"
                     : "bg-zinc-200 text-zinc-900 "
                 }`}
               >
@@ -602,7 +602,7 @@ export default function PostItemModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-xs font-bold transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-xs font-bold transition-all shadow-sm hover:shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {isSubmitting ? (
                 <>

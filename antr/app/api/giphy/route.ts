@@ -5,10 +5,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const q = searchParams.get("q")?.trim() || "";
   const type = searchParams.get("type") === "stickers" ? "stickers" : "gifs";
-  const apiKey =
-    process.env.GIPHY_API_KEY ||
-    process.env.NEXT_PUBLIC_GIPHY_API_KEY ||
-    "sXpGFDGZs0Dv1mmNFvYaGUvYwKX0PWIh";
+  const apiKey = process.env.GIPHY_API_KEY;
 
   // 1. Call GIPHY API (stickers or gifs)
   if (apiKey) {

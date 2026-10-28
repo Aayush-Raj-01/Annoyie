@@ -157,7 +157,7 @@ export default function ListingMediaGallery({
                 onClick={(e) => handleSelectDot(e, idx)}
                 className={`transition-all rounded-full cursor-pointer ${
                   currentIndex === idx
-                    ? "w-4 h-1.5 bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                    ? "w-4 h-1.5 bg-emerald-400"
                     : "w-1.5 h-1.5 bg-white/40 hover:bg-white/70"
                 }`}
                 title={`View slide ${idx + 1}`}

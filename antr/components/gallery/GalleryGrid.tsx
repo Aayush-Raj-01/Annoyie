@@ -5,6 +5,7 @@ import { GalleryPost, deleteGalleryPhoto } from "@/lib/api/gallery";
 import { UserProfile } from "@/app/lib/auth";
 import ImageZoomModal from "@/components/marketplace/ImageZoomModal";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import LoadingAnimation from "@/components/ui/LoadingAnimation";
 
 interface GalleryGridProps {
   posts: GalleryPost[];
@@ -76,14 +77,25 @@ export default function GalleryGrid({
 
   if (loading) {
     return (
-      <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-3.5 space-y-3.5">
-        {Array.from({ length: 10 }).map((_, idx) => (
-          <div
-            key={idx}
-            className="break-inside-avoid rounded-2xl bg-zinc-900/40 border border-white/[0.04] overflow-hidden animate-pulse"
-            style={{ height: `${200 + (idx % 4) * 55}px` }}
+      <div className="space-y-6">
+        <div className="py-6 flex justify-center">
+          <LoadingAnimation
+            size="sm"
+            text="Streaming Media"
+            subtitle="Fetching latest campus moments"
           />
-        ))}
+        </div>
+        <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-3.5 space-y-3.5">
+          {Array.from({ length: 10 }).map((_, idx) => (
+            <div
+              key={idx}
+              className="break-inside-avoid rounded-2xl bg-zinc-950/70 border border-white/[0.05] relative overflow-hidden shadow-inner"
+              style={{ height: `${200 + (idx % 4) * 55}px` }}
+            >
+              <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/[0.04] to-transparent animate-shimmer-slide" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

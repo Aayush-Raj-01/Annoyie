@@ -4,10 +4,12 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { isUserLoggedIn } from "../lib/auth";
+import { useChatStore } from "@/store/chatStore";
 
 export default function Navbar() {
   const pathname = usePathname();
   const [loggedIn, setLoggedIn] = useState(false);
+  const isMobileChatOpen = useChatStore((state) => state.isMobileChatOpen);
 
   useEffect(() => {
     setLoggedIn(isUserLoggedIn());
@@ -25,12 +27,15 @@ export default function Navbar() {
     return null;
   }
 
+  const isMarketplace = pathname?.startsWith("/marketplace");
+
   const navItems = [
     {
       href: "/",
       label: "Home",
+      isActive: pathname === "/",
       icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -43,8 +48,9 @@ export default function Navbar() {
     {
       href: "/chats",
       label: "Chats",
+      isActive: pathname === "/chats" || pathname?.startsWith("/chats/"),
       icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -57,8 +63,9 @@ export default function Navbar() {
     {
       href: "/marketplace",
       label: "MarketPlace",
+      isActive: pathname === "/marketplace",
       icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -69,10 +76,13 @@ export default function Navbar() {
       ),
     },
     {
-      href: "/profile",
-      label: "Profile",
+      href: isMarketplace ? "/marketplace/profile" : "/profile",
+      label: isMarketplace ? "Seller Desk" : "Profile",
+      isActive: isMarketplace
+        ? pathname === "/marketplace/profile"
+        : (pathname === "/profile" || pathname?.startsWith("/profile/")),
       icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -84,27 +94,45 @@ export default function Navbar() {
     },
   ];
 
+  // When active mobile chat is open, hide navbar on small viewports so keyboard and message input have full screen
+  const isChatHidden = isMobileChatOpen && pathname?.startsWith("/chats");
+
   return (
-    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-      {/* Outer shell (Doppelrand hardware aesthetic) */}
-      <div className="p-1 rounded-full bg-zinc-950/80 backdrop-blur-xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)]">
-        <div className="flex items-center gap-1">
+    <nav
+      className={`fixed left-1/2 -translate-x-1/2 z-50 transition-all duration-300 pointer-events-auto bottom-3 sm:bottom-6 mb-[env(safe-area-inset-bottom)] max-w-[calc(100vw-1.25rem)] sm:max-w-none ${
+        isChatHidden ? "hidden md:block" : "block"
+      }`}
+    >
+      {/* Outer shell (Tactile floating dock matching reference image) */}
+      <div className="p-1.5 rounded-full bg-[#16171b]/95 backdrop-blur-2xl border border-white/[0.08] shadow-[0_16px_40px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.08)]">
+        <div className="flex items-center justify-between sm:justify-start gap-1 sm:gap-1.5">
           {navItems.map((item) => {
-            const isActive = pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href));
+            const isActive = item.isActive;
+            const isChatTab = item.href === "/chats";
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`relative flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                className={`relative flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-full text-xs font-medium transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] select-none shrink-0 ${
                   isActive
-                    ? "bg-white/[0.12] text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)]"
+                    ? isChatTab
+                      ? "bg-[#ff4d4f]/20 text-white border border-[#ff4d4f]/30 shadow-sm"
+                      : "bg-white/[0.12] text-white border border-white/10 shadow-sm"
                     : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]"
                 }`}
               >
-                <span className={isActive ? "text-emerald-400" : "text-zinc-400"}>
+                <span className={`transition-transform duration-200 ${
+                  isActive
+                    ? isChatTab
+                      ? "text-[#ff4d4f] scale-105"
+                      : "text-emerald-400 scale-105"
+                    : "text-zinc-400"
+                }`}>
                   {item.icon}
                 </span>
-                <span>{item.label}</span>
+                <span className="text-[11px] sm:text-xs tracking-tight font-medium">
+                  {item.label}
+                </span>
               </Link>
             );
           })}

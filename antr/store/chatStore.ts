@@ -117,6 +117,8 @@ interface ChatState {
   isConnected: boolean;
   isConnecting: boolean;
 
+  isMobileChatOpen: boolean;
+  setIsMobileChatOpen: (open: boolean) => void;
   setCurrentUserId: (id?: number) => void;
   syncDmConversationsFromBackend: (userId?: number) => Promise<void>;
   setActiveRoom: (roomId: number) => void;
@@ -186,6 +188,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
   currentUserId: getStoredProfile()?.id,
   isConnected: false,
   isConnecting: true,
+  isMobileChatOpen: false,
+
+  setIsMobileChatOpen: (open) => set({ isMobileChatOpen: open }),
 
   setCurrentUserId: (id) => {
     set({ currentUserId: id });

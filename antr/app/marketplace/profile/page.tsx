@@ -10,6 +10,8 @@ import ListingMediaGallery from "@/components/marketplace/ListingMediaGallery";
 import ImageZoomModal from "@/components/marketplace/ImageZoomModal";
 import ProfileHeaderNavigation from "@/components/profile/ProfileHeaderNavigation";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import LoadingAnimation from "@/components/ui/LoadingAnimation";
+import PinterestBackground from "@/components/ui/PinterestBackground";
 import {
   MarketplaceProfile,
   fetchMarketplaceProfile,
@@ -113,18 +115,16 @@ export default function MarketplaceProfilePage() {
 
         if (!isMounted) return;
 
-        if (!user || !user.anonymousName || user.anonymousName.startsWith("Guest_")) {
-          router.replace("/authentication");
-          return;
+        if (user) {
+          setCurrentUser(user);
         }
-
-        setCurrentUser(user);
         setIsLoadingAuth(false);
 
         // Fetch marketplace profile for this user ID
-        if (user.id) {
+        const resolvedUserId = user?.id;
+        if (resolvedUserId) {
           // Check cached profile first
-          const cached = getCachedMarketplaceProfile(user.id);
+          const cached = getCachedMarketplaceProfile(resolvedUserId);
           if (cached && isMounted) {
             setMarketProfile(cached);
             setDisplayName(cached.displayName || "");
@@ -134,7 +134,7 @@ export default function MarketplaceProfilePage() {
             setIsLoadingProfile(false);
           }
 
-          const profile = await fetchMarketplaceProfile(user.id);
+          const profile = await fetchMarketplaceProfile(resolvedUserId);
           if (isMounted) {
             setMarketProfile(profile);
             if (profile) {
@@ -142,7 +142,7 @@ export default function MarketplaceProfilePage() {
               setPhoneNumber(profile.phoneNumber || "");
               setBio(profile.bio || "");
               setProfileImage(profile.profileImage || "");
-            } else {
+            } else if (user?.anonymousName) {
               setDisplayName(`${user.anonymousName.replace(/[^a-zA-Z0-9]/g, "")}_Store`);
             }
           }
@@ -151,6 +151,7 @@ export default function MarketplaceProfilePage() {
         console.error("Error loading marketplace profile page:", err);
       } finally {
         if (isMounted) {
+          setIsLoadingAuth(false);
           setIsLoadingProfile(false);
         }
       }
@@ -463,19 +464,14 @@ export default function MarketplaceProfilePage() {
   // Loading skeleton
   if (isLoadingAuth || isLoadingProfile) {
     return (
-      <div className="min-h-screen bg-[#070709] text-zinc-100 flex flex-col justify-between py-12 px-4 selection:bg-emerald-500/30">
-        <div className="max-w-2xl w-full mx-auto space-y-6 pt-6">
-          <div className="h-6 w-40 bg-zinc-900 rounded-full animate-pulse" />
-          <div className="p-6 rounded-[2rem] bg-zinc-900/40 border border-white/5 space-y-6">
-            <div className="flex items-center gap-6">
-              <div className="w-20 h-20 rounded-full bg-zinc-800 animate-pulse shrink-0" />
-              <div className="flex-1 space-y-2">
-                <div className="h-5 w-40 bg-zinc-800 rounded animate-pulse" />
-                <div className="h-3 w-60 bg-zinc-800/60 rounded animate-pulse" />
-              </div>
-            </div>
-            <div className="h-10 w-full bg-zinc-800/40 rounded-xl animate-pulse" />
-          </div>
+      <div className="min-h-screen bg-[#07080a] text-zinc-100 flex flex-col justify-between py-12 px-4 relative overflow-hidden">
+        <PinterestBackground variant="blueprint" />
+        <div className="flex-1 flex items-center justify-center">
+          <LoadingAnimation
+            size="lg"
+            text="Marketplace Seller Desk"
+            subtitle="Loading campus store details"
+          />
         </div>
         <Navbar />
       </div>
@@ -483,7 +479,10 @@ export default function MarketplaceProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#070709] text-zinc-100 flex flex-col justify-between pt-6 pb-28 px-4 selection:bg-emerald-500/30">
+    <div className="min-h-screen bg-[#07080a] text-zinc-100 flex flex-col justify-between pt-6 pb-28 px-4 selection:bg-emerald-500/25 relative overflow-hidden">
+      {/* Editorial Pinterest Blueprint Background */}
+      <PinterestBackground variant="blueprint" />
+
       {/* Hidden file input */}
       <input
         ref={fileInputRef}

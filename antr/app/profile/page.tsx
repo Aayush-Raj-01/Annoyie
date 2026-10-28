@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "../components/navbar";
 import ProfileHeaderNavigation from "@/components/profile/ProfileHeaderNavigation";
+import LoadingAnimation from "@/components/ui/LoadingAnimation";
+import PinterestBackground from "@/components/ui/PinterestBackground";
 import {
   getUserProfile,
   clearUserProfile,
@@ -142,19 +144,13 @@ export default function ProfilePage() {
 
   if (!loaded) {
     return (
-      <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col justify-between py-12 px-4">
-        <div className="max-w-md w-full mx-auto space-y-6">
-          <div className="h-6 w-32 bg-zinc-900 rounded-lg animate-pulse" />
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 space-y-6">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-zinc-800 animate-pulse shrink-0" />
-              <div className="space-y-2 flex-1">
-                <div className="h-5 w-36 bg-zinc-800 rounded animate-pulse" />
-                <div className="h-3 w-48 bg-zinc-800/60 rounded animate-pulse" />
-              </div>
-            </div>
-            <div className="h-10 w-full bg-zinc-800/40 rounded-xl animate-pulse" />
-          </div>
+      <div className="min-h-screen bg-[#050608] text-zinc-100 flex flex-col justify-between py-12 px-4">
+        <div className="flex-1 flex items-center justify-center">
+          <LoadingAnimation
+            size="lg"
+            text="Decentralized Profile"
+            subtitle="Decrypting identity data"
+          />
         </div>
         <Navbar />
       </div>
@@ -162,7 +158,10 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col justify-between pt-10 pb-28 px-4">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col justify-between pt-10 pb-28 px-4 relative overflow-hidden">
+      {/* Editorial Pinterest Blueprint Background */}
+      <PinterestBackground variant="blueprint" />
+
       {/* Hidden file input for photo upload */}
       <input
         ref={fileInputRef}
@@ -320,17 +319,17 @@ export default function ProfilePage() {
 
 
             {/* Marketplace Profile Link Card */}
-            <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-950/30 via-zinc-900/80 to-teal-950/20 border border-emerald-500/20 flex items-center justify-between gap-3">
+            <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-950/30 via-zinc-900/80 to-teal-950/20 border border-emerald-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
-                <span className="text-lg">🏪</span>
-                <div>
+                <span className="text-lg shrink-0">🏪</span>
+                <div className="min-w-0">
                   <div className="text-xs font-semibold text-white">Marketplace Profile</div>
                   <div className="text-[11px] text-zinc-400">Different profile for buying & selling on campus</div>
                 </div>
               </div>
               <Link
                 href="/marketplace/profile"
-                className="px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-colors shrink-0"
+                className="px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-colors text-center shrink-0"
               >
                 Manage Store →
               </Link>

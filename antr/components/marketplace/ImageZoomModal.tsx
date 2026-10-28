@@ -610,7 +610,7 @@ export default function ImageZoomModal({
                   }}
                   className={`w-9 h-9 sm:w-11 sm:h-11 rounded-lg overflow-hidden border-2 transition-all shrink-0 cursor-pointer relative ${
                     isSelected
-                      ? "border-emerald-400 scale-105 shadow-[0_0_12px_rgba(16,185,129,0.5)]"
+                      ? "border-emerald-400 scale-105"
                       : "border-white/10 opacity-60 hover:opacity-100 hover:border-white/30"
                   }`}
                   title={`View photo ${idx + 1}`}

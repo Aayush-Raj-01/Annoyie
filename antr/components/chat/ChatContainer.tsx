@@ -11,6 +11,7 @@ import MessageInput, { MentionMember } from "./MessageInput";
 import ChatNotificationBanner from "./ChatNotificationBanner";
 import { requestNotificationPermission } from "@/lib/notifications/chatNotifier";
 import { searchUsers } from "@/lib/api/users";
+import PinterestBackground from "@/components/ui/PinterestBackground";
 
 interface ChatContainerProps {
   currentUser: {
@@ -69,10 +70,22 @@ export default function ChatContainer({ currentUser, isLoggedIn = true }: ChatCo
 
   // WebSocket hook: connects to /chat, handles real-time incoming messages, reconnects
   const { isConnected, isConnecting, send } = useChatWebSocket();
+  const setIsMobileChatOpen = useChatStore((state) => state.setIsMobileChatOpen);
 
   // Mobile WhatsApp-style view state: "list" shows chats list, "chat" shows conversation
   const [mobileView, setMobileView] = useState<"list" | "chat">("list");
   const [campusUsers, setCampusUsers] = useState<MentionMember[]>([]);
+
+  // Keep global store aware of mobile chat screen status to auto-hide navbar on phones
+  React.useEffect(() => {
+    setIsMobileChatOpen(mobileView === "chat");
+  }, [mobileView, setIsMobileChatOpen]);
+
+  React.useEffect(() => {
+    return () => {
+      setIsMobileChatOpen(false);
+    };
+  }, [setIsMobileChatOpen]);
 
   React.useEffect(() => {
     requestNotificationPermission().catch(() => {});
@@ -259,7 +272,7 @@ export default function ChatContainer({ currentUser, isLoggedIn = true }: ChatCo
   };
 
   return (
-    <div className="flex h-screen w-full bg-[#08090d] text-zinc-100 overflow-hidden font-sans relative">
+    <div className="flex h-[100dvh] w-full bg-[#121316] text-zinc-100 overflow-hidden font-sans relative selection:bg-emerald-500/30 selection:text-white">
       {/* Floating In-App Chat Notification Banner */}
       <ChatNotificationBanner />
 

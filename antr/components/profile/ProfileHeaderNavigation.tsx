@@ -34,7 +34,7 @@ export default function ProfileHeaderNavigation({
       {/* Segmented Persona Switcher Pill (Consistent across both Marketplace & Chat Profile) */}
       <div className="flex items-center p-1 rounded-full bg-zinc-900/90 border border-white/[0.08] backdrop-blur-md shadow-md gap-0.5 sm:gap-1">
         {activeTab === "marketplace" ? (
-          <div className="px-2.5 sm:px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.25)] flex items-center gap-1.5 select-none">
+          <div className="px-2.5 sm:px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5 select-none">
             <span>🏪</span>
             <span>Marketplace</span>
           </div>
@@ -50,7 +50,7 @@ export default function ProfileHeaderNavigation({
         )}
 
         {activeTab === "chat" ? (
-          <div className="px-2.5 sm:px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.25)] flex items-center gap-1.5 select-none">
+          <div className="px-2.5 sm:px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5 select-none">
             <span>💬</span>
             <span>Chat Profile</span>
           </div>

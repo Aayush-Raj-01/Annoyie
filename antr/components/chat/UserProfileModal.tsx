@@ -123,8 +123,8 @@ export default function UserProfileModal({ userId, onClose, onMessage }: UserPro
             visible ? "scale-100 opacity-100 translate-y-0" : "scale-95 opacity-0 translate-y-3"
           }`}
         >
-          {/* Top Gradient accent bar */}
-          <div className="h-1 bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600" />
+          {/* Top Hairline Accent */}
+          <div className="h-[1px] bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
 
           {/* Header Bar with Title and Close Button */}
           <div className="flex items-center justify-between px-5 pt-3.5 pb-1">
@@ -223,7 +223,7 @@ export default function UserProfileModal({ userId, onClose, onMessage }: UserPro
                 {!isMe && (
                   <button
                     onClick={handleOpenDm}
-                    className="w-full py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-zinc-950 text-xs font-bold tracking-wide transition-all shadow-[0_0_20px_rgba(16,185,129,0.25)] hover:shadow-[0_0_28px_rgba(16,185,129,0.35)] cursor-pointer flex items-center justify-center gap-2 mt-2"
+                    className="w-full py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-zinc-950 text-xs font-bold tracking-wide transition-all shadow-sm hover:shadow-md cursor-pointer flex items-center justify-center gap-2 mt-2"
                   >
                     <svg className="w-4 h-4 text-zinc-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path

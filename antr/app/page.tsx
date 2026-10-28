@@ -8,6 +8,7 @@ import { fetchRandomGalleryFeed, GalleryPost } from "@/lib/api/gallery";
 import { getUserProfile, syncUserProfile, UserProfile } from "./lib/auth";
 import { connectSocket, subscribeToGallery } from "@/lib/socket/chatClient";
 import ToastNotification from "@/components/ui/ToastNotification";
+import PinterestBackground from "@/components/ui/PinterestBackground";
 
 export default function HomePage() {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
@@ -158,24 +159,31 @@ export default function HomePage() {
     });
 
   return (
-    <div className="min-h-screen bg-[#050505] text-zinc-100 flex flex-col relative font-sans selection:bg-white/20 selection:text-white pb-32">
+    <div className="min-h-screen bg-[#07080a] text-zinc-100 flex flex-col relative font-sans selection:bg-white/20 selection:text-white pb-32">
+      {/* Editorial Pinterest Dots Canvas */}
+      <PinterestBackground variant="dots" />
+
       <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
         {/* Toast */}
         <ToastNotification message={toast} onClose={() => setToast(null)} />
 
         {/* Minimal Clean Top Bar */}
-        <div className="flex items-center justify-between py-6 sm:py-8 border-b border-white/[0.06] mb-6">
-          <div className="flex items-center gap-4">
-            <h1 className="text-lg sm:text-xl font-semibold tracking-tight text-white">
-              Feed
-            </h1>
+        <div className="flex flex-wrap items-center justify-between gap-3 py-4 sm:py-8 border-b border-white/[0.06] mb-4 sm:mb-6">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <h1 className="text-lg sm:text-xl font-black tracking-widest text-white uppercase font-mono truncate">
+                ANNOYOI /IMSEC
+              </h1>
+              <span className="text-zinc-600 font-mono text-xs hidden sm:inline">•</span>
+              <span className="text-xs text-zinc-400 font-medium hidden sm:inline">Campus Feed</span>
+            </div>
 
             {/* Subtle Filter Toggle */}
-            <div className="flex items-center gap-1 p-0.5 rounded-lg bg-zinc-900/70 border border-white/5 text-xs">
+            <div className="flex items-center gap-0.5 sm:gap-1 p-0.5 rounded-lg bg-zinc-900/70 border border-white/5 text-xs">
               <button
                 type="button"
                 onClick={() => setFilterMode("all")}
-                className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer text-xs ${
                   filterMode === "all"
                     ? "bg-white/10 text-white font-medium"
                     : "text-zinc-500 hover:text-zinc-300"
@@ -186,7 +194,7 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => setFilterMode("mine")}
-                className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer text-xs ${
                   filterMode === "mine"
                     ? "bg-white/10 text-white font-medium"
                     : "text-zinc-500 hover:text-zinc-300"
@@ -204,7 +212,7 @@ export default function HomePage() {
               onClick={() => loadFeed(true)}
               disabled={loading || isShuffling}
               title="Shuffle feed"
-              className="px-3 py-1.5 rounded-xl border border-white/10 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 hover:text-white text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer active:scale-95 disabled:opacity-40"
+              className="px-2.5 sm:px-3 py-1.5 rounded-xl border border-white/10 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-300 hover:text-white text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer active:scale-95 disabled:opacity-40"
             >
               <svg
                 className={`w-3.5 h-3.5 text-zinc-400 transition-transform duration-300 ${
@@ -221,13 +229,13 @@ export default function HomePage() {
                   d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                 />
               </svg>
-              <span className="hidden sm:inline">Shuffle</span>
+              <span>Shuffle</span>
             </button>
 
             <button
               type="button"
               onClick={() => setIsUploadOpen(true)}
-              className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-medium transition-colors cursor-pointer active:scale-95 shadow-sm"
+              className="px-3 sm:px-3.5 py-1.5 rounded-xl bg-white hover:bg-zinc-200 text-black text-xs font-medium transition-colors cursor-pointer active:scale-95 shadow-sm"
             >
               + Upload
             </button>

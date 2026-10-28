@@ -7,6 +7,7 @@ import Image from "next/image";
 import Navbar from "../components/navbar";
 import { getAuthHeaders, getPendingEmail, getUserProfile, saveUserProfile, uploadAvatarImage, syncUserProfile } from "../lib/auth";
 import { apiUrl } from "@/lib/config/api";
+import PinterestBackground from "@/components/ui/PinterestBackground";
 
 const GENDER_OPTIONS = [
   { label: "Male", icon: "♂" },
@@ -253,9 +254,8 @@ export default function OnboardingPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-[#030504]/50 via-transparent to-[#030504]/80" />
       </div>
 
-      {/* Subtle Ambient Glows */}
-      <div className="hidden lg:block absolute -top-32 left-1/3 w-[600px] h-[400px] bg-emerald-900/15 rounded-full blur-[160px] pointer-events-none z-0" />
-      <div className="hidden lg:block absolute bottom-0 right-1/4 w-[450px] h-[350px] bg-teal-950/20 rounded-full blur-[150px] pointer-events-none z-0" />
+      {/* Editorial Pinterest Blueprint / Grid Background */}
+      <PinterestBackground variant="blueprint" />
 
       {/* Giant "PROFILE" Background Watermark Typography */}
       <div className="absolute top-12 sm:top-16 lg:top-20 left-1/2 -translate-x-1/2 pointer-events-none select-none z-0 w-full text-center overflow-hidden flex items-center justify-center">
@@ -282,10 +282,10 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        <form onSubmit={handleSaveProfile} className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-20 items-start">
+        <form onSubmit={handleSaveProfile} className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-16 items-start">
           
           {/* LEFT COLUMN: Very Large Profile Avatar & Username */}
-          <div className="lg:col-span-5 flex flex-col items-center space-y-5 p-6 sm:p-8 rounded-2xl bg-zinc-950/40 border border-zinc-900/90 shadow-black/40">
+          <div className="lg:col-span-5 flex flex-col items-center space-y-5 p-4 sm:p-8 rounded-2xl bg-zinc-950/40 border border-zinc-900/90 shadow-black/40">
             <input
               type="file"
               ref={fileInputRef}
@@ -300,7 +300,7 @@ export default function OnboardingPage() {
               className="relative group cursor-pointer"
               title="Click to choose profile picture"
             >
-              <div className="w-48 h-48 sm:w-56 sm:h-56 lg:w-60 lg:h-60 rounded-full overflow-hidden bg-zinc-900/90 border-2 border-zinc-800 group-hover:border-emerald-700/60 shadow-2xl shadow-black transition-all flex items-center justify-center relative group-hover:shadow-[0_0_35px_rgba(16,185,129,0.18)]">
+              <div className="w-40 h-40 sm:w-56 sm:h-56 lg:w-60 lg:h-60 rounded-full overflow-hidden bg-zinc-900/90 border-2 border-zinc-800 group-hover:border-zinc-700 shadow-2xl shadow-black transition-all flex items-center justify-center relative">
                 {activeAvatarPreview ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -309,7 +309,7 @@ export default function OnboardingPage() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <span className="text-6xl sm:text-7xl select-none opacity-80 group-hover:scale-150 transition-transform">
+                  <span className="text-5xl sm:text-7xl select-none opacity-80 group-hover:scale-150 transition-transform">
                     🐵
                   </span>
                 )}
@@ -364,7 +364,7 @@ export default function OnboardingPage() {
           </div>
 
           {/* RIGHT COLUMN: Specialization, Gender, Bio & Action Button */}
-          <div className="lg:col-span-7 flex flex-col space-y-6 p-6 sm:p-8 rounded-2xl bg-zinc-950/40 border border-zinc-900/80 shadow-xl shadow-black/40">
+          <div className="lg:col-span-7 flex flex-col space-y-6 p-4 sm:p-8 rounded-2xl bg-zinc-950/40 border border-zinc-900/80 shadow-xl shadow-black/40">
             {/* Specialization Selection (Single-Choice) */}
             <div className="space-y-2">
               <div className="flex justify-between items-center">
@@ -384,7 +384,7 @@ export default function OnboardingPage() {
                       onClick={() => selectHobby(item.tag)}
                       className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
                         isSelected
-                          ? "bg-emerald-500/10 border-emerald-500/40 text-zinc-100 shadow-[0_0_15px_rgba(16,185,129,0.08)]"
+                          ? "bg-emerald-500/10 border-emerald-500/40 text-zinc-100"
                           : "bg-zinc-900/40 border-zinc-800/80 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700 hover:bg-zinc-900/60"
                       }`}
                     >
@@ -460,7 +460,7 @@ export default function OnboardingPage() {
               <button
                 type="submit"
                 disabled={isSaving}
-                className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] text-zinc-950 text-xs font-semibold tracking-wide transition-all shadow-[0_1px_2px_rgba(0,0,0,0.5),0_0_20px_rgba(16,185,129,0.18)] hover:shadow-[0_0_25px_rgba(16,185,129,0.28)] disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] text-zinc-950 text-xs font-semibold tracking-wide transition-all shadow-sm hover:shadow-md disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
               >
                 <span className="onboardtext">{isSaving ? "Saving profile..." : "Save and Continue"}</span>
                 <span>→</span>

@@ -4,6 +4,8 @@ import React, { useEffect, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { isUserLoggedIn, getPendingEmail, syncTokenCookie } from "@/app/lib/auth";
 
+import LoadingAnimation from "@/components/ui/LoadingAnimation";
+
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -95,14 +97,15 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     };
   }, [pathname, router]);
 
-  // Render a clean pitch-black veil if unauthorized or redirecting
+  // Render a clean obsidian veil if unauthorized or redirecting
   if (!isAuthorized) {
     return (
-      <div className="fixed inset-0 z-[9999] bg-[#050505] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 rounded-full border-2 border-emerald-500/20 border-t-emerald-500 animate-spin" />
-        </div>
-      </div>
+      <LoadingAnimation
+        fullScreen
+        size="lg"
+        text="Verifying Access"
+        subtitle="Securing session credentials"
+      />
     );
   }
 

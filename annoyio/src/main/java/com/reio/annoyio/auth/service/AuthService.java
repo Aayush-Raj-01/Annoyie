@@ -177,7 +177,8 @@ public class AuthService {
                 saved.getTag(),
                 saved.getAvatarUrl(),
                 saved.getAdmissionYear(),
-                saved.getStudentYear()
+                saved.getStudentYear(),
+                saved.isBlocked()
         );
     }
 
@@ -190,6 +191,9 @@ public class AuthService {
         User user = userRepository.findByEmail(cleanEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        if(user.isBlocked()){
+            throw new RuntimeException("Account suspended. This account has been blocked by an administrator.");
+        }
         if(!user.isVerified()){
             throw new RuntimeException("Email is not verified");
         }
@@ -219,7 +223,8 @@ public class AuthService {
                 user.getTag(),
                 user.getAvatarUrl(),
                 user.getAdmissionYear(),
-                user.getStudentYear()
+                user.getStudentYear(),
+                user.isBlocked()
         );
     }
 

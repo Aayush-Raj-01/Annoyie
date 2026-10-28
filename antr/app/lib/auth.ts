@@ -12,6 +12,7 @@ export interface UserProfile {
   stealthMode?: boolean;
   admissionYear?: number;
   studentYear?: number;
+  blocked?: boolean;
 }
 
 export function formatStudentYear(year?: number | null): string {
@@ -177,6 +178,7 @@ export async function syncUserProfile(token?: string): Promise<UserProfile | nul
 
     const data = await res.json();
     if (data.username || data.email) {
+      const isBlocked = Boolean(data.blocked);
       const hobbies = data.tag ? (data.tag.split(",") as ("Coder" | "Non-coder")[]) : [];
       const updated = saveUserProfile({
         id: typeof data.id === "number" ? data.id : undefined,
@@ -187,7 +189,17 @@ export async function syncUserProfile(token?: string): Promise<UserProfile | nul
         avatarUrl: data.avatarUrl || undefined,
         admissionYear: data.admissionYear,
         studentYear: data.studentYear,
+        blocked: isBlocked,
       });
+
+      if (isBlocked && typeof window !== "undefined") {
+        localStorage.setItem("annoyms_is_blocked", "true");
+        if (window.location.pathname !== "/blocked") {
+          window.location.href = "/blocked";
+        }
+      } else if (typeof window !== "undefined") {
+        localStorage.removeItem("annoyms_is_blocked");
+      }
 
       // Synchronize marketplace profile immediately if user ID is known
       if (updated.id) {

@@ -14,12 +14,14 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import com.reio.annoyio.security.JwtService;
+import com.reio.annoyio.user.entity.User;
 import com.reio.annoyio.user.repository.UserRepository;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
 import java.util.Arrays;
+import java.util.Map;
 
 @Configuration
 @EnableWebSocketMessageBroker
@@ -69,8 +71,25 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         String email = jwtService.extractUsername(authorization.substring(7).trim());
                         Authentication user = new UsernamePasswordAuthenticationToken(email, null, java.util.List.of());
                         accessor.setUser(user);
+
+                        // Attach user details into session attributes for presence tracking
+                        userRepository.findByEmail(email).ifPresent(u -> {
+                            Map<String, Object> sessionAttrs = accessor.getSessionAttributes();
+                            if (sessionAttrs != null) {
+                                sessionAttrs.put("userId", u.getId());
+                                sessionAttrs.put("username", u.getUsername());
+                                sessionAttrs.put("email", u.getEmail());
+                            }
+                        });
                     } catch (RuntimeException ex) {
                         throw new AccessDeniedException("Invalid token", ex);
+                    }
+                }
+
+                if (accessor.getUser() != null) {
+                    String userEmail = accessor.getUser().getName();
+                    if (userEmail != null && userRepository.findByEmail(userEmail).map(User::isBlocked).orElse(false)) {
+                        throw new AccessDeniedException("Your account has been suspended by an administrator.");
                     }
                 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useCallback } from "react";
-import { connectSocket, sendMessage } from "@/lib/socket/chatClient";
+import { connectSocket, sendMessage, subscribeToPresence } from "@/lib/socket/chatClient";
 import { useChatStore } from "@/store/chatStore";
 import type { SendMessageDTO } from "@/types/chat";
 
@@ -12,8 +12,12 @@ export function useChatWebSocket() {
   const isConnecting = useChatStore((state) => state.isConnecting);
   const activeRoomId = useChatStore((state) => state.activeRoomId);
 
+  const fetchOnlinePresence = useChatStore((state) => state.fetchOnlinePresence);
+  const setOnlinePresence = useChatStore((state) => state.setOnlinePresence);
+  const updateUserPresence = useChatStore((state) => state.updateUserPresence);
+
   useEffect(() => {
-    // Connect STOMP socket with message handler and status listener
+    // 1. Connect STOMP socket with message handler and status listener
     connectSocket(
       (incomingMsg) => {
         addMessage(incomingMsg);
@@ -23,10 +27,28 @@ export function useChatWebSocket() {
       }
     );
 
+    // 2. Initial presence sync
+    fetchOnlinePresence();
+
+    // 3. Real-time presence listener from WebSocket
+    const unsubPresence = subscribeToPresence((presence) => {
+      if (Array.isArray(presence.onlineUserIds) && Array.isArray(presence.onlineUsernames)) {
+        setOnlinePresence(presence.onlineUserIds, presence.onlineUsernames);
+      } else if (presence.userId != null || presence.username != null) {
+        updateUserPresence(presence.userId, presence.username, presence.online);
+      }
+    });
+
+    // 4. Polling heartbeat sync every 15s
+    const pollInterval = setInterval(() => {
+      fetchOnlinePresence();
+    }, 15000);
+
     return () => {
-      // Keep socket alive across route switches
+      unsubPresence();
+      clearInterval(pollInterval);
     };
-  }, [addMessage, setConnectionStatus]);
+  }, [addMessage, setConnectionStatus, fetchOnlinePresence, setOnlinePresence, updateUserPresence]);
 
   const send = useCallback(
     async (

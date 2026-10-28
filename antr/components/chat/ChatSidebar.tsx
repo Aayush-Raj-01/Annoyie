@@ -93,6 +93,7 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
 
   const setActiveRoom = useChatStore((state) => state.setActiveRoom);
   const openDm = useChatStore((state) => state.openDm);
+  const isUserOnline = useChatStore((state) => state.isUserOnline);
   const isConnected = useChatStore((state) => state.isConnected);
   const isConnecting = useChatStore((state) => state.isConnecting);
 
@@ -212,7 +213,7 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
               src={currentUser.avatarUrl}
               name={currentUser.anonymousName}
               size="md"
-              className="shrink-0 ring-1 ring-white/10"
+              className="shrink-0"
             />
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white font-sans">
               Chats
@@ -336,6 +337,8 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
                               name={user.username}
                               size="sm"
                               isBlocked={isBlocked}
+                              showStatus={true}
+                              isConnected={isUserOnline(user.id, user.username)}
                             />
 
                             <div className="min-w-0">
@@ -343,6 +346,9 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
                                 <span className="text-xs font-semibold text-white group-hover:text-emerald-300 truncate">
                                   @{user.username}
                                 </span>
+                                {isUserOnline(user.id, user.username) && (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" title="Active now" />
+                                )}
                                 <span className="text-[9px] px-1 py-0.2 rounded bg-zinc-800 text-zinc-300 font-mono">
                                   Yr {user.studentYear ?? 1}
                                 </span>
@@ -445,6 +451,7 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
                         activeChatType === "dm" && activeDmUser?.userId === dm.userId;
                       const unread = unreadDmCounts[dm.userId] || 0;
                       const isBlocked = blockedUserIds.includes(dm.userId);
+                      const isOnline = isUserOnline(dm.userId, dm.username);
                       const dmMessages = messagesByDm[dm.userId] || [];
                       const lastMsg =
                         dmMessages.length > 0 ? dmMessages[dmMessages.length - 1] : null;
@@ -493,7 +500,9 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
                               name={dm.username}
                               size="md"
                               isBlocked={isBlocked}
-                              className="ring-1 ring-white/10"
+                              showStatus={true}
+                              isConnected={isOnline}
+                              className="shrink-0"
                             />
                           </div>
 
@@ -508,6 +517,9 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
                                 >
                                   {dm.username}
                                 </span>
+                                {isOnline && (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" title="Active now" />
+                                )}
                               </div>
                               {timeStr && (
                                 <span className="text-[11px] font-mono text-zinc-500 shrink-0">

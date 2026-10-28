@@ -73,7 +73,17 @@ export default function ChatContainer({ currentUser, isLoggedIn = true }: ChatCo
   const setIsMobileChatOpen = useChatStore((state) => state.setIsMobileChatOpen);
 
   // Mobile WhatsApp-style view state: "list" shows chats list, "chat" shows conversation
-  const [mobileView, setMobileView] = useState<"list" | "chat">("list");
+  const [mobileView, setMobileView] = useState<"list" | "chat">(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("dm")) return "chat";
+      try {
+        const raw = localStorage.getItem("annoyms_active_chat");
+        if (raw && JSON.parse(raw).type === "dm") return "chat";
+      } catch {}
+    }
+    return "list";
+  });
   const [campusUsers, setCampusUsers] = useState<MentionMember[]>([]);
 
   // Keep global store aware of mobile chat screen status to auto-hide navbar on phones
@@ -303,7 +313,17 @@ export default function ChatContainer({ currentUser, isLoggedIn = true }: ChatCo
       >
         {/* Chat Top Header with WhatsApp Back Button on Mobile */}
         <ChatHeader
-          onBack={() => setMobileView("list")}
+          onBack={() => {
+            setMobileView("list");
+            if (typeof window !== "undefined") {
+              try {
+                localStorage.removeItem("annoyms_active_chat");
+                const url = new URL(window.location.href);
+                url.searchParams.delete("dm");
+                window.history.replaceState({}, "", url.toString());
+              } catch {}
+            }
+          }}
           onRefresh={() => refetch()}
           isFetching={isFetching}
         />

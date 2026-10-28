@@ -68,7 +68,7 @@ export default function ListingMediaGallery({
 
   return (
     <>
-      <div className="relative w-full h-48 sm:h-52 rounded-xl overflow-hidden bg-zinc-950 border border-white/5 group select-none">
+      <div className="relative w-full h-36 sm:h-52 rounded-xl overflow-hidden bg-zinc-950 border border-white/5 group select-none">
         {/* Media Content */}
         {isVideo ? (
           <video

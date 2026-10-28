@@ -19,10 +19,14 @@ export function proxy(request: NextRequest) {
     pathname === "/authentication" || pathname.startsWith("/authentication/");
   const isOnboardingPage =
     pathname === "/onboarding" || pathname.startsWith("/onboarding/");
+  const isAdminPage =
+    pathname === "/annoyoiadmin" || pathname.startsWith("/annoyoiadmin/");
+  const isBlockedPage =
+    pathname === "/blocked" || pathname.startsWith("/blocked/");
 
   // 2. Unauthenticated visitor: lock down all pages and redirect to /authentication
   if (!tokenCookie) {
-    if (!isAuthPage && !isOnboardingPage) {
+    if (!isAuthPage && !isOnboardingPage && !isAdminPage && !isBlockedPage) {
       const loginUrl = new URL("/authentication", request.url);
       return NextResponse.redirect(loginUrl);
     }

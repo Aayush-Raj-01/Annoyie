@@ -377,10 +377,11 @@ export default function MarketplacePage() {
 
       <div className="max-w-7xl w-full mx-auto space-y-8">
         {/* ========================================================= */}
+        {/* ========================================================= */}
         {/* HERO SECTION: Editorial "Shop" Display Banner             */}
         {/* (Directly styled after reference image, dark theme)       */}
         {/* ========================================================= */}
-        <section className="relative rounded-3xl overflow-hidden bg-[#10121a] border border-white/[0.08] p-6 sm:p-12">
+        <section className="relative rounded-2xl sm:rounded-3xl overflow-hidden bg-[#10121a] border border-white/[0.08] p-4 sm:p-8 md:p-12">
           {/* Subtle architectural room silhouette background */}
           <div className="absolute inset-0 opacity-15 pointer-events-none select-none overflow-hidden flex items-center justify-center">
             <svg viewBox="0 0 800 400" className="w-full h-full text-zinc-400" fill="none" stroke="currentColor" strokeWidth="1">
@@ -398,18 +399,18 @@ export default function MarketplacePage() {
 
           {/* Huge "Shop" Wordmark Overlay */}
           <div className="relative z-10 flex flex-col items-center sm:items-start text-center sm:text-left select-none">
-            <h1 className="text-6xl sm:text-8xl md:text-9xl font-extrabold tracking-tight text-white/90 leading-none">
+            <h1 className="text-5xl sm:text-8xl md:text-9xl font-extrabold tracking-tight text-white/90 leading-none">
               Shop
             </h1>
           </div>
 
           {/* Docked Control Bar: Subtitle & Search Box (Matching Reference Hero Header) */}
-          <div className="relative z-10 mt-6 pt-6 border-t border-white/[0.08] flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <span className="text-base sm:text-lg font-bold text-white tracking-tight">
+          <div className="relative z-10 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-white/[0.08] flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 sm:gap-4">
+            <div className="flex items-center justify-between sm:justify-start gap-3">
+              <span className="text-sm sm:text-lg font-bold text-white tracking-tight">
                 Give All You Need
               </span>
-              <span className="hidden sm:inline text-xs font-mono text-zinc-500 uppercase tracking-widest">
+              <span className="text-[10px] sm:text-xs font-mono text-zinc-500 uppercase tracking-widest">
                 // Campus Peer Exchange
               </span>
             </div>
@@ -421,10 +422,10 @@ export default function MarketplacePage() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search on Annoyms Store..."
-                  className="w-full pl-9 pr-8 py-2.5 rounded-full bg-[#181a24] border border-white/[0.1] text-xs sm:text-sm text-white placeholder-zinc-500 outline-none focus:border-white/30 transition-all"
+                  placeholder="Search campus marketplace..."
+                  className="w-full pl-8 sm:pl-9 pr-7 sm:pr-8 py-2 sm:py-2.5 rounded-full bg-[#181a24] border border-white/[0.1] text-xs sm:text-sm text-white placeholder-zinc-500 outline-none focus:border-white/30 transition-all"
                 />
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">
+                <div className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 text-zinc-400">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
@@ -432,7 +433,7 @@ export default function MarketplacePage() {
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white text-xs cursor-pointer"
+                    className="absolute right-2.5 sm:right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white text-xs cursor-pointer"
                   >
                     ✕
                   </button>
@@ -440,7 +441,7 @@ export default function MarketplacePage() {
               </div>
               <button
                 type="button"
-                className="px-5 py-2.5 rounded-full bg-white text-black font-semibold text-xs transition-all hover:bg-zinc-200 active:scale-95 cursor-pointer shrink-0"
+                className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-white text-black font-semibold text-xs transition-all hover:bg-zinc-200 active:scale-95 cursor-pointer shrink-0"
               >
                 Search
               </button>
@@ -449,23 +450,23 @@ export default function MarketplacePage() {
         </section>
 
         {/* Action Header: Post Item, Inquiries & Seller Desk */}
-        <div className="flex items-center justify-between flex-wrap gap-3 pb-2 border-b border-white/[0.06]">
+        <div className="flex items-center justify-between flex-wrap gap-2.5 pb-2 border-b border-white/[0.06]">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-            <span className="text-xs font-mono uppercase tracking-wider text-zinc-400">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block shrink-0" />
+            <span className="text-[11px] sm:text-xs font-mono uppercase tracking-wider text-zinc-400">
               Verified Student Listings ({filteredListings.length})
             </span>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             {/* Inquiries */}
             <Link
               href="/marketplace/messages"
-              className="px-3.5 py-1.5 rounded-full bg-[#141620] hover:bg-[#1a1d2b] border border-white/[0.08] text-zinc-200 text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+              className="px-3 sm:px-3.5 py-1.5 rounded-full bg-[#141620] hover:bg-[#1a1d2b] border border-white/[0.08] text-zinc-200 text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
               title="Buyer Inquiries"
             >
               <span>💬</span>
-              <span>Messages</span>
+              <span className="hidden xs:inline">Messages</span>
               {unreadDmCount > 0 && (
                 <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-white text-black">
                   {unreadDmCount}
@@ -477,18 +478,80 @@ export default function MarketplacePage() {
             <button
               type="button"
               onClick={handlePostItemClick}
-              className="px-4 py-1.5 rounded-full bg-white text-black text-xs font-bold transition-all hover:bg-zinc-200 active:scale-95 cursor-pointer shadow-sm"
+              className="px-3.5 sm:px-4 py-1.5 rounded-full bg-white text-black text-xs font-bold transition-all hover:bg-zinc-200 active:scale-95 cursor-pointer shadow-sm"
             >
-              + List Item
+              + Sell Item
             </button>
 
             {/* Seller Desk */}
             <Link
               href="/marketplace/profile"
-              className="px-3 py-1.5 rounded-full bg-[#141620] hover:bg-[#1a1d2b] border border-white/[0.08] text-zinc-300 text-xs font-medium transition-all"
+              className="px-2.5 sm:px-3 py-1.5 rounded-full bg-[#141620] hover:bg-[#1a1d2b] border border-white/[0.08] text-zinc-300 text-xs font-medium transition-all"
             >
-              <span>👤 Seller Desk</span>
+              <span>👤 <span className="hidden sm:inline">Seller Desk</span></span>
             </Link>
+          </div>
+        </div>
+
+        {/* ========================================================= */}
+        {/* MOBILE CATEGORY & SUBFILTER HORIZONTAL STRIPS (lg:hidden) */}
+        {/* Fast thumb scrolling without pushing down product items   */}
+        {/* ========================================================= */}
+        <div className="lg:hidden space-y-2.5 -mt-2">
+          {/* Scrollable Category Chips */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 no-scrollbar scroll-smooth">
+            {CATEGORIES.map((cat) => {
+              const isActive = selectedCategory === cat.id;
+              const count =
+                cat.id === "All"
+                  ? listings.length
+                  : listings.filter((l) => l.category === cat.id).length;
+
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shrink-0 flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 ${
+                    isActive
+                      ? "bg-white text-black font-bold shadow-md"
+                      : "bg-[#141622] text-zinc-400 border border-white/[0.08] hover:text-white"
+                  }`}
+                >
+                  <span>{cat.icon}</span>
+                  <span>{cat.label}</span>
+                  <span
+                    className={`text-[9px] font-mono px-1.5 py-0.2 rounded-full ${
+                      isActive ? "bg-black text-white" : "bg-white/[0.08] text-zinc-400"
+                    }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Sub-Filters Horizontal Chips */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+            {SUB_FILTERS.map((f) => {
+              const isActive = subFilter === f.id;
+              return (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setSubFilter(f.id as any)}
+                  className={`px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap shrink-0 transition-all flex items-center gap-1 cursor-pointer active:scale-95 ${
+                    isActive
+                      ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-semibold"
+                      : "bg-[#12131b] text-zinc-400 border border-white/[0.06] hover:text-zinc-200"
+                  }`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-emerald-400" : "bg-zinc-600"}`} />
+                  <span>{f.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -496,11 +559,12 @@ export default function MarketplacePage() {
         {/* TWO-COLUMN E-COMMERCE LAYOUT (Matching Reference Image)   */}
         {/* Left: Category tree & Sub-filters | Right: Product Grid   */}
         {/* ========================================================= */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8 items-start">
           {/* ======================================= */}
           {/* LEFT SIDEBAR: Category Tree & Filters   */}
+          {/* (Hidden on mobile, uses top chip scroller)*/}
           {/* ======================================= */}
-          <aside className="space-y-6 lg:sticky lg:top-8">
+          <aside className="hidden lg:block space-y-6 lg:sticky lg:top-8">
             {/* Category Section */}
             <div className="p-5 rounded-2xl bg-[#12131b] border border-white/[0.07] space-y-4">
               <div className="flex items-center justify-between">
@@ -632,7 +696,7 @@ export default function MarketplacePage() {
               </div>
             ) : (
               /* E-Commerce Product Card Grid (Matching Reference Image) */
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+              <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-5">
                 {paginatedListings.map((item) => {
                   const isMine =
                     (currentUser?.id && item.sellerUserId === currentUser.id) ||
@@ -641,10 +705,10 @@ export default function MarketplacePage() {
                   return (
                     <article
                       key={item.id}
-                      className="rounded-2xl bg-[#12131a] border border-white/[0.07] hover:border-white/20 transition-all duration-300 p-3.5 flex flex-col justify-between group shadow-sm hover:shadow-xl select-none"
+                      className="rounded-2xl bg-[#12131a] border border-white/[0.07] hover:border-white/20 transition-all duration-300 p-2.5 sm:p-3.5 flex flex-col justify-between group shadow-sm hover:shadow-xl select-none"
                     >
                       {/* Top Media Showcase Container (Matching Reference Layout) */}
-                      <div className="relative rounded-xl bg-[#171822] overflow-hidden p-2 flex items-center justify-center">
+                      <div className="relative rounded-xl bg-[#171822] overflow-hidden p-1.5 sm:p-2 flex items-center justify-center">
                         <ListingMediaGallery
                           mediaUrls={item.mediaUrls}
                           imageUrl={item.imageUrl}
@@ -652,20 +716,20 @@ export default function MarketplacePage() {
                         />
 
                         {/* Top-Right Category Pill Badge (Matching Reference Image) */}
-                        <div className="absolute top-2.5 right-2.5 z-10 pointer-events-none">
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-black/75 text-zinc-300 border border-white/10 backdrop-blur-sm">
+                        <div className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 z-10 pointer-events-none">
+                          <span className="px-1.5 sm:px-2.5 py-0.5 rounded-full text-[8px] sm:text-[10px] font-mono font-medium bg-black/75 text-zinc-300 border border-white/10 backdrop-blur-sm">
                             {item.category}
                           </span>
                         </div>
 
                         {/* Top-Left Negotiable / Fixed Tag */}
-                        <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none">
+                        <div className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 z-10 pointer-events-none">
                           {item.bargainAvailable ? (
-                            <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 backdrop-blur-sm">
-                              🤝 Negotiable
+                            <span className="px-1.5 sm:px-2 py-0.5 rounded-full text-[8px] sm:text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 backdrop-blur-sm">
+                              🤝 <span className="hidden xs:inline">Negotiable</span>
                             </span>
                           ) : (
-                            <span className="px-2 py-0.5 rounded-full text-[9px] font-mono text-zinc-400 bg-black/60 border border-white/5 backdrop-blur-sm">
+                            <span className="px-1.5 sm:px-2 py-0.5 rounded-full text-[8px] sm:text-[9px] font-mono text-zinc-400 bg-black/60 border border-white/5 backdrop-blur-sm">
                               Fixed
                             </span>
                           )}
@@ -673,56 +737,56 @@ export default function MarketplacePage() {
                       </div>
 
                       {/* Card Content (Matching Reference Title, Reviews/Location, Price) */}
-                      <div className="pt-3 pb-2 space-y-2">
+                      <div className="pt-2 sm:pt-3 pb-1.5 sm:pb-2 space-y-1.5 sm:space-y-2">
                         {/* Title & Price Row */}
-                        <div className="flex items-start justify-between gap-2">
-                          <h3 className="text-sm font-bold text-white group-hover:text-zinc-200 transition-colors line-clamp-1 leading-snug flex-1">
+                        <div className="flex items-start justify-between gap-1 sm:gap-2">
+                          <h3 className="text-xs sm:text-sm font-bold text-white group-hover:text-zinc-200 transition-colors line-clamp-1 leading-snug flex-1">
                             {item.title}
                           </h3>
-                          <span className="font-mono font-bold text-sm sm:text-base text-white shrink-0">
+                          <span className="font-mono font-bold text-xs sm:text-base text-white shrink-0">
                             ₹{item.price}
                           </span>
                         </div>
 
                         {/* Campus Location / Reviews Row (Matching Reference "★ 5.0") */}
-                        <div className="flex items-center justify-between text-xs text-zinc-400">
-                          <div className="flex items-center gap-1 text-[11px] font-medium text-amber-400">
+                        <div className="flex items-center justify-between text-[10px] sm:text-xs text-zinc-400">
+                          <div className="flex items-center gap-0.5 sm:gap-1 text-[10px] sm:text-[11px] font-medium text-amber-400">
                             <span>★</span>
-                            <span className="text-zinc-300 font-semibold">
-                              {item.hostelName || "Campus Hostel"}
+                            <span className="text-zinc-300 font-semibold truncate max-w-[70px] sm:max-w-none">
+                              {item.hostelName || "Hostel"}
                             </span>
-                            <span className="text-zinc-600">•</span>
-                            <span className="text-zinc-400 font-mono text-[10px]">
+                            <span className="text-zinc-600 hidden xs:inline">•</span>
+                            <span className="text-zinc-400 font-mono text-[9px] sm:text-[10px] hidden xs:inline">
                               Rm {item.roomNo || "—"}
                             </span>
                           </div>
 
-                          <span className="text-[10px] text-zinc-500 font-mono">
+                          <span className="text-[9px] sm:text-[10px] text-zinc-500 font-mono truncate max-w-[60px] sm:max-w-none">
                             @{item.sellerDisplayName}
                           </span>
                         </div>
 
                         {item.description && (
-                          <p className="text-xs text-zinc-400 line-clamp-1 leading-relaxed">
+                          <p className="text-[11px] sm:text-xs text-zinc-400 line-clamp-1 leading-relaxed hidden xs:block">
                             {item.description}
                           </p>
                         )}
                       </div>
 
                       {/* Dual Action Button Row (Directly Matching Reference Image!) */}
-                      <div className="pt-2 border-t border-white/[0.05] grid grid-cols-2 gap-2 mt-1">
+                      <div className="pt-2 border-t border-white/[0.05] grid grid-cols-2 gap-1.5 sm:gap-2 mt-1">
                         {isMine ? (
                           <>
                             <Link
                               href="/marketplace/profile"
-                              className="w-full py-2 rounded-xl bg-transparent hover:bg-white/[0.05] text-zinc-300 border border-white/10 text-xs font-semibold text-center transition-all cursor-pointer"
+                              className="w-full py-1.5 sm:py-2 rounded-xl bg-transparent hover:bg-white/[0.05] text-zinc-300 border border-white/10 text-[11px] sm:text-xs font-semibold text-center transition-all cursor-pointer"
                             >
-                              Edit Item
+                              Edit
                             </Link>
                             <button
                               type="button"
                               onClick={() => handleDeleteListing(item.id, item.title, item.sellerUserId)}
-                              className="w-full py-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/25 text-xs font-semibold transition-all cursor-pointer active:scale-95"
+                              className="w-full py-1.5 sm:py-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/25 text-[11px] sm:text-xs font-semibold transition-all cursor-pointer active:scale-95"
                             >
                               Remove
                             </button>
@@ -736,9 +800,9 @@ export default function MarketplacePage() {
                               )}&listingId=${item.id}&listingTitle=${encodeURIComponent(
                                 item.title
                               )}&listingPrice=${item.price}`}
-                              className="w-full py-2 rounded-xl bg-transparent hover:bg-white/[0.05] text-zinc-200 border border-white/10 text-xs font-semibold text-center transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-sm"
+                              className="w-full py-1.5 sm:py-2 rounded-xl bg-transparent hover:bg-white/[0.05] text-zinc-200 border border-white/10 text-[11px] sm:text-xs font-semibold text-center transition-all flex items-center justify-center gap-1 active:scale-95 shadow-sm"
                             >
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                               </svg>
                               <span>Chat</span>
@@ -752,10 +816,10 @@ export default function MarketplacePage() {
                                 )}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="w-full py-2 rounded-xl bg-white text-black hover:bg-zinc-200 text-xs font-bold text-center transition-all flex items-center justify-center gap-1 active:scale-95 shadow-sm"
+                                className="w-full py-1.5 sm:py-2 rounded-xl bg-white text-black hover:bg-zinc-200 text-[11px] sm:text-xs font-bold text-center transition-all flex items-center justify-center gap-1 active:scale-95 shadow-sm"
                                 title="Contact via WhatsApp"
                               >
-                                <span>Buy Now</span>
+                                <span>Buy</span>
                                 <span className="text-[10px]">↗</span>
                               </a>
                             ) : (
@@ -765,9 +829,9 @@ export default function MarketplacePage() {
                                 )}&listingId=${item.id}&listingTitle=${encodeURIComponent(
                                   item.title
                                 )}&listingPrice=${item.price}`}
-                                className="w-full py-2 rounded-xl bg-white text-black hover:bg-zinc-200 text-xs font-bold text-center transition-all active:scale-95 shadow-sm"
+                                className="w-full py-1.5 sm:py-2 rounded-xl bg-white text-black hover:bg-zinc-200 text-[11px] sm:text-xs font-bold text-center transition-all active:scale-95 shadow-sm"
                               >
-                                Buy Now
+                                Buy
                               </Link>
                             )}
                           </>
@@ -781,14 +845,14 @@ export default function MarketplacePage() {
 
             {/* Pagination Controls (Matching Reference: ← Previous | 1 2 3 ... | Next →) */}
             {totalPages > 1 && (
-              <div className="pt-6 border-t border-white/[0.06] flex items-center justify-between text-xs">
+              <div className="pt-6 border-t border-white/[0.06] flex items-center justify-between flex-wrap gap-3 text-xs">
                 <button
                   type="button"
                   disabled={currentPage <= 1}
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  className="px-4 py-2 rounded-full border border-white/10 hover:bg-white/[0.04] text-zinc-300 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
+                  className="px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full border border-white/10 hover:bg-white/[0.04] text-zinc-300 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
                 >
-                  ← Previous
+                  ← Prev
                 </button>
 
                 {/* Page Number Chips */}
@@ -800,7 +864,7 @@ export default function MarketplacePage() {
                         key={pageNum}
                         type="button"
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`w-8 h-8 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                        className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                           currentPage === pageNum
                             ? "bg-white text-black font-bold"
                             : "text-zinc-400 hover:text-white hover:bg-white/[0.05]"
@@ -816,7 +880,7 @@ export default function MarketplacePage() {
                   type="button"
                   disabled={currentPage >= totalPages}
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  className="px-4 py-2 rounded-full border border-white/10 hover:bg-white/[0.04] text-zinc-300 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
+                  className="px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full border border-white/10 hover:bg-white/[0.04] text-zinc-300 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-all"
                 >
                   Next →
                 </button>
@@ -831,27 +895,27 @@ export default function MarketplacePage() {
         {recommendations.length > 0 && (
           <section className="pt-8 space-y-4 border-t border-white/[0.08]">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg sm:text-xl font-bold tracking-tight text-white">
+              <h2 className="text-base sm:text-xl font-bold tracking-tight text-white">
                 Explore our recommendations
               </h2>
-              <span className="text-xs font-mono text-zinc-500">
+              <span className="text-[11px] sm:text-xs font-mono text-zinc-500">
                 Peer Picks
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4">
               {recommendations.map((rec) => (
                 <div
                   key={`rec-${rec.id}`}
-                  className="rounded-2xl bg-[#12131a] border border-white/[0.06] p-3 space-y-2 hover:border-white/20 transition-all select-none"
+                  className="rounded-2xl bg-[#12131a] border border-white/[0.06] p-2.5 sm:p-3 space-y-2 hover:border-white/20 transition-all select-none"
                 >
-                  <div className="h-32 rounded-xl bg-[#171822] overflow-hidden flex items-center justify-center p-2 relative">
+                  <div className="h-28 sm:h-32 rounded-xl bg-[#171822] overflow-hidden flex items-center justify-center p-2 relative">
                     <ListingMediaGallery
                       mediaUrls={rec.mediaUrls}
                       imageUrl={rec.imageUrl}
                       title={rec.title}
                     />
-                    <span className="absolute top-2 right-2 text-[9px] font-mono px-2 py-0.5 rounded-full bg-black/70 text-zinc-300 border border-white/10">
+                    <span className="absolute top-2 right-2 text-[8px] sm:text-[9px] font-mono px-2 py-0.5 rounded-full bg-black/70 text-zinc-300 border border-white/10">
                       {rec.category}
                     </span>
                   </div>
@@ -865,7 +929,7 @@ export default function MarketplacePage() {
                         )}&listingId=${rec.id}&listingTitle=${encodeURIComponent(
                           rec.title
                         )}&listingPrice=${rec.price}`}
-                        className="text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 cursor-pointer"
+                        className="text-[10px] sm:text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 cursor-pointer"
                       >
                         Contact →
                       </Link>
@@ -876,6 +940,16 @@ export default function MarketplacePage() {
             </div>
           </section>
         )}
+
+        {/* Floating Action Button (FAB) on Mobile: 1-thumb fast access */}
+        <button
+          type="button"
+          onClick={handlePostItemClick}
+          className="fixed bottom-20 right-4 z-40 lg:hidden flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-white text-black font-bold text-xs shadow-[0_8px_25px_rgba(0,0,0,0.6)] border border-white/20 active:scale-95 transition-all cursor-pointer"
+        >
+          <span className="text-sm leading-none">+</span>
+          <span>Sell Item</span>
+        </button>
 
         {/* ========================================================= */}
         {/* BOTTOM CALLOUT CARD ("Ready to Get Our New Stuff?" Match) */}

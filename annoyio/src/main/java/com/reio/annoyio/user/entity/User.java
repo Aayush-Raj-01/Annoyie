@@ -58,6 +58,17 @@ public class User {
     private String avatarUrl;
     private Integer admissionYear;
 
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean blocked = false;
+
+    public boolean isBlocked() {
+        return blocked;
+    }
+
+    public void setBlocked(boolean blocked) {
+        this.blocked = blocked;
+    }
+
     public Integer getAdmissionYear(){ return admissionYear;}
     public void setAdmissionYear(Integer admissionYear){this.admissionYear = admissionYear;}
     public User(){}

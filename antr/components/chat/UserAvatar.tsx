@@ -78,21 +78,22 @@ export default function UserAvatar({
   const hasValidImage = Boolean(src && src.trim() && !imageFailed);
 
   return (
-    <div className={`relative shrink-0 select-none ${className}`}>
+    <div className={`relative shrink-0 select-none rounded-full ${sizeMap[size]} ${className}`}>
       <div
-        className={`${sizeMap[size]} rounded-full overflow-hidden border border-white/[0.08] ring-1 ring-black/40 flex items-center justify-center relative shadow-[0_2px_8px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.1)]`}
+        className="w-full h-full rounded-full overflow-hidden border border-white/[0.12] flex items-center justify-center relative shadow-sm"
+        style={{ WebkitMaskImage: "-webkit-radial-gradient(white, black)" }}
       >
         {hasValidImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={src!}
             alt={name || "User Avatar"}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover rounded-full"
             onError={() => setImageFailed(true)}
           />
         ) : (
           <div
-            className={`w-full h-full ${palette} border flex items-center justify-center font-bold tracking-tight font-mono`}
+            className={`w-full h-full ${palette} rounded-full flex items-center justify-center font-bold tracking-tight font-mono`}
           >
             <span>{initials}</span>
           </div>

@@ -31,7 +31,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/register", "/auth/verify", "/auth/login", "/chat/**").permitAll()
+                        .requestMatchers("/auth/register", "/auth/verify", "/auth/login", "/chat/**",
+                                "/api/annoyoiadmin/**", "/annoyoiadmin/**", "/api/presence/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET,
                                 "/api/users/**", "/api/gallery/**", "/marketplace/listings/**",
                                 "/marketplace/profile/view/**", "/marketplace/profile/check-name").permitAll()

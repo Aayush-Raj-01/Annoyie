@@ -41,6 +41,7 @@ export default function UserProfileModal({ userId, onClose, onMessage }: UserPro
 
   const openDm = useChatStore((state) => state.openDm);
   const currentUserId = useChatStore((state) => state.currentUserId);
+  const isUserOnline = useChatStore((state) => state.isUserOnline);
 
   const fetchUser = useCallback(async (id: number) => {
     setLoading(true);
@@ -154,7 +155,13 @@ export default function UserProfileModal({ userId, onClose, onMessage }: UserPro
                 {/* Avatar + name */}
                 <div className="flex flex-col items-center gap-3 pb-3">
                   <div className="relative">
-                    <UserAvatar src={user.avatarUrl} name={user.username} size="xl" />
+                    <UserAvatar
+                      src={user.avatarUrl}
+                      name={user.username}
+                      size="xl"
+                      showStatus={true}
+                      isConnected={isUserOnline(user.id, user.username)}
+                    />
                     {user.studentYear && (
                       <span className="absolute -bottom-1 -right-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-mono font-bold leading-none shadow-md">
                         Yr {user.studentYear}
@@ -166,6 +173,19 @@ export default function UserProfileModal({ userId, onClose, onMessage }: UserPro
                     <h2 className="text-base font-bold text-white tracking-tight">
                       @{user.username}
                     </h2>
+                    <div className="flex items-center justify-center gap-1.5 mt-1.5 text-xs">
+                      {isUserOnline(user.id, user.username) ? (
+                        <>
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          <span className="text-emerald-400 font-sans font-medium text-[11px]">Active now</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="w-1.5 h-1.5 rounded-full bg-zinc-600" />
+                          <span className="text-zinc-500 font-sans text-[11px]">Offline</span>
+                        </>
+                      )}
+                    </div>
                     {user.studentYear && (
                       <p className="text-xs text-zinc-400 font-mono mt-0.5">{formatYear(user.studentYear)}</p>
                     )}

@@ -18,9 +18,11 @@ export default function ChatHeader({ onBack, onRefresh, isFetching }: ChatHeader
   const blockedUserIds = useChatStore((state) => state.blockedUserIds);
   const blockUser = useChatStore((state) => state.blockUser);
   const unblockUser = useChatStore((state) => state.unblockUser);
+  const isUserOnline = useChatStore((state) => state.isUserOnline);
 
   const isDm = activeChatType === "dm" && Boolean(activeDmUser);
   const isBlocked = isDm && activeDmUser ? blockedUserIds.includes(activeDmUser.userId) : false;
+  const isOnline = isDm && activeDmUser ? isUserOnline(activeDmUser.userId, activeDmUser.username) : false;
   const [profileUserId, setProfileUserId] = useState<number | null>(null);
 
   const handleToggleBlock = () => {
@@ -62,7 +64,9 @@ export default function ChatHeader({ onBack, onRefresh, isFetching }: ChatHeader
                 name={activeDmUser.username}
                 size="md"
                 isBlocked={isBlocked}
-                className="ring-1 ring-white/10 shrink-0"
+                showStatus={true}
+                isConnected={isOnline}
+                className="shrink-0"
               />
 
               <div className="min-w-0">
@@ -72,10 +76,22 @@ export default function ChatHeader({ onBack, onRefresh, isFetching }: ChatHeader
                   </h1>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-zinc-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                  <span className="text-zinc-400 text-xs font-sans">
-                    {isBlocked ? "Blocked" : "Active now"}
-                  </span>
+                  {isBlocked ? (
+                    <>
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                      <span className="text-rose-400 text-xs font-sans">Blocked</span>
+                    </>
+                  ) : isOnline ? (
+                    <>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                      <span className="text-emerald-400 text-xs font-sans font-medium">Active now</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="w-1.5 h-1.5 rounded-full bg-zinc-600"></span>
+                      <span className="text-zinc-500 text-xs font-sans">Offline</span>
+                    </>
+                  )}
                 </div>
               </div>
             </button>

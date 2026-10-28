@@ -10,13 +10,25 @@ let currentStatusCallback: ((connected: boolean, connecting: boolean) => void) |
 
 type GalleryCallback = (post: any) => void;
 type GalleryDeleteCallback = (deleteInfo: { id: number }) => void;
+type PresenceCallback = (presence: {
+  type: string;
+  userId?: number;
+  username?: string;
+  online: boolean;
+  onlineUserIds?: number[];
+  onlineUsernames?: string[];
+  timestamp?: number;
+}) => void;
 
 const galleryCallbacks: Set<GalleryCallback> = new Set();
 const galleryDeleteCallbacks: Set<GalleryDeleteCallback> = new Set();
+const presenceCallbacks: Set<PresenceCallback> = new Set();
+
 let roomSubscriptions: any[] = [];
 let dmMessagesSubscription: any = null;
 let gallerySubscription: any = null;
 let galleryDeleteSubscription: any = null;
+let presenceSubscription: any = null;
 
 export function subscribeToGallery(
   onPost: GalleryCallback,
@@ -28,6 +40,13 @@ export function subscribeToGallery(
   return () => {
     galleryCallbacks.delete(onPost);
     if (onDelete) galleryDeleteCallbacks.delete(onDelete);
+  };
+}
+
+export function subscribeToPresence(cb: PresenceCallback): () => void {
+  presenceCallbacks.add(cb);
+  return () => {
+    presenceCallbacks.delete(cb);
   };
 }
 
@@ -59,9 +78,15 @@ export function connectSocket(
     return;
   }
 
+  const token = getAuthToken();
+  if (!token) {
+    currentStatusCallback?.(false, false);
+    return;
+  }
+
   stompClient = new Client({
     webSocketFactory: () => new SockJS(apiUrl("/chat")),
-    connectHeaders: { Authorization: `Bearer ${getAuthToken()}` },
+    connectHeaders: { Authorization: `Bearer ${token}` },
     reconnectDelay: 3000,
     heartbeatIncoming: 4000,
     heartbeatOutgoing: 4000,
@@ -83,6 +108,9 @@ export function connectSocket(
       }
       if (galleryDeleteSubscription) {
         try { galleryDeleteSubscription.unsubscribe(); } catch {}
+      }
+      if (presenceSubscription) {
+        try { presenceSubscription.unsubscribe(); } catch {}
       }
 
       const receiveMessage = (messageFrame: any) => {
@@ -107,7 +135,6 @@ export function connectSocket(
       gallerySubscription = stompClient?.subscribe("/topic/gallery", (frame) => {
         try {
           const payload = JSON.parse(frame.body);
-          console.log("[STOMP] Incoming gallery post:", payload);
           galleryCallbacks.forEach((cb) => cb(payload));
         } catch (err) {
           console.error("[STOMP] Failed to parse gallery frame:", err);
@@ -118,10 +145,19 @@ export function connectSocket(
       galleryDeleteSubscription = stompClient?.subscribe("/topic/gallery/delete", (frame) => {
         try {
           const payload = JSON.parse(frame.body);
-          console.log("[STOMP] Incoming gallery deletion:", payload);
           galleryDeleteCallbacks.forEach((cb) => cb(payload));
         } catch (err) {
           console.error("[STOMP] Failed to parse gallery delete frame:", err);
+        }
+      });
+
+      // Subscribe to real-time presence topic
+      presenceSubscription = stompClient?.subscribe("/topic/presence", (frame) => {
+        try {
+          const payload = JSON.parse(frame.body);
+          presenceCallbacks.forEach((cb) => cb(payload));
+        } catch (err) {
+          console.error("[STOMP] Failed to parse presence frame:", err);
         }
       });
     },
@@ -190,6 +226,10 @@ export async function sendMessage(payload: SendMessageDTO): Promise<void> {
 export function disconnectSocket(): void {
   if (stompClient) {
     console.log("[STOMP] Deactivating client...");
+    if (presenceSubscription) {
+      try { presenceSubscription.unsubscribe(); } catch {}
+      presenceSubscription = null;
+    }
     stompClient.deactivate();
     stompClient = null;
     currentStatusCallback?.(false, false);

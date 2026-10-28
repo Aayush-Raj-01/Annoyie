@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { Message, ChatRoom, DMConversation } from "@/types/chat";
 import { getUserById } from "@/lib/api/users";
 import { fetchDmConversations } from "@/lib/api/messages";
+import { apiUrl } from "@/lib/config/api";
 import {
   playNotificationSound,
   showDesktopNotification,
@@ -133,6 +134,12 @@ interface ChatState {
   addMessage: (message: Partial<Message> & { sender: string; content: string }) => void;
   setConnectionStatus: (connected: boolean, connecting?: boolean) => void;
   clearRoom: (roomId: number) => void;
+  onlineUserIds: number[];
+  onlineUsernames: string[];
+  setOnlinePresence: (ids: number[], usernames: string[]) => void;
+  updateUserPresence: (userId?: number, username?: string, online?: boolean) => void;
+  isUserOnline: (userId?: number | null, username?: string | null) => boolean;
+  fetchOnlinePresence: () => Promise<void>;
 }
 
 function resolveSenderName(sender: any, fallback?: any): string {
@@ -174,11 +181,111 @@ function getStoredProfile(): { id?: number; email?: string; anonymousName?: stri
   }
 }
 
+const ACTIVE_CHAT_KEY = "annoyms_active_chat";
+
+function getInitialActiveChat(): {
+  activeChatType: "channel" | "dm";
+  activeRoomId: number;
+  activeRoom: ChatRoom;
+  activeDmUser: DMConversation | null;
+} {
+  const fallback = {
+    activeChatType: "channel" as const,
+    activeRoomId: 1,
+    activeRoom: CHAT_ROOMS[0],
+    activeDmUser: null,
+  };
+
+  if (typeof window === "undefined") return fallback;
+
+  // 1. Check URL parameters
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const dmIdParam = params.get("dm");
+    const roomIdParam = params.get("room");
+
+    if (dmIdParam) {
+      const dmId = parseInt(dmIdParam, 10);
+      if (!isNaN(dmId) && dmId > 0) {
+        const storedConvs = getInitialDmConversations();
+        const found = storedConvs.find((c) => c.userId === dmId);
+        if (found) {
+          return {
+            activeChatType: "dm",
+            activeRoomId: 1,
+            activeRoom: CHAT_ROOMS[0],
+            activeDmUser: found,
+          };
+        }
+        return {
+          activeChatType: "dm",
+          activeRoomId: 1,
+          activeRoom: CHAT_ROOMS[0],
+          activeDmUser: {
+            userId: dmId,
+            username: `User_${dmId}`,
+          },
+        };
+      }
+    }
+
+    if (roomIdParam) {
+      const roomId = parseInt(roomIdParam, 10);
+      const room = CHAT_ROOMS.find((r) => r.id === roomId);
+      if (room) {
+        return {
+          activeChatType: "channel",
+          activeRoomId: room.id,
+          activeRoom: room,
+          activeDmUser: null,
+        };
+      }
+    }
+  } catch {}
+
+  // 2. Check localStorage
+  try {
+    const raw = localStorage.getItem(ACTIVE_CHAT_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.type === "dm" && parsed.user && parsed.user.id) {
+        const storedConvs = getInitialDmConversations();
+        const found = storedConvs.find((c) => c.userId === parsed.user.id);
+        return {
+          activeChatType: "dm",
+          activeRoomId: 1,
+          activeRoom: CHAT_ROOMS[0],
+          activeDmUser: found || {
+            userId: parsed.user.id,
+            username: parsed.user.username || `User_${parsed.user.id}`,
+            avatarUrl: parsed.user.avatarUrl,
+            tag: parsed.user.tag,
+            studentYear: parsed.user.studentYear,
+          },
+        };
+      }
+      if (parsed.type === "channel" && parsed.roomId) {
+        const room = CHAT_ROOMS.find((r) => r.id === parsed.roomId) || CHAT_ROOMS[0];
+        return {
+          activeChatType: "channel",
+          activeRoomId: room.id,
+          activeRoom: room,
+          activeDmUser: null,
+        };
+      }
+    }
+  } catch {}
+
+  return fallback;
+}
+
+const initialActiveChat = getInitialActiveChat();
+
 export const useChatStore = create<ChatState>((set, get) => ({
-  activeChatType: "channel",
-  activeRoomId: 1,
-  activeRoom: CHAT_ROOMS[0],
-  activeDmUser: null,
+  activeChatType: initialActiveChat.activeChatType,
+  activeRoomId: initialActiveChat.activeRoomId,
+  activeRoom: initialActiveChat.activeRoom,
+  activeDmUser: initialActiveChat.activeDmUser,
   dmConversations: getInitialDmConversations(),
   messagesByRoom: {},
   messagesByDm: {},
@@ -189,6 +296,70 @@ export const useChatStore = create<ChatState>((set, get) => ({
   isConnected: false,
   isConnecting: true,
   isMobileChatOpen: false,
+  onlineUserIds: [],
+  onlineUsernames: [],
+
+  setOnlinePresence: (ids, usernames) => {
+    set({
+      onlineUserIds: Array.from(new Set(ids.map((id) => Number(id)))),
+      onlineUsernames: Array.from(new Set(usernames.map((u) => u.toLowerCase().trim()))),
+    });
+  },
+
+  updateUserPresence: (userId, username, online) => {
+    set((state) => {
+      let nextIds = [...state.onlineUserIds];
+      let nextNames = [...state.onlineUsernames];
+
+      if (userId != null) {
+        const numId = Number(userId);
+        if (online) {
+          if (!nextIds.includes(numId)) nextIds.push(numId);
+        } else {
+          nextIds = nextIds.filter((id) => id !== numId);
+        }
+      }
+
+      if (username) {
+        const u = username.toLowerCase().trim();
+        if (online) {
+          if (!nextNames.includes(u)) nextNames.push(u);
+        } else {
+          nextNames = nextNames.filter((name) => name !== u);
+        }
+      }
+
+      return {
+        onlineUserIds: nextIds,
+        onlineUsernames: nextNames,
+      };
+    });
+  },
+
+  isUserOnline: (userId, username) => {
+    const state = get();
+    if (userId != null && state.onlineUserIds.includes(Number(userId))) {
+      return true;
+    }
+    if (username) {
+      const u = username.toLowerCase().trim();
+      if (state.onlineUsernames.includes(u)) {
+        return true;
+      }
+    }
+    return false;
+  },
+
+  fetchOnlinePresence: async () => {
+    try {
+      const res = await fetch(apiUrl("/api/presence/online"), { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (Array.isArray(data.onlineUserIds) || Array.isArray(data.onlineUsernames)) {
+        get().setOnlinePresence(data.onlineUserIds || [], data.onlineUsernames || []);
+      }
+    } catch {}
+  },
 
   setIsMobileChatOpen: (open) => set({ isMobileChatOpen: open }),
 
@@ -276,6 +447,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
     if (typeof window !== "undefined") {
       try {
         localStorage.setItem(`annoyms_last_read_${roomId}`, Date.now().toString());
+        localStorage.setItem(ACTIVE_CHAT_KEY, JSON.stringify({ type: "channel", roomId }));
+        const url = new URL(window.location.href);
+        url.searchParams.delete("dm");
+        if (roomId === 1) {
+          url.searchParams.delete("room");
+        } else {
+          url.searchParams.set("room", String(roomId));
+        }
+        window.history.replaceState({}, "", url.toString());
       } catch {}
     }
     set((state) => ({
@@ -340,6 +520,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
           if (myId) {
             localStorage.setItem(`annoyms_dm_conversations_${myId}`, JSON.stringify(updatedList));
           }
+          localStorage.setItem(ACTIVE_CHAT_KEY, JSON.stringify({ type: "dm", user: mergedItem }));
+          const url = new URL(window.location.href);
+          url.searchParams.delete("room");
+          url.searchParams.set("dm", String(user.id));
+          window.history.replaceState({}, "", url.toString());
         } catch {}
       }
 

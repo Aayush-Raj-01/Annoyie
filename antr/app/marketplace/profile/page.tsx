@@ -893,54 +893,54 @@ export default function MarketplaceProfilePage() {
                     </div>
                   ) : (
                     /* User's active listings grid */
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div className="grid grid-cols-2 sm:grid-cols-2 gap-2.5 sm:gap-3.5">
                       {userListings.map((item) => (
                         <div
                           key={item.id}
-                          className="p-3.5 rounded-2xl bg-zinc-900/70 border border-white/[0.06] hover:border-emerald-500/30 transition-all flex flex-col justify-between gap-3 group"
+                          className="p-2.5 sm:p-3.5 rounded-2xl bg-zinc-900/70 border border-white/[0.06] hover:border-emerald-500/30 transition-all flex flex-col justify-between gap-2.5 sm:gap-3 group"
                         >
-                          <div className="space-y-2">
+                          <div className="space-y-1.5 sm:space-y-2">
                             <ListingMediaGallery
                               mediaUrls={item.mediaUrls}
                               imageUrl={item.imageUrl}
                               title={item.title}
                             />
-                            <div className="flex items-center justify-between gap-2 flex-wrap">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-zinc-800 text-zinc-300 border border-zinc-700">
+                            <div className="flex items-center justify-between gap-1 sm:gap-2 flex-wrap">
+                              <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
+                                <span className="px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-mono bg-zinc-800 text-zinc-300 border border-zinc-700">
                                   {item.category}
                                 </span>
                                 {item.bargainAvailable ? (
-                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                                  <span className="px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-mono font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
                                     <span>🤝</span>
-                                    <span>Bargain</span>
+                                    <span className="hidden xs:inline">Bargain</span>
                                   </span>
                                 ) : (
-                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-zinc-800/60 text-zinc-400 border border-white/[0.04]">
+                                  <span className="px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-mono font-medium bg-zinc-800/60 text-zinc-400 border border-white/[0.04]">
                                     Fixed
                                   </span>
                                 )}
                               </div>
-                              <span className="text-sm font-bold font-mono text-emerald-400">
+                              <span className="text-xs sm:text-sm font-bold font-mono text-emerald-400">
                                 ₹{item.price}
                               </span>
                             </div>
-                            <h4 className="text-sm font-semibold text-white line-clamp-1 group-hover:text-emerald-300 transition-colors">
+                            <h4 className="text-xs sm:text-sm font-semibold text-white line-clamp-1 group-hover:text-emerald-300 transition-colors">
                               {item.title}
                             </h4>
 
                             {(item.hostelName || item.roomNo) && (
-                              <div className="flex items-center gap-1.5 text-[11px] bg-white/[0.04] border border-white/[0.06] rounded-xl px-2.5 py-1 font-medium">
-                                <span className="text-emerald-400 text-xs">🏠</span>
-                                <span className="text-white font-semibold">{item.hostelName || "Hostel"}</span>
-                                <span className="text-zinc-600">•</span>
-                                <span className="text-zinc-300 font-mono">Room {item.roomNo || "—"}</span>
+                              <div className="flex items-center gap-1 text-[10px] sm:text-[11px] bg-white/[0.04] border border-white/[0.06] rounded-xl px-2 sm:px-2.5 py-0.5 sm:py-1 font-medium truncate">
+                                <span className="text-emerald-400 text-xs shrink-0">🏠</span>
+                                <span className="text-white font-semibold truncate">{item.hostelName || "Hostel"}</span>
+                                <span className="text-zinc-600 hidden xs:inline">•</span>
+                                <span className="text-zinc-300 font-mono hidden xs:inline">Rm {item.roomNo || "—"}</span>
                               </div>
                             )}
                           </div>
 
                           <div className="pt-2 border-t border-white/[0.04] flex items-center justify-between text-xs">
-                            <span className="text-[10px] text-zinc-500 font-mono">
+                            <span className="text-[9px] sm:text-[10px] text-zinc-500 font-mono">
                               {new Date(item.createdAt).toLocaleDateString(undefined, {
                                 month: "short",
                                 day: "numeric",
@@ -950,9 +950,9 @@ export default function MarketplaceProfilePage() {
                               type="button"
                               onClick={() => handleDeleteListingClick(item.id)}
                               disabled={deletingListingId === item.id}
-                              className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-[11px] font-medium transition-colors cursor-pointer disabled:opacity-50"
+                              className="px-2 sm:px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-[10px] sm:text-[11px] font-medium transition-colors cursor-pointer disabled:opacity-50"
                             >
-                              {deletingListingId === item.id ? "Deleting..." : "Delete"}
+                              {deletingListingId === item.id ? "..." : "Delete"}
                             </button>
                           </div>
                         </div>

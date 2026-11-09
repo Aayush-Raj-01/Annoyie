@@ -150,6 +150,14 @@ public class MarketplaceListingService {
         listingRepository.delete(listing);
     }
 
+    @Transactional
+    public void adminDeleteListing(Long listingId) {
+        MarketplaceListing listing = listingRepository.findById(listingId)
+                .orElseThrow(() -> new RuntimeException("Listing not found with ID: " + listingId));
+        messageRepository.detachListingFromMessages(listingId);
+        listingRepository.delete(listing);
+    }
+
     private MarketplaceListingResponse mapToResponse(MarketplaceListing listing) {
         MarketplaceProfile seller = listing.getSeller();
         Long sellerProfileId = seller != null ? seller.getId() : null;

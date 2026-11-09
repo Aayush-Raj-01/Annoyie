@@ -107,7 +107,7 @@ export default function MessageList({
 
   return (
     <>
-      <div className="relative flex-1 min-h-0 bg-[#08090d] flex flex-col overflow-hidden">
+      <div className="relative flex-1 min-h-0 bg-transparent flex flex-col overflow-hidden">
         {/* Blocked User Notice Banner */}
         {isDm && isBlocked && (
           <div className="relative z-20 bg-rose-950/40 border-b border-rose-500/20 px-4 py-2.5 flex items-center justify-between gap-3 text-xs backdrop-blur-md">
@@ -276,8 +276,8 @@ export default function MessageList({
                 return (
                   <React.Fragment key={message.id}>
                     {showDateSeparator && (
-                      <div className="flex items-center justify-center my-4 select-none">
-                        <span className="text-xs text-zinc-500 font-medium">
+                      <div className="flex items-center justify-center my-5 select-none">
+                        <span className="text-[11px] text-zinc-400 font-medium px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.06]">
                           {currentDateLabel}
                         </span>
                       </div>

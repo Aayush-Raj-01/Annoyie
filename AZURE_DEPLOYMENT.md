@@ -3,7 +3,7 @@
 Deploy this as two Linux App Service apps and one Azure Database for PostgreSQL Flexible Server:
 
 - `antr/` is a Node.js App Service. Build with `npm ci && npm run build`; start with `npm run start`. Do not configure it as a static export: `/api/giphy` is a server route.
-- `annoyio/` is a Java 21 App Service deployed as the Spring Boot JAR produced by `mvn package`.
+- `annoyio/` is a Java 25 App Service deployed as the Spring Boot JAR produced by `mvn package`.
 - Set `PORT=8080` for the backend and `PORT=3000` for the frontend unless the selected App Service runtime supplies the expected port itself.
 - Use a plan with enough WebSocket capacity for expected concurrent chat users. Linux App Service supports WebSockets; the Free plan allows at most five connections.
 

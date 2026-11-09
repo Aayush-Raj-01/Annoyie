@@ -60,10 +60,10 @@ function getMessageSnippet(content?: string, senderName?: string): { text: strin
     return { text: `${prefix}✨ ${parts[0] || "Sticker"}`, isMedia: true };
   }
   if (trimmed.startsWith("[gif:") || trimmed.includes("giphy.com")) {
-    return { text: `${prefix}🎬 GIF`, isMedia: true };
+    return { text: `${prefix}GIF`, isMedia: true };
   }
   if (/^https?:\/\/\S+\.(gif|webp|png|jpe?g)/i.test(trimmed)) {
-    return { text: `${prefix}🖼️ Image`, isMedia: true };
+    return { text: `${prefix}Image`, isMedia: true };
   }
   return { text: `${prefix}${trimmed}`, isMedia: false };
 }
@@ -103,7 +103,6 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
   const [activeTab, setActiveTab] = useState<"all" | "channels" | "dms">("all");
   const [profileUserId, setProfileUserId] = useState<number | null>(null);
 
-  // Determine current user ID and names for exclusion
   const effectiveMyId = useMemo(() => {
     return currentUser.id || storeUserId || getStoredProfile()?.id;
   }, [currentUser.id, storeUserId]);
@@ -119,10 +118,7 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
         return true;
       }
       const stored = getStoredProfile();
-      const myNames = [
-        currentUser.anonymousName,
-        stored?.anonymousName,
-      ]
+      const myNames = [currentUser.anonymousName, stored?.anonymousName]
         .filter(Boolean)
         .map((n) => n!.toLowerCase().trim());
 
@@ -134,7 +130,6 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
     [effectiveMyId, currentUser.anonymousName]
   );
 
-  // Debounced search for users from backend with self-exclusion
   useEffect(() => {
     const query = searchQuery.trim();
     if (!query) {
@@ -163,9 +158,7 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
 
   const accessibleRooms = useMemo(() => {
     return CHAT_ROOMS.filter((room) => {
-      if (room.requiredYear) {
-        return userYear === room.requiredYear;
-      }
+      if (room.requiredYear) return userYear === room.requiredYear;
       return true;
     });
   }, [userYear]);
@@ -183,12 +176,10 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
       router.push("/authentication");
       return;
     }
-
     if (isSelfUser(user)) {
       console.warn("Cannot start a direct message with yourself");
       return;
     }
-
     openDm({
       id: user.id,
       username: user.username,
@@ -203,55 +194,64 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
   const totalUnreadChannels = Object.values(unreadCounts).reduce((acc, count) => acc + count, 0);
   const totalUnreadDms = Object.values(unreadDmCounts).reduce((acc, count) => acc + count, 0);
 
+  const tabClass = (tab: typeof activeTab) =>
+    `flex-1 py-2 px-2 rounded-xl text-xs font-semibold transition-all cursor-pointer text-center ${
+      activeTab === tab
+        ? "bg-emerald-500 text-black shadow-[0_4px_14px_rgba(16,185,129,0.25)]"
+        : "text-zinc-400 hover:text-white hover:bg-white/5"
+    }`;
+
   return (
     <>
-      <aside className="w-full h-full bg-[#121316] border-r border-white/[0.05] flex flex-col select-none relative">
-        {/* Header: Avatar + "Chats" title */}
-        <div className="p-4 border-b border-white/[0.04] flex items-center justify-between bg-[#14151a]">
-          <div className="flex items-center gap-3">
-            <UserAvatar
-              src={currentUser.avatarUrl}
-              name={currentUser.anonymousName}
-              size="md"
-              className="shrink-0"
-            />
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white font-sans">
-              Chats
-            </h1>
+      <aside className="w-full h-full bg-[#0F0F12] flex flex-col select-none relative overflow-hidden">
+        {/* Header with Title */}
+        <div className="p-4 sm:p-5 flex items-center justify-between border-b border-white/[0.04]">
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">Messages</h1>
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => document.getElementById("chat-search-input")?.focus()}
+              className="p-2 rounded-full bg-white/5 text-zinc-400 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+              title="Search"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+              </svg>
+            </button>
           </div>
         </div>
 
-        {/* Search Input Bar: Inset Capsule */}
-        <div className="px-4 py-3 border-b border-white/[0.04] bg-[#121316]">
-          <div className="relative">
+        {/* Search Bar */}
+        <div className="px-4 sm:px-5 py-2">
+          <div className="relative group">
             <svg
-              className="w-3.5 h-3.5 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+              className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none group-focus-within:text-emerald-500 transition-colors"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
             </svg>
             <input
               id="chat-search-input"
               type="text"
-              placeholder="Search"
+              placeholder="Search peers or rooms..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-7 py-2 text-xs bg-[#18191f] border border-white/[0.04] rounded-full text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-emerald-500/40 transition-all font-sans"
+              className="w-full pl-10 pr-9 py-2 text-xs sm:text-sm bg-[#16171e] border border-white/[0.06] rounded-xl text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50 focus:bg-[#1a1b24] transition-all"
             />
             {searchQuery && (
               <button
+                type="button"
                 onClick={() => {
                   setSearchQuery("");
                   setUserSearchResults([]);
                 }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white text-xs cursor-pointer"
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center rounded-full bg-white/10 text-zinc-400 hover:text-white text-[10px] cursor-pointer"
               >
                 ✕
               </button>
@@ -259,43 +259,25 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
           </div>
         </div>
 
-        {/* Segmented Filter Bar */}
         {!searchQuery.trim() && (
-          <div className="px-4 py-2 flex items-center gap-1 border-b border-white/[0.04] bg-[#14151a]">
-            <button
-              onClick={() => setActiveTab("all")}
-              className={`flex-1 py-1.5 px-2 rounded-full text-xs font-medium transition-colors cursor-pointer text-center ${
-                activeTab === "all"
-                  ? "bg-white text-black font-bold shadow-sm"
-                  : "text-zinc-400 hover:text-white"
-              }`}
-            >
+          <div className="px-4 sm:px-5 py-2 flex items-center gap-1.5">
+            <button type="button" onClick={() => setActiveTab("all")} className={tabClass("all")}>
               All
             </button>
-            <button
-              onClick={() => setActiveTab("channels")}
-              className={`flex-1 py-1.5 px-2 rounded-full text-xs font-medium transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
-                activeTab === "channels"
-                  ? "bg-white text-black font-bold shadow-sm"
-                  : "text-zinc-400 hover:text-white"
-              }`}
-            >
+            <button type="button" onClick={() => setActiveTab("channels")} className={`${tabClass("channels")} flex items-center justify-center gap-1.5`}>
               <span>Rooms</span>
               {totalUnreadChannels > 0 && (
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                <span className={`w-1.5 h-1.5 rounded-full ${activeTab === "channels" ? "bg-black" : "bg-emerald-400"}`} />
               )}
             </button>
-            <button
-              onClick={() => setActiveTab("dms")}
-              className={`flex-1 py-1.5 px-2 rounded-full text-xs font-medium transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
-                activeTab === "dms"
-                  ? "bg-white text-black font-bold shadow-sm"
-                  : "text-zinc-400 hover:text-white"
-              }`}
-            >
+            <button type="button" onClick={() => setActiveTab("dms")} className={`${tabClass("dms")} flex items-center justify-center gap-1.5`}>
               <span>DMs</span>
               {totalUnreadDms > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full bg-emerald-500 text-zinc-950 font-bold text-[9px] font-mono">
+                <span
+                  className={`px-1.5 py-0.5 rounded-full font-bold text-[9px] font-mono ${
+                    activeTab === "dms" ? "bg-black text-emerald-500" : "bg-emerald-500 text-black"
+                  }`}
+                >
                   {totalUnreadDms}
                 </span>
               )}
@@ -303,22 +285,18 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
           </div>
         )}
 
-        {/* Main List Area */}
-        <div className="flex-1 overflow-y-auto px-2 py-2 space-y-3 scrollbar-thin scrollbar-thumb-zinc-800">
-          {/* If Active Search Query: Show Combined Results */}
+        <div className="flex-1 overflow-y-auto px-3 py-1 space-y-1 scrollbar-thin scrollbar-thumb-zinc-800">
           {searchQuery.trim() ? (
-            <div className="space-y-4">
-              {/* Search Results: Users */}
+            <div className="space-y-6 pt-2">
               <div>
-                <div className="px-2 pb-1.5 flex items-center justify-between text-[10px] font-mono font-semibold uppercase tracking-wider text-emerald-400">
-                  <span>USERS FOUND</span>
+                <div className="px-3 pb-2 flex items-center justify-between text-[10px] font-mono font-bold uppercase tracking-[0.12em] text-emerald-500/80">
+                  <span>People</span>
                   {isSearchingUsers ? (
                     <span className="animate-spin text-emerald-400">◌</span>
                   ) : (
                     <span>{userSearchResults.length}</span>
                   )}
                 </div>
-
                 {userSearchResults.length > 0 ? (
                   <div className="space-y-1">
                     {userSearchResults.map((user) => {
@@ -326,66 +304,51 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
                       return (
                         <div
                           key={`user-search-${user.id}`}
-                          className="w-full text-left px-3 py-2.5 rounded-xl border border-white/[0.04] bg-white/[0.02] hover:bg-white/[0.06] hover:border-emerald-500/30 transition-all flex items-center justify-between gap-2.5 cursor-pointer group"
+                          className="w-full text-left px-3 py-3 rounded-2xl bg-white/[0.02] hover:bg-white/[0.05] border border-transparent hover:border-white/[0.05] transition-all flex items-center justify-between gap-3 cursor-pointer group"
                         >
-                          <div
-                            className="flex items-center gap-2.5 min-w-0 flex-1"
-                            onClick={() => setProfileUserId(user.id)}
-                          >
+                          <div className="flex items-center gap-3 min-w-0 flex-1" onClick={() => setProfileUserId(user.id)}>
                             <UserAvatar
                               src={user.avatarUrl}
                               name={user.username}
-                              size="sm"
+                              size="md"
                               isBlocked={isBlocked}
                               showStatus={true}
                               isConnected={isUserOnline(user.id, user.username)}
                             />
-
                             <div className="min-w-0">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-xs font-semibold text-white group-hover:text-emerald-300 truncate">
-                                  @{user.username}
-                                </span>
-                                {isUserOnline(user.id, user.username) && (
-                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" title="Active now" />
-                                )}
-                                <span className="text-[9px] px-1 py-0.2 rounded bg-zinc-800 text-zinc-300 font-mono">
-                                  Yr {user.studentYear ?? 1}
-                                </span>
-                                {isBlocked && (
-                                  <span className="text-[9px] px-1 py-0.2 rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-mono">
-                                    Blocked
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-[10px] text-zinc-500 truncate font-mono">
-                                {user.tag || "Campus Peer"}
+                              <span className="text-sm font-bold text-white group-hover:text-emerald-400 truncate block transition-colors">
+                                @{user.username}
+                              </span>
+                              <p className="text-[11px] text-zinc-500 truncate font-medium">
+                                {isBlocked ? "Blocked" : user.tag || `Year ${user.studentYear ?? 1}`}
                               </p>
                             </div>
                           </div>
-
                           <button
                             type="button"
                             onClick={() => handleStartDm(user)}
-                            className="px-2.5 py-1 text-[11px] font-medium rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 transition-colors shrink-0 cursor-pointer"
+                            className="w-8 h-8 flex items-center justify-center rounded-xl bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-black transition-all shrink-0 cursor-pointer"
+                            title="Start chat"
                           >
-                            Chat
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
                           </button>
                         </div>
                       );
                     })}
                   </div>
                 ) : (
-                  <p className="px-2 py-1 text-xs text-zinc-500 italic">No users found</p>
+                  <div className="px-3 py-6 text-center rounded-2xl border border-dashed border-white/[0.06]">
+                    <p className="text-xs text-zinc-500">{isSearchingUsers ? "Searching…" : "No people found"}</p>
+                  </div>
                 )}
               </div>
 
-              {/* Search Results: Channels */}
               <div>
-                <div className="px-2 pb-1.5 text-[10px] font-mono font-semibold uppercase tracking-wider text-zinc-500">
-                  <span>ROOMS MATCHING</span>
+                <div className="px-3 pb-2 text-[10px] font-mono font-bold uppercase tracking-[0.12em] text-zinc-500">
+                  Rooms
                 </div>
-
                 {filteredRooms.length > 0 ? (
                   <div className="space-y-1">
                     {filteredRooms.map((room) => {
@@ -393,68 +356,67 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
                       return (
                         <button
                           key={`search-room-${room.id}`}
+                          type="button"
                           onClick={() => {
                             setActiveRoom(room.id);
                             setSearchQuery("");
                             if (onSelectRoom) onSelectRoom(room.id);
                           }}
-                          className={`w-full text-left px-3 py-2 rounded-xl transition-all duration-150 flex items-center gap-2.5 cursor-pointer ${
+                          className={`w-full text-left px-3 py-3 rounded-2xl transition-all flex items-center gap-3 cursor-pointer border ${
                             isActive
-                              ? "bg-white/[0.08] text-white border border-white/[0.08]"
-                              : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03]"
+                              ? "bg-white/10 text-white border-white/10"
+                              : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03] border-transparent"
                           }`}
                         >
-                          <span className="w-7 h-7 rounded-lg bg-zinc-900 border border-white/[0.06] flex items-center justify-center text-xs shrink-0">
+                          <div className="w-10 h-10 rounded-2xl bg-zinc-900 border border-white/[0.06] flex items-center justify-center text-lg shrink-0">
                             {room.emoji || "#"}
-                          </span>
+                          </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5">
-                              <p className="text-xs font-medium truncate text-zinc-200">{room.name}</p>
+                              <p className="text-sm font-bold truncate text-zinc-100">{room.name}</p>
                               {room.requiredYear && (
-                                <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 font-mono shrink-0">
-                                  Yr {room.requiredYear}
+                                <span className="text-[9px] px-1.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono font-bold shrink-0">
+                                  YR {room.requiredYear}
                                 </span>
                               )}
                             </div>
-                            <p className="text-[10px] text-zinc-500 truncate">{room.description}</p>
+                            <p className="text-[11px] text-zinc-500 truncate mt-0.5">{room.description}</p>
                           </div>
                         </button>
                       );
                     })}
                   </div>
                 ) : (
-                  <p className="px-2 py-1 text-xs text-zinc-500 italic">No channels found</p>
+                  <div className="px-3 py-6 text-center rounded-2xl border border-dashed border-white/[0.06]">
+                    <p className="text-xs text-zinc-500">No rooms found</p>
+                  </div>
                 )}
               </div>
             </div>
           ) : (
-            /* Default Mode: Grouped Channels and Direct Messages */
             <>
-              {/* DIRECT MESSAGES SECTION */}
               {(activeTab === "all" || activeTab === "dms") && (
                 <div className="space-y-1">
-                  <div className="px-2 pb-1 flex items-center justify-between text-[10px] font-mono font-semibold uppercase tracking-wider text-zinc-500">
-                    <span>DIRECT MESSAGES</span>
-                    <span>{dmConversations.length}</span>
+                  <div className="px-3 pb-2 flex items-center justify-between text-[10px] font-mono font-bold uppercase tracking-[0.15em] text-zinc-500">
+                    <span>Direct messages</span>
+                    {dmConversations.length > 0 && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 normal-case tracking-normal">{dmConversations.length}</span>
+                    )}
                   </div>
 
                   {dmConversations.length === 0 ? (
-                    <div className="px-3 py-4 rounded-xl border border-dashed border-white/[0.06] text-center select-none">
+                    <div className="px-4 py-8 rounded-2xl border border-dashed border-white/[0.06] text-center">
                       <p className="text-xs text-zinc-400 font-medium">No direct messages yet</p>
-                      <p className="text-[11px] text-zinc-500 mt-0.5">
-                        Search peers above to start a conversation
-                      </p>
+                      <p className="text-[11px] text-zinc-500 mt-1">Search a peer above to start one</p>
                     </div>
                   ) : (
                     dmConversations.map((dm) => {
-                      const isActive =
-                        activeChatType === "dm" && activeDmUser?.userId === dm.userId;
+                      const isActive = activeChatType === "dm" && activeDmUser?.userId === dm.userId;
                       const unread = unreadDmCounts[dm.userId] || 0;
                       const isBlocked = blockedUserIds.includes(dm.userId);
                       const isOnline = isUserOnline(dm.userId, dm.username);
                       const dmMessages = messagesByDm[dm.userId] || [];
-                      const lastMsg =
-                        dmMessages.length > 0 ? dmMessages[dmMessages.length - 1] : null;
+                      const lastMsg = dmMessages.length > 0 ? dmMessages[dmMessages.length - 1] : null;
                       const snippet = lastMsg
                         ? getMessageSnippet(lastMsg.content)
                         : dm.lastMessage
@@ -469,6 +431,7 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
                       return (
                         <button
                           key={`dm-${dm.userId}`}
+                          type="button"
                           onClick={() => {
                             openDm({
                               id: dm.userId,
@@ -479,22 +442,18 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
                             });
                             if (onSelectDm) onSelectDm(dm.userId);
                           }}
-                          className={`w-full text-left px-4 py-3.5 border-b border-white/[0.04] transition-colors flex items-center gap-3.5 cursor-pointer group relative ${
+                          className={`w-full text-left px-3.5 py-3 rounded-2xl transition-all flex items-center gap-3.5 cursor-pointer group relative border overflow-hidden ${
                             isActive
-                              ? "bg-white/[0.05] text-white"
-                              : "hover:bg-white/[0.02] text-zinc-400 hover:text-zinc-200"
+                              ? "bg-[#121c17]/95 border-emerald-500/35 shadow-[0_4px_20px_rgba(16,185,129,0.15)]"
+                              : "hover:bg-white/[0.04] border-transparent hover:border-white/[0.05]"
                           }`}
                         >
-                          {/* Left Accent indicator when active */}
+                          {/* Right-side subtle green gradient wash for active conversation (Image 3) */}
                           {isActive && (
-                            <span className="absolute left-0 top-3 bottom-3 w-1 bg-emerald-400 rounded-r"></span>
+                            <div className="absolute inset-y-0 right-0 w-28 bg-gradient-to-l from-emerald-500/20 via-emerald-500/5 to-transparent pointer-events-none rounded-r-2xl" />
                           )}
 
-                          {/* Avatar */}
-                          <div
-                            onClick={(e) => { e.stopPropagation(); setProfileUserId(dm.userId); }}
-                            className="shrink-0"
-                          >
+                          <div onClick={(e) => { e.stopPropagation(); setProfileUserId(dm.userId); }} className="shrink-0 relative z-10">
                             <UserAvatar
                               src={dm.avatarUrl}
                               name={dm.username}
@@ -502,53 +461,34 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
                               isBlocked={isBlocked}
                               showStatus={true}
                               isConnected={isOnline}
-                              className="shrink-0"
+                              className="group-hover:scale-105 transition-transform"
                             />
+                            {unread > 0 && (
+                              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-emerald-500 text-black text-[10px] font-black flex items-center justify-center border-2 border-[#0F0F12]">
+                                {unread > 9 ? "9+" : unread}
+                              </span>
+                            )}
                           </div>
-
-                          {/* Info */}
-                          <div className="flex-1 min-w-0">
+                          <div className="flex-1 min-w-0 z-10">
                             <div className="flex items-center justify-between gap-1 mb-0.5">
-                              <div className="flex items-center gap-1.5 min-w-0">
-                                <span
-                                  className={`text-sm font-semibold truncate ${
-                                    isActive ? "text-white" : "text-zinc-100 group-hover:text-white"
-                                  }`}
-                                >
-                                  {dm.username}
-                                </span>
-                                {isOnline && (
-                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" title="Active now" />
-                                )}
-                              </div>
+                              <span className={`text-sm font-bold truncate ${isActive ? "text-white" : "text-zinc-200 group-hover:text-white"}`}>
+                                {dm.username}
+                              </span>
                               {timeStr && (
-                                <span className="text-[11px] font-mono text-zinc-500 shrink-0">
+                                <span className={`text-[10px] font-mono font-bold shrink-0 ${isActive ? "text-emerald-400" : "text-zinc-500"}`}>
                                   {timeStr}
                                 </span>
                               )}
                             </div>
-
-                            <div className="flex items-center justify-between gap-2">
-                              <p
-                                className={`text-xs truncate ${
-                                  isBlocked
-                                    ? "text-rose-400/80 italic font-mono text-[11px]"
-                                    : "text-zinc-400 group-hover:text-zinc-300"
-                                }`}
-                              >
-                                {isBlocked ? "User Blocked" : snippet.text}
-                              </p>
-
-                              {unread > 0 && (
-                                <span
-                                  className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full shrink-0 bg-emerald-500 text-zinc-950 shadow-sm"
-                                  title={`${unread} unread message${unread > 1 ? "s" : ""}`}
-                                >
-                                  {unread > 99 ? "99+" : unread}
-                                </span>
-                              )}
-                            </div>
+                            <p className={`text-[12px] truncate font-medium ${isBlocked ? "text-rose-400/70 italic" : isActive ? "text-zinc-300" : "text-zinc-500 group-hover:text-zinc-400"}`}>
+                              {isBlocked ? "Blocked" : snippet.text}
+                            </p>
                           </div>
+
+                          {/* Emerald-Green Glow Indicator Pill (Image 3) */}
+                          {isActive && (
+                            <div className="w-1.5 h-6 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.95)] shrink-0 z-10" />
+                          )}
                         </button>
                       );
                     })
@@ -556,14 +496,12 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
                 </div>
               )}
 
-              {/* CHANNELS SECTION */}
               {(activeTab === "all" || activeTab === "channels") && (
-                <div className="space-y-1 pt-2">
-                  <div className="px-2 pb-1 flex items-center justify-between text-[10px] font-mono font-semibold uppercase tracking-wider text-zinc-500">
-                    <span>ROOMS</span>
-                    <span>{filteredRooms.length}</span>
+                <div className="space-y-1 pt-4">
+                  <div className="px-3 pb-2 flex items-center justify-between text-[10px] font-mono font-bold uppercase tracking-[0.15em] text-zinc-500">
+                    <span>Rooms</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 normal-case tracking-normal">{filteredRooms.length}</span>
                   </div>
-
                   {filteredRooms.map((room) => {
                     const isActive = activeChatType === "channel" && room.id === activeRoomId;
                     const roomMsgs = messagesByRoom[room.id] ?? [];
@@ -573,73 +511,63 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
                     const lastSenderName = lastMsg ? resolveSenderName(lastMsg.sender, lastMsg.senderEmail) : "";
                     const snippet = lastMsg
                       ? getMessageSnippet(lastMsg.content, lastSenderName)
-                      : { text: room.description || "Tap to chat", isMedia: false };
+                      : { text: room.description || "Public room", isMedia: false };
 
                     return (
                       <button
                         key={room.id}
+                        type="button"
                         onClick={() => {
                           setActiveRoom(room.id);
                           if (onSelectRoom) onSelectRoom(room.id);
                         }}
-                        className={`w-full text-left px-4 py-3.5 border-b border-white/[0.04] transition-colors flex items-center gap-3.5 cursor-pointer group relative ${
+                        className={`w-full text-left px-3.5 py-3 rounded-2xl transition-all flex items-center gap-3.5 cursor-pointer group relative border overflow-hidden ${
                           isActive
-                            ? "bg-white/[0.05] text-white"
-                            : "hover:bg-white/[0.02] text-zinc-400 hover:text-zinc-200"
+                            ? "bg-[#121c17]/95 border-emerald-500/35 shadow-[0_4px_20px_rgba(16,185,129,0.15)]"
+                            : "hover:bg-white/[0.04] border-transparent hover:border-white/[0.05]"
                         }`}
                       >
-                        {/* Left Accent indicator when active */}
+                        {/* Right-side subtle green gradient wash for active room (Image 3) */}
                         {isActive && (
-                          <span className="absolute left-0 top-3 bottom-3 w-1 bg-emerald-400 rounded-r"></span>
+                          <div className="absolute inset-y-0 right-0 w-28 bg-gradient-to-l from-emerald-500/20 via-emerald-500/5 to-transparent pointer-events-none rounded-r-2xl" />
                         )}
 
-                        {/* Channel Avatar */}
-                        <div className="relative shrink-0">
+                        <div className="relative shrink-0 z-10">
                           <div
-                            className={`w-10 h-10 rounded-full flex items-center justify-center text-base transition-transform group-hover:scale-105 ring-1 ring-white/10 ${
+                            className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xl transition-all border ${
                               isActive
-                                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                                : "bg-[#18191f] text-zinc-300"
+                                ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.25)]"
+                                : "bg-[#18191f] text-zinc-400 border-white/[0.05] group-hover:scale-105"
                             }`}
                           >
                             {room.emoji || "#"}
                           </div>
+                          {unseenCount > 0 && (
+                            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-emerald-500 text-black text-[10px] font-black flex items-center justify-center border-2 border-[#0F0F12]">
+                              {unseenCount > 9 ? "9+" : unseenCount}
+                            </span>
+                          )}
                         </div>
-
-                        {/* Channel Info */}
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 z-10">
                           <div className="flex items-center justify-between gap-1 mb-0.5">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <span
-                                className={`text-sm font-semibold truncate ${
-                                  isActive ? "text-white" : "text-zinc-100 group-hover:text-white"
-                                }`}
-                              >
-                                {room.name}
-                              </span>
-                            </div>
+                            <span className={`text-sm font-bold truncate ${isActive ? "text-white" : "text-zinc-200 group-hover:text-white"}`}>
+                              {room.name}
+                            </span>
                             {timeStr && (
-                              <span className="text-[11px] font-mono text-zinc-500 shrink-0">
+                              <span className={`text-[10px] font-mono font-bold shrink-0 ${isActive ? "text-emerald-400" : "text-zinc-500"}`}>
                                 {timeStr}
                               </span>
                             )}
                           </div>
-
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="text-xs truncate text-zinc-400 group-hover:text-zinc-300">
-                              {snippet.text}
-                            </p>
-
-                            {unseenCount > 0 && (
-                              <span
-                                className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full shrink-0 bg-emerald-500 text-zinc-950 shadow-sm"
-                                title={`${unseenCount} unseen message${unseenCount > 1 ? "s" : ""}`}
-                              >
-                                {unseenCount > 99 ? "99+" : unseenCount}
-                              </span>
-                            )}
-                          </div>
+                          <p className={`text-[12px] truncate font-medium ${isActive ? "text-zinc-300" : "text-zinc-500 group-hover:text-zinc-400"}`}>
+                            {snippet.text}
+                          </p>
                         </div>
+
+                        {/* Emerald-Green Glow Indicator Pill (Image 3) */}
+                        {isActive && (
+                          <div className="w-1.5 h-6 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.95)] shrink-0 z-10" />
+                        )}
                       </button>
                     );
                   })}
@@ -649,77 +577,63 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
           )}
         </div>
 
-        {/* User Profile Footer Panel */}
-        <div className="p-3 border-t border-white/[0.07] bg-[#090b10] pb-24 md:pb-3">
-          <div className="flex items-center justify-between gap-2 p-2 rounded-2xl bg-zinc-900/60 border border-white/[0.06]">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <UserAvatar
-                src={currentUser.avatarUrl}
-                name={currentUser.anonymousName || "Anonymous"}
-                size="sm"
-                showStatus={true}
-                isConnected={isConnected}
-                isConnecting={isConnecting}
-              />
-
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5">
-                  <p className="text-xs font-bold text-white truncate">
-                    {isLoggedIn ? (currentUser.anonymousName || "Anonymous") : "Guest User"}
-                  </p>
-                  {isLoggedIn && currentUser.studentYear && (
-                    <span className="text-[9px] px-1.5 py-0.2 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium font-mono shrink-0">
-                      Yr {currentUser.studentYear}
-                    </span>
-                  )}
-                  {!isLoggedIn && (
-                    <span className="text-[9px] px-1.5 py-0.2 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20 font-medium font-mono shrink-0">
-                      Read-Only
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 font-mono">
-                  {isLoggedIn ? (
-                    <>
-                      <span>{currentUser.tag || "Student"}</span>
-                      <span>•</span>
-                      <span
-                        className={
-                          isConnected
-                            ? "text-emerald-400 font-medium"
-                            : isConnecting
-                            ? "text-amber-400 font-medium"
-                            : "text-rose-400"
-                        }
-                      >
-                        {isConnected ? "Secure" : isConnecting ? "Syncing" : "Offline"}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="text-zinc-500">Sign in to send messages</span>
-                  )}
-                </div>
+        <div className="p-4 bg-[#0F0F12] border-t border-white/[0.04] pb-24 md:pb-4">
+          <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.03] border border-white/[0.04]">
+            <UserAvatar
+              src={currentUser.avatarUrl}
+              name={currentUser.anonymousName || "Anonymous"}
+              size="md"
+              showStatus={true}
+              isConnected={isConnected}
+              isConnecting={isConnecting}
+            />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-bold text-white truncate">
+                  {isLoggedIn ? currentUser.anonymousName || "Anonymous" : "Guest"}
+                </p>
+                {isLoggedIn && currentUser.studentYear && (
+                  <span className="text-[9px] px-1.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold font-mono shrink-0">
+                    Y{currentUser.studentYear}
+                  </span>
+                )}
+                {!isLoggedIn && (
+                  <span className="text-[9px] px-1.5 py-0.5 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/20 font-bold font-mono shrink-0">
+                    Read only
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 font-medium mt-0.5">
+                <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? "bg-emerald-500" : isConnecting ? "bg-amber-400" : "bg-zinc-600"}`} />
+                <span>
+                  {isLoggedIn
+                    ? isConnected
+                      ? "Online"
+                      : isConnecting
+                      ? "Connecting"
+                      : "Offline"
+                    : "Sign in to send messages"}
+                </span>
               </div>
             </div>
           </div>
         </div>
       </aside>
 
-      {/* User Profile Modal */}
       <UserProfileModal
         userId={profileUserId}
         onClose={() => setProfileUserId(null)}
         onMessage={(id) => {
           const found =
             userSearchResults.find((u) => u.id === id) ||
-            dmConversations.find((d) => d.userId === id) as UserSearchResult | undefined;
+            (dmConversations.find((d) => d.userId === id) as UserSearchResult | undefined);
           if (found) {
             handleStartDm({
               id,
-              username: (found as any).username ?? "",
-              avatarUrl: (found as any).avatarUrl,
-              tag: (found as any).tag,
-              studentYear: (found as any).studentYear,
+              username: (found as { username?: string }).username ?? "",
+              avatarUrl: (found as { avatarUrl?: string }).avatarUrl,
+              tag: (found as { tag?: string }).tag,
+              studentYear: (found as { studentYear?: number }).studentYear,
             });
           } else {
             openDm({ id, username: "User" });

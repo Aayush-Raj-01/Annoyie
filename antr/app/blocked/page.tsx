@@ -1,14 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import Link from "next/link";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import PinterestBackground from "@/components/ui/PinterestBackground";
 import { getUserProfile, clearUserProfile, UserProfile, syncUserProfile } from "@/app/lib/auth";
 
 export default function BlockedAccountPage() {
   const router = useRouter();
-  const [profile, setProfile] = useState<UserProfile | null>(() => getUserProfile());
+  const [profile] = useState<UserProfile | null>(() => getUserProfile());
   const [isChecking, setIsChecking] = useState(false);
 
   // Poll once to verify if administrator unblocked the account

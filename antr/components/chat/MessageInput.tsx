@@ -225,28 +225,6 @@ export default function MessageInput({
     }
   };
 
-  const triggerMentionButton = () => {
-    if (isActuallyDisabled) return;
-    setShowMediaPicker(false);
-    const cursor = inputRef.current?.selectionStart ?? content.length;
-    const textBefore = content.slice(0, cursor);
-    const textAfter = content.slice(cursor);
-    const needsSpace = textBefore.length > 0 && !textBefore.endsWith(" ");
-    const inserted = needsSpace ? " @" : "@";
-    const newText = `${textBefore}${inserted}${textAfter}`;
-    setContent(newText);
-    setMentionQuery("");
-    setShowMentionPicker(true);
-    setSelectedMentionIndex(0);
-    setTimeout(() => {
-      if (inputRef.current) {
-        inputRef.current.focus();
-        const newPos = cursor + inserted.length;
-        inputRef.current.setSelectionRange(newPos, newPos);
-      }
-    }, 10);
-  };
-
   // If user is not logged in, render locked banner
   if (!isLoggedIn) {
     return (
@@ -300,8 +278,32 @@ export default function MessageInput({
     );
   }
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        onSendMessage(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
   return (
-    <div className="relative border-t border-white/[0.04] bg-[#121316] px-3 sm:px-6 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:pb-20 z-20">
+    <div className="relative bg-transparent px-3 sm:px-5 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:pb-20 z-20">
+      {/* Hidden file input for Image Action */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+
       {/* Tabbed Sticker / GIF / Emoji Picker Drawer */}
       {!isActuallyDisabled && (
         <MediaPicker
@@ -377,18 +379,18 @@ export default function MessageInput({
       <form onSubmit={handleSubmit} className="w-full">
         {/* Unified Recessed Capsule */}
         <div
-          className={`flex items-center gap-2 p-1.5 sm:p-2 bg-[#18191f] rounded-full shadow-lg transition-all ${
+          className={`flex items-center gap-1.5 p-1.5 bg-[#14151b] rounded-[1.4rem] transition-all ${
             isBlocked
-              ? "border border-rose-500/20 bg-rose-950/10"
-              : "border border-white/[0.05] focus-within:border-emerald-500/30"
+              ? "border border-rose-500/25"
+              : "border border-white/[0.08] focus-within:border-emerald-500/40 focus-within:shadow-[0_0_0_3px_rgba(16,185,129,0.08)]"
           }`}
         >
-          {/* Emoji Smiley Button matching reference */}
+          {/* Emoji Smiley Button */}
           <button
             type="button"
             disabled={isActuallyDisabled}
             onClick={() => openPickerWithTab("emojis")}
-            className="p-1.5 rounded-full text-zinc-400 hover:text-white transition-colors cursor-pointer text-lg flex items-center justify-center shrink-0 ml-1"
+            className="p-1.5 rounded-full text-zinc-400 hover:text-white transition-colors cursor-pointer text-base flex items-center justify-center shrink-0 ml-1 hover:scale-110 active:scale-95"
             title="Insert Emojis"
           >
             😊
@@ -407,17 +409,17 @@ export default function MessageInput({
                 ? "You have blocked this user. Unblock to chat."
                 : disabled
                 ? "Connecting to chat room..."
-                : "Type a message..."
+                : placeholder
             }
-            className="flex-1 bg-transparent border-0 outline-none text-xs sm:text-sm px-1 py-1 text-zinc-100 placeholder-zinc-500 focus:ring-0"
+            className="flex-1 bg-transparent border-0 outline-none text-xs sm:text-sm px-2 py-1.5 text-zinc-100 placeholder-zinc-500 focus:ring-0"
           />
 
-          {/* Attachment Paperclip Button matching reference */}
+          {/* Quick Attachment: Stickers */}
           <button
             type="button"
             disabled={isActuallyDisabled}
             onClick={() => openPickerWithTab("stickers")}
-            className="p-1.5 text-zinc-400 hover:text-white transition-colors cursor-pointer shrink-0"
+            className="p-1.5 text-zinc-400 hover:text-white transition-colors cursor-pointer shrink-0 hover:scale-110 active:scale-95"
             title="Attach Sticker"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -425,12 +427,12 @@ export default function MessageInput({
             </svg>
           </button>
 
-          {/* Camera / GIF Button matching reference */}
+          {/* Quick GIFs Button */}
           <button
             type="button"
             disabled={isActuallyDisabled}
             onClick={() => openPickerWithTab("gifs")}
-            className="p-1.5 text-zinc-400 hover:text-white transition-colors cursor-pointer shrink-0"
+            className="p-1.5 text-zinc-400 hover:text-white transition-colors cursor-pointer shrink-0 hover:scale-110 active:scale-95"
             title="GIFs"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -443,7 +445,7 @@ export default function MessageInput({
           <button
             type="submit"
             disabled={isActuallyDisabled}
-            className="w-9 h-9 rounded-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 flex items-center justify-center shrink-0 shadow-md transition-all active:scale-95 disabled:opacity-40 cursor-pointer font-bold"
+            className="w-9 h-9 rounded-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/20 transition-all active:scale-95 disabled:opacity-40 cursor-pointer font-bold"
             title="Send message"
           >
             {content.trim() ? (
@@ -451,7 +453,6 @@ export default function MessageInput({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
               </svg>
             ) : (
-              /* Microphone icon when empty */
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
                 <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />

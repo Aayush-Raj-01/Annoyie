@@ -579,9 +579,10 @@ export function resolveGiphyUrl(input: string): string {
 
 export interface ParsedMediaMessage {
   isMedia: boolean;
-  type: "sticker" | "gif" | "image" | "text";
+  type: "sticker" | "gif" | "image" | "audio" | "text";
   url?: string;
   name?: string;
+  duration?: number;
   rawText: string;
 }
 
@@ -591,6 +592,18 @@ export function parseMessageContent(content: string): ParsedMediaMessage {
   }
 
   const trimmed = content.trim();
+
+  // Audio / Voice note format: [audio:DURATION:NAME]
+  const audioMatch = trimmed.match(/^\[audio:(\d+)(?::([^\]]*))?\]$/i);
+  if (audioMatch) {
+    return {
+      isMedia: true,
+      type: "audio",
+      duration: parseInt(audioMatch[1] || "16", 10),
+      name: audioMatch[2] || "Voice Note",
+      rawText: trimmed,
+    };
+  }
 
   // Sticker format: [sticker:STICKER_NAME:URL]
   const stickerMatch = trimmed.match(/^\[sticker:([^:]*):(https?:\/\/[^\]]+)\]$/i);

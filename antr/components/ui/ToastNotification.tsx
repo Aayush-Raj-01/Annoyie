@@ -74,7 +74,7 @@ export default function ToastNotification({
         )}
 
         {!isSuccess && !isError && !isWarning && (
-          <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse shrink-0" />
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
         )}
 
         {/* Message */}

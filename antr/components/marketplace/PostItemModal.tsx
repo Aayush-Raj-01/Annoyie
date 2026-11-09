@@ -25,12 +25,15 @@ interface SelectedMedia {
 }
 
 const CATEGORIES = [
-  { id: "Textbooks", label: "Textbooks", icon: "📚" },
-  { id: "Electronics", label: "Electronics", icon: "💻" },
-  { id: "Cycles", label: "Cycles", icon: "🚲" },
-  { id: "Hostel", label: "Hostel Gear", icon: "🛏️" },
+  { id: "Textbooks", label: "Books & Hobbies", icon: "📚" },
+  { id: "Electronics", label: "Electronics & Tech", icon: "💻" },
+  { id: "Mobiles", label: "Mobiles & Gadgets", icon: "📱" },
+  { id: "Cycles", label: "Bikes & Cycles", icon: "🚲" },
+  { id: "Furniture", label: "Furniture & Dorm", icon: "🛋️" },
+  { id: "Hostel", label: "Hostel & Properties", icon: "🏢" },
+  { id: "Jobs", label: "Jobs & Gigs", icon: "💼" },
   { id: "Lab Kits", label: "Lab Kits", icon: "🔬" },
-  { id: "Other", label: "Other", icon: "📦" },
+  { id: "Other", label: "Other Essentials", icon: "📦" },
 ];
 
 const CONDITION_PRESETS = ["Brand New", "Like New", "Gently Used", "Fair Condition"];

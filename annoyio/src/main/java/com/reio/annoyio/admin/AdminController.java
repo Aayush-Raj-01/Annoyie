@@ -1,10 +1,17 @@
 package com.reio.annoyio.admin;
 
+import com.reio.annoyio.gallery.dto.GalleryPostResponse;
+import com.reio.annoyio.gallery.repository.GalleryRepository;
+import com.reio.annoyio.gallery.service.GalleryService;
+import com.reio.annoyio.marketplace.dto.MarketplaceListingResponse;
+import com.reio.annoyio.marketplace.repository.MarketplaceListingRepository;
+import com.reio.annoyio.marketplace.service.MarketplaceListingService;
 import com.reio.annoyio.user.entity.User;
 import com.reio.annoyio.user.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.StandardCharsets;
@@ -20,13 +27,28 @@ public class AdminController {
     private final UserRepository userRepository;
     private final ActiveUserTracker activeUserTracker;
     private final AdminRateLimiter rateLimiter;
+    private final GalleryService galleryService;
+    private final GalleryRepository galleryRepository;
+    private final MarketplaceListingService marketplaceListingService;
+    private final MarketplaceListingRepository marketplaceListingRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     public AdminController(UserRepository userRepository,
                            ActiveUserTracker activeUserTracker,
-                           AdminRateLimiter rateLimiter) {
+                           AdminRateLimiter rateLimiter,
+                           GalleryService galleryService,
+                           GalleryRepository galleryRepository,
+                           MarketplaceListingService marketplaceListingService,
+                           MarketplaceListingRepository marketplaceListingRepository,
+                           SimpMessagingTemplate messagingTemplate) {
         this.userRepository = userRepository;
         this.activeUserTracker = activeUserTracker;
         this.rateLimiter = rateLimiter;
+        this.galleryService = galleryService;
+        this.galleryRepository = galleryRepository;
+        this.marketplaceListingService = marketplaceListingService;
+        this.marketplaceListingRepository = marketplaceListingRepository;
+        this.messagingTemplate = messagingTemplate;
     }
 
     private boolean isAuthorized(String username, String password, String authHeader) {
@@ -374,6 +396,9 @@ public class AdminController {
             recentUserSummaries.add(dto);
         }
 
+        long totalPosts = galleryRepository.count();
+        long totalMarketplaceListings = marketplaceListingRepository.count();
+
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalUsers", totalUsers);
         stats.put("activeUsers", Math.max(activeCount, activeUsersList.size()));
@@ -383,7 +408,112 @@ public class AdminController {
         stats.put("blockedUsers", blockedUsers);
         stats.put("connectedSessions", connectedSessions);
         stats.put("recentUsers", recentUserSummaries);
+        stats.put("totalPosts", totalPosts);
+        stats.put("totalMarketplaceListings", totalMarketplaceListings);
         stats.put("serverTime", new Date().toString());
         return stats;
+    }
+
+    @GetMapping("/posts")
+    public ResponseEntity<?> getPosts(
+            @RequestHeader(value = "X-Admin-User", required = false) String headerUser,
+            @RequestHeader(value = "X-Admin-Pass", required = false) String headerPass,
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            HttpServletRequest servletRequest
+    ) {
+        String ip = rateLimiter.getClientIp(servletRequest);
+        if (rateLimiter.isLocked(ip)) {
+            return buildLockedOutResponse(ip);
+        }
+
+        if (!isAuthorized(headerUser, headerPass, authHeader)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized"));
+        }
+
+        rateLimiter.recordSuccess(ip);
+        return ResponseEntity.ok(galleryService.getAllPosts());
+    }
+
+    @DeleteMapping("/posts/{id}")
+    public ResponseEntity<?> deletePost(
+            @PathVariable("id") Long id,
+            @RequestHeader(value = "X-Admin-User", required = false) String headerUser,
+            @RequestHeader(value = "X-Admin-Pass", required = false) String headerPass,
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            HttpServletRequest servletRequest
+    ) {
+        String ip = rateLimiter.getClientIp(servletRequest);
+        if (rateLimiter.isLocked(ip)) {
+            return buildLockedOutResponse(ip);
+        }
+
+        if (!isAuthorized(headerUser, headerPass, authHeader)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized"));
+        }
+
+        boolean deleted = galleryService.adminDeletePost(id);
+        if (deleted) {
+            try {
+                messagingTemplate.convertAndSend("/topic/gallery/delete", (Object) Map.of("id", id));
+            } catch (Exception ex) {
+                System.err.println("Notice: Could not broadcast gallery deletion from admin: " + ex.getMessage());
+            }
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "id", id,
+                    "message", "Post #" + id + " has been permanently deleted by Admin."
+            ));
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Post not found with ID: " + id));
+        }
+    }
+
+    @GetMapping("/marketplace/listings")
+    public ResponseEntity<?> getMarketplaceListings(
+            @RequestHeader(value = "X-Admin-User", required = false) String headerUser,
+            @RequestHeader(value = "X-Admin-Pass", required = false) String headerPass,
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            HttpServletRequest servletRequest
+    ) {
+        String ip = rateLimiter.getClientIp(servletRequest);
+        if (rateLimiter.isLocked(ip)) {
+            return buildLockedOutResponse(ip);
+        }
+
+        if (!isAuthorized(headerUser, headerPass, authHeader)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized"));
+        }
+
+        rateLimiter.recordSuccess(ip);
+        return ResponseEntity.ok(marketplaceListingService.getAllListings());
+    }
+
+    @DeleteMapping("/marketplace/listings/{id}")
+    public ResponseEntity<?> deleteMarketplaceListing(
+            @PathVariable("id") Long id,
+            @RequestHeader(value = "X-Admin-User", required = false) String headerUser,
+            @RequestHeader(value = "X-Admin-Pass", required = false) String headerPass,
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            HttpServletRequest servletRequest
+    ) {
+        String ip = rateLimiter.getClientIp(servletRequest);
+        if (rateLimiter.isLocked(ip)) {
+            return buildLockedOutResponse(ip);
+        }
+
+        if (!isAuthorized(headerUser, headerPass, authHeader)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized"));
+        }
+
+        try {
+            marketplaceListingService.adminDeleteListing(id);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "id", id,
+                    "message", "Marketplace listing #" + id + " has been permanently deleted by Admin."
+            ));
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
+        }
     }
 }

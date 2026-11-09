@@ -11,7 +11,6 @@ import MessageInput, { MentionMember } from "./MessageInput";
 import ChatNotificationBanner from "./ChatNotificationBanner";
 import { requestNotificationPermission } from "@/lib/notifications/chatNotifier";
 import { searchUsers } from "@/lib/api/users";
-import PinterestBackground from "@/components/ui/PinterestBackground";
 
 interface ChatContainerProps {
   currentUser: {
@@ -44,7 +43,7 @@ export default function ChatContainer({ currentUser, isLoggedIn = true }: ChatCo
     Boolean(activeRoom?.requiredYear && currentUser.studentYear && currentUser.studentYear !== activeRoom.requiredYear);
 
   // React Query hook: loads either cohort room messages or direct messages between currentUser and activeDmUser
-  const { messages, isLoading, isFetching, isError, error, refetch } = useChatMessages(
+  const { messages, isLoading, isError, error, refetch } = useChatMessages(
     activeChatType,
     activeRoomId,
     currentUser.id,
@@ -282,90 +281,94 @@ export default function ChatContainer({ currentUser, isLoggedIn = true }: ChatCo
   };
 
   return (
-    <div className="flex h-[100dvh] w-full bg-[#121316] text-zinc-100 overflow-hidden font-sans relative selection:bg-emerald-500/30 selection:text-white">
+    <div className="flex h-[100dvh] w-full bg-[#0D0F12] text-zinc-100 overflow-hidden font-sans relative">
       {/* Floating In-App Chat Notification Banner */}
       <ChatNotificationBanner />
 
-      {/* Left Chats List: On mobile takes 100% width when mobileView === 'list'; on desktop is always fixed w-80 */}
-      <div
-        className={`h-full md:flex md:w-80 md:shrink-0 ${
-          mobileView === "list" ? "flex flex-col w-full" : "hidden"
-        }`}
-      >
-        <ChatSidebar
-          currentUser={currentUser}
-          isLoggedIn={isLoggedIn}
-          onSelectRoom={(roomId) => {
-            setActiveRoom(roomId);
-            setMobileView("chat");
-          }}
-          onSelectDm={() => {
-            setMobileView("chat");
-          }}
-        />
+      <div className="flex h-full w-full relative z-10">
+        {/* Left Sidebar */}
+        <div
+          className={`h-full md:w-[320px] md:shrink-0 md:border-r border-white/[0.08] ${
+            mobileView === "list" ? "flex flex-col w-full" : "hidden md:flex"
+          }`}
+        >
+          <ChatSidebar
+            currentUser={currentUser}
+            isLoggedIn={isLoggedIn}
+            onSelectRoom={(roomId) => {
+              setActiveRoom(roomId);
+              setMobileView("chat");
+            }}
+            onSelectDm={() => {
+              setMobileView("chat");
+            }}
+          />
+        </div>
+
+        {/* Main Chat Area */}
+        <main
+          className={`h-full flex-col min-w-0 relative md:flex md:flex-1 bg-[#121417] ${
+            mobileView === "chat" ? "flex w-full" : "hidden"
+          }`}
+        >
+          {/* Header */}
+          <ChatHeader
+            onBack={() => {
+              setMobileView("list");
+              if (typeof window !== "undefined") {
+                try {
+                  localStorage.removeItem("annoyms_active_chat");
+                  const url = new URL(window.location.href);
+                  url.searchParams.delete("dm");
+                  window.history.replaceState({}, "", url.toString());
+                } catch {}
+              }
+            }}
+          />
+
+          {/* Messages */}
+          <div className="flex-1 relative overflow-hidden">
+            <MessageList
+              messages={messages}
+              currentUserId={currentUser.id}
+              currentUserEmail={currentUser.email}
+              currentUserName={currentUser.anonymousName}
+              isLoading={isLoading}
+              isError={isError}
+              error={error}
+              onRetry={() => refetch()}
+              roomName={isDm && activeDmUser ? `@${activeDmUser.username}` : activeRoom.name}
+              isDm={isDm}
+              dmUsername={activeDmUser?.username}
+              isBlocked={isBlocked}
+              onUnblock={() => activeDmUser && unblockUser(activeDmUser.userId)}
+              isYearRestricted={isRoomYearRestricted}
+              requiredYear={activeRoom?.requiredYear}
+            />
+          </div>
+
+          {/* Input Area */}
+          <div className="border-t border-white/[0.06] bg-[#101216]">
+            <MessageInput
+              onSendMessage={handleSendMessage}
+              disabled={(!isConnected && isConnecting) || isRoomYearRestricted}
+              isBlocked={isBlocked}
+              isLoggedIn={isLoggedIn}
+              isYearRestricted={isRoomYearRestricted}
+              requiredYear={activeRoom?.requiredYear}
+              placeholder={
+                isRoomYearRestricted
+                  ? `Access restricted to Year ${activeRoom.requiredYear}`
+                  : isDm && activeDmUser
+                  ? `Message @${activeDmUser.username}`
+                  : `Message #${activeRoom.name}`
+              }
+              senderName={currentUser.anonymousName || "Anonymous"}
+              roomMembers={uniqueRoomMembers}
+            />
+          </div>
+        </main>
       </div>
-
-      {/* Main Conversation Pane: On mobile takes 100% width when mobileView === 'chat'; on desktop always fills remaining space */}
-      <main
-        className={`h-full flex-col min-w-0 relative md:flex md:flex-1 ${
-          mobileView === "chat" ? "flex w-full" : "hidden"
-        }`}
-      >
-        {/* Chat Top Header with WhatsApp Back Button on Mobile */}
-        <ChatHeader
-          onBack={() => {
-            setMobileView("list");
-            if (typeof window !== "undefined") {
-              try {
-                localStorage.removeItem("annoyms_active_chat");
-                const url = new URL(window.location.href);
-                url.searchParams.delete("dm");
-                window.history.replaceState({}, "", url.toString());
-              } catch {}
-            }
-          }}
-          onRefresh={() => refetch()}
-          isFetching={isFetching}
-        />
-
-        {/* Message Feed Window */}
-        <MessageList
-          messages={messages}
-          currentUserId={currentUser.id}
-          currentUserEmail={currentUser.email}
-          currentUserName={currentUser.anonymousName}
-          isLoading={isLoading}
-          isError={isError}
-          error={error}
-          onRetry={() => refetch()}
-          roomName={isDm && activeDmUser ? `@${activeDmUser.username}` : activeRoom.name}
-          isDm={isDm}
-          dmUsername={activeDmUser?.username}
-          isBlocked={isBlocked}
-          onUnblock={() => activeDmUser && unblockUser(activeDmUser.userId)}
-          isYearRestricted={isRoomYearRestricted}
-          requiredYear={activeRoom?.requiredYear}
-        />
-
-        {/* Message Input Bar */}
-        <MessageInput
-          onSendMessage={handleSendMessage}
-          disabled={(!isConnected && isConnecting) || isRoomYearRestricted}
-          isBlocked={isBlocked}
-          isLoggedIn={isLoggedIn}
-          isYearRestricted={isRoomYearRestricted}
-          requiredYear={activeRoom?.requiredYear}
-          placeholder={
-            isRoomYearRestricted
-              ? `Year ${activeRoom.requiredYear} only`
-              : isDm && activeDmUser
-              ? `Message @${activeDmUser.username}`
-              : `Message #${activeRoom.name}`
-          }
-          senderName={currentUser.anonymousName || "Anonymous"}
-          roomMembers={uniqueRoomMembers}
-        />
-      </main>
     </div>
   );
 }

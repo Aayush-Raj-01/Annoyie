@@ -10,6 +10,7 @@ import {
   MediaItem,
   resolveGiphyUrl,
 } from "@/lib/chat/mediaData";
+import { IsometricCubeIcon, IsometricSparkleIcon, IsometricMediaIcon } from "./FolderTab";
 
 interface MediaPickerProps {
   isOpen: boolean;
@@ -188,48 +189,56 @@ export default function MediaPicker({
       ref={pickerRef}
       className="fixed inset-x-2 sm:inset-x-auto bottom-[calc(3.75rem+env(safe-area-inset-bottom))] z-50 sm:absolute sm:left-2 sm:bottom-full sm:mb-2.5 sm:w-[420px] max-w-[calc(100vw-1rem)] sm:max-w-md h-[420px] max-h-[65vh] sm:max-h-[80vh] rounded-2xl bg-[#0c0e14]/98 backdrop-blur-2xl border border-white/[0.1] shadow-[0_20px_50px_rgba(0,0,0,0.85)] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-150"
     >
-      {/* Header with Navigation Tabs */}
-      <div className="flex items-center justify-between p-2.5 border-b border-white/[0.06] bg-zinc-950/70">
-        <div className="flex items-center gap-1">
+      {/* Header with Navigation Tabs (Image 2 style with 3D icons) */}
+      <div className="flex items-center justify-between px-3 pt-2 pb-1 border-b border-white/[0.08] bg-[#0c0e14]">
+        <div className="flex items-center gap-1.5">
+          {/* Tab: Stickers */}
           <button
             type="button"
             onClick={() => handleTabChange("stickers")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+            className={`relative flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
               activeTab === "stickers"
-                ? "bg-white/[0.1] text-white border border-white/10 shadow-inner"
+                ? "bg-white/[0.1] text-white border border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
                 : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]"
             }`}
           >
-            ✨ Stickers
+            <IsometricSparkleIcon className="w-3.5 h-3.5" />
+            <span>Stickers</span>
           </button>
+
+          {/* Tab: GIFs */}
           <button
             type="button"
             onClick={() => handleTabChange("gifs")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+            className={`relative flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
               activeTab === "gifs"
-                ? "bg-white/[0.1] text-white border border-white/10 shadow-inner"
+                ? "bg-white/[0.1] text-white border border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
                 : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]"
             }`}
           >
-            🎬 GIFs
+            <IsometricMediaIcon className="w-3.5 h-3.5" />
+            <span>GIFs</span>
           </button>
+
+          {/* Tab: Emojis */}
           <button
             type="button"
             onClick={() => handleTabChange("emojis")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+            className={`relative flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
               activeTab === "emojis"
-                ? "bg-white/[0.1] text-white border border-white/10 shadow-inner"
+                ? "bg-white/[0.1] text-white border border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
                 : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]"
             }`}
           >
-            😀 Emojis
+            <IsometricCubeIcon className="w-3.5 h-3.5" />
+            <span>Emojis</span>
           </button>
         </div>
 
         <button
           type="button"
           onClick={onClose}
-          className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+          className="p-1.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
           title="Close drawer"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

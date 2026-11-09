@@ -144,6 +144,23 @@ public class GalleryService {
                 .toList();
     }
 
+    public List<GalleryPostResponse> getAllPosts() {
+        return galleryRepository.findAllByOrderByCreatedAtDesc()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Transactional
+    public boolean adminDeletePost(Long id) {
+        Optional<GalleryPost> optionalPost = galleryRepository.findById(id);
+        if (optionalPost.isEmpty()) {
+            return false;
+        }
+        galleryRepository.delete(optionalPost.get());
+        return true;
+    }
+
     @Transactional
     public boolean deletePost(Long id, String email, String username) {
         Optional<GalleryPost> optionalPost = galleryRepository.findById(id);

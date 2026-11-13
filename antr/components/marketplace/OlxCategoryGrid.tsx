@@ -161,8 +161,8 @@ export default function OlxCategoryGrid({
         )}
       </div>
 
-      {/* Responsive Grid: 3 cols on mobile, 5 on tablet, 9 in a balanced row on desktop */}
-      <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-y-4 sm:gap-y-4 gap-x-2 sm:gap-x-3">
+      {/* Mobile: Horizontal scrollable carousel row; Tablet & Desktop: Responsive Grid */}
+      <div className="flex sm:grid sm:grid-cols-5 lg:grid-cols-9 items-start gap-2.5 sm:gap-3 overflow-x-auto sm:overflow-visible scrollbar-none pb-1.5 sm:pb-0 -mx-3 px-3 sm:mx-0 sm:px-0">
         {OLX_CATEGORIES.map((cat) => {
           const isSelected = selectedCategoryId === cat.id;
 
@@ -171,15 +171,15 @@ export default function OlxCategoryGrid({
               key={cat.id}
               type="button"
               onClick={() => onSelectCategory(cat.id)}
-              className="flex flex-col items-center text-center group cursor-pointer focus:outline-none"
+              className="flex flex-col items-center text-center shrink-0 w-[68px] sm:w-auto group cursor-pointer focus:outline-none"
             >
               {/* Circular Avatar with Pastel Fill */}
               <div
                 style={{ backgroundColor: cat.bgHex }}
-                className={`w-13 h-13 sm:w-14 sm:h-14 lg:w-15 lg:h-15 rounded-full flex items-center justify-center transition-all duration-200 shadow-md group-hover:scale-105 active:scale-95 ${
+                className={`w-12 h-12 sm:w-14 sm:h-14 lg:w-15 lg:h-15 rounded-full flex items-center justify-center transition-all duration-200 shadow-sm group-hover:scale-105 active:scale-95 ${
                   isSelected
-                    ? "ring-4 ring-emerald-500 ring-offset-2 ring-offset-[#0a0c10] scale-105 shadow-emerald-500/40"
-                    : "group-hover:shadow-lg"
+                    ? "ring-3 sm:ring-4 ring-emerald-500 ring-offset-2 ring-offset-[#0a0c10] scale-105 shadow-emerald-500/40"
+                    : "group-hover:shadow-md"
                 }`}
               >
                 {cat.icon}
@@ -187,10 +187,10 @@ export default function OlxCategoryGrid({
 
               {/* Uppercase College-Specific Category Label */}
               <span
-                className={`mt-1.5 text-[9.5px] sm:text-[10px] lg:text-[10.5px] font-bold tracking-tight uppercase leading-tight line-clamp-2 px-0.5 transition-colors ${
+                className={`mt-1.5 text-[9px] sm:text-[10px] lg:text-[10.5px] font-bold tracking-tight uppercase leading-tight line-clamp-2 px-0.5 transition-colors ${
                   isSelected
                     ? "text-emerald-400 font-extrabold"
-                    : "text-zinc-300 group-hover:text-white"
+                    : "text-zinc-400 group-hover:text-white"
                 }`}
               >
                 {cat.label}

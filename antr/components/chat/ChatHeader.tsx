@@ -52,7 +52,7 @@ export default function ChatHeader({ onBack }: ChatHeaderProps) {
       {
         id: "room-7",
         label: room7?.name || "Creative",
-        icon: "sparkles",
+        icon: "hash",
       },
     ];
 

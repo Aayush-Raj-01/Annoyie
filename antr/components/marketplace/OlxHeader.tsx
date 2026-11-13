@@ -107,16 +107,16 @@ export default function OlxHeader({
             )}
           </Link>
 
-          {/* Desktop Pinned "+ SELL" Button (PC only, elegant top-right header placement) */}
+          {/* Header "+ SELL" Button (Accessible on both Mobile & Desktop) */}
           {onPostClick && (
             <button
               type="button"
               onClick={onPostClick}
-              className="hidden md:flex items-center gap-1.5 px-4 py-2 rounded-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-xs tracking-wider shadow-md shadow-emerald-500/30 border border-emerald-400/40 active:scale-95 transition-all cursor-pointer uppercase select-none group shrink-0"
+              className="flex items-center gap-1 sm:gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-xs tracking-wider shadow-md shadow-emerald-500/30 border border-emerald-400/40 active:scale-95 transition-all cursor-pointer uppercase select-none group shrink-0"
               title="Post an Ad on Campus Marketplace"
             >
               <svg
-                className="w-4 h-4 text-white group-hover:scale-110 transition-transform"
+                className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-zinc-950 group-hover:scale-110 transition-transform"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"

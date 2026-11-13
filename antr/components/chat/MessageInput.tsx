@@ -382,7 +382,7 @@ export default function MessageInput({
           className={`flex items-center gap-1.5 p-1.5 bg-[#14151b] rounded-[1.4rem] transition-all ${
             isBlocked
               ? "border border-rose-500/25"
-              : "border border-white/[0.08] focus-within:border-emerald-500/40 focus-within:shadow-[0_0_0_3px_rgba(16,185,129,0.08)]"
+              : "border border-white/[0.08] focus-within:border-white/25 focus-within:shadow-[0_0_0_2px_rgba(255,255,255,0.04)]"
           }`}
         >
           {/* Emoji Smiley Button */}
@@ -441,11 +441,11 @@ export default function MessageInput({
             </svg>
           </button>
 
-          {/* Circular Green Send / Voice Action Button */}
+          {/* Send / Voice Action Button */}
           <button
             type="submit"
             disabled={isActuallyDisabled}
-            className="w-9 h-9 rounded-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/20 transition-all active:scale-95 disabled:opacity-40 cursor-pointer font-bold"
+            className="w-8 h-8 rounded-full bg-white hover:bg-zinc-200 text-zinc-950 flex items-center justify-center shrink-0 shadow-sm transition-all active:scale-95 disabled:opacity-30 cursor-pointer font-bold"
             title="Send message"
           >
             {content.trim() ? (

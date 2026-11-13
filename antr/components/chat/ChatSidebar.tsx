@@ -57,13 +57,13 @@ function getMessageSnippet(content?: string, senderName?: string): { text: strin
 
   if (trimmed.startsWith("[sticker:")) {
     const parts = trimmed.slice(9, -1).split(":");
-    return { text: `${prefix}✨ ${parts[0] || "Sticker"}`, isMedia: true };
+    return { text: `${prefix}Sticker`, isMedia: true };
   }
   if (trimmed.startsWith("[gif:") || trimmed.includes("giphy.com")) {
     return { text: `${prefix}GIF`, isMedia: true };
   }
   if (/^https?:\/\/\S+\.(gif|webp|png|jpe?g)/i.test(trimmed)) {
-    return { text: `${prefix}Image`, isMedia: true };
+    return { text: `${prefix}Photo`, isMedia: true };
   }
   return { text: `${prefix}${trimmed}`, isMedia: false };
 }
@@ -75,6 +75,60 @@ function getStoredProfile() {
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
+  }
+}
+
+function getRoomBadge(roomId: number, emoji?: string) {
+  switch (roomId) {
+    case 1:
+      return {
+        bg: "bg-emerald-500/15 text-emerald-400 border-emerald-500/25",
+        icon: <span className="font-mono font-bold text-base">#</span>,
+      };
+    case 2:
+      return {
+        bg: "bg-sky-500/15 text-sky-400 border-sky-500/25",
+        icon: <span className="font-mono font-bold text-xs">Y1</span>,
+      };
+    case 3:
+      return {
+        bg: "bg-amber-500/15 text-amber-400 border-amber-500/25",
+        icon: <span className="font-mono font-bold text-xs">Y2</span>,
+      };
+    case 4:
+      return {
+        bg: "bg-teal-500/15 text-teal-400 border-teal-500/25",
+        icon: <span className="font-mono font-bold text-xs">Y3</span>,
+      };
+    case 5:
+      return {
+        bg: "bg-purple-500/15 text-purple-400 border-purple-500/25",
+        icon: <span className="font-mono font-bold text-xs">Y4</span>,
+      };
+    case 6:
+      return {
+        bg: "bg-cyan-500/15 text-cyan-400 border-cyan-500/25",
+        icon: <span className="font-mono font-bold text-xs">&lt;/&gt;</span>,
+      };
+    case 7:
+      return {
+        bg: "bg-rose-500/15 text-rose-400 border-rose-500/25",
+        icon: <span className="text-base">🎨</span>,
+      };
+    case 8:
+      return {
+        bg: "bg-emerald-500/15 text-emerald-400 border-emerald-500/25",
+        icon: <span className="text-base">📚</span>,
+      };
+    default:
+      return {
+        bg: "bg-white/10 text-zinc-300 border-white/10",
+        icon: emoji ? (
+          <span className="text-base">{emoji}</span>
+        ) : (
+          <span className="font-mono font-bold text-base">#</span>
+        ),
+      };
   }
 }
 
@@ -194,42 +248,82 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
   const totalUnreadChannels = Object.values(unreadCounts).reduce((acc, count) => acc + count, 0);
   const totalUnreadDms = Object.values(unreadDmCounts).reduce((acc, count) => acc + count, 0);
 
-  const tabClass = (tab: typeof activeTab) =>
-    `flex-1 py-2 px-2 rounded-xl text-xs font-semibold transition-all cursor-pointer text-center ${
-      activeTab === tab
-        ? "bg-emerald-500 text-black shadow-[0_4px_14px_rgba(16,185,129,0.25)]"
-        : "text-zinc-400 hover:text-white hover:bg-white/5"
-    }`;
 
   return (
     <>
-      <aside className="w-full h-full bg-[#0F0F12] flex flex-col select-none relative overflow-hidden">
-        {/* Header with Title */}
-        <div className="p-4 sm:p-5 flex items-center justify-between border-b border-white/[0.04]">
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">Messages</h1>
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+      <aside className="w-full h-full bg-[#0a0d11] text-zinc-100 flex flex-col select-none relative overflow-hidden font-sans">
+        {/* Subtle Ambient Background Glow */}
+        <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-emerald-950/20 via-transparent to-transparent pointer-events-none -z-0" />
+
+        {/* 1. Header (Inspired by the Sarah Greeting + Status Meter) */}
+        <div className="px-4 sm:px-5 pt-4 pb-3 flex items-center justify-between relative z-10">
+          <div
+            className="flex items-center gap-3 cursor-pointer group"
+            onClick={() => setProfileUserId(currentUser.id || null)}
+          >
+            <div className="relative">
+              <UserAvatar
+                src={currentUser.avatarUrl}
+                name={currentUser.anonymousName || "Anonymous"}
+                size="md"
+                showStatus={false}
+                className="ring-2 ring-emerald-500/30 group-hover:ring-emerald-400 transition-all"
+              />
+              <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#0a0d11] ${isConnected ? "bg-emerald-400" : isConnecting ? "bg-amber-400 animate-pulse" : "bg-zinc-600"}`} />
+            </div>
+
+            <div className="flex flex-col">
+              <span className="text-[11px] text-zinc-400 font-medium leading-none">
+                {isLoggedIn ? "Good day!" : "Welcome!"}
+              </span>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="text-sm sm:text-base font-bold text-white group-hover:text-zinc-200 transition-colors">
+                  {currentUser.anonymousName || "Anonymous"}
+                </span>
+                {currentUser.studentYear && (
+                  <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-mono font-semibold">
+                    Y{currentUser.studentYear}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => document.getElementById("chat-search-input")?.focus()}
-              className="p-2 rounded-full bg-white/5 text-zinc-400 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
-              title="Search"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+          {/* Right Status Gauge Pill (Inspired by the 85% Mind Balance pill) */}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] backdrop-blur-md">
+            {/* Circular Gauge Ring */}
+            <div className="relative w-5 h-5 flex items-center justify-center">
+              <svg className="w-5 h-5 -rotate-90" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.5" fill="none" className="text-white/[0.08]" />
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="9"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  fill="none"
+                  strokeDasharray="56.5"
+                  strokeDashoffset={isConnected ? "8" : "28"}
+                  strokeLinecap="round"
+                  className={isConnected ? "text-emerald-400" : isConnecting ? "text-amber-400" : "text-zinc-600"}
+                />
               </svg>
-            </button>
+              <span className="text-[8px] font-mono font-bold text-emerald-300 absolute">
+                {isConnected ? "✓" : "•"}
+              </span>
+            </div>
+            <span className="text-[11px] font-semibold text-zinc-200">
+              {isConnected ? "Campus Live" : isConnecting ? "Connecting" : "Offline"}
+            </span>
           </div>
         </div>
 
-        {/* Search Bar */}
-        <div className="px-4 sm:px-5 py-2">
-          <div className="relative group">
+        {/* Scrollable Main Overview Feed */}
+        <div className="flex-1 overflow-y-auto px-4 pb-24 md:pb-6 space-y-4 scrollbar-thin scrollbar-thumb-zinc-800 relative z-10">
+          {/* Search Bar */}
+          <div className="relative group pt-1">
             <svg
-              className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none group-focus-within:text-emerald-500 transition-colors"
+              className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none group-focus-within:text-emerald-400 transition-colors"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -239,10 +333,10 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
             <input
               id="chat-search-input"
               type="text"
-              placeholder="Search peers or rooms..."
+              placeholder="Search classmates or rooms..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-9 py-2 text-xs sm:text-sm bg-[#16171e] border border-white/[0.06] rounded-xl text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50 focus:bg-[#1a1b24] transition-all"
+              className="w-full pl-10 pr-9 py-2.5 text-xs sm:text-sm bg-white/[0.04] border border-white/[0.07] rounded-2xl text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-emerald-500/40 focus:bg-white/[0.07] transition-all"
             />
             {searchQuery && (
               <button
@@ -257,54 +351,27 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
               </button>
             )}
           </div>
-        </div>
 
-        {!searchQuery.trim() && (
-          <div className="px-4 sm:px-5 py-2 flex items-center gap-1.5">
-            <button type="button" onClick={() => setActiveTab("all")} className={tabClass("all")}>
-              All
-            </button>
-            <button type="button" onClick={() => setActiveTab("channels")} className={`${tabClass("channels")} flex items-center justify-center gap-1.5`}>
-              <span>Rooms</span>
-              {totalUnreadChannels > 0 && (
-                <span className={`w-1.5 h-1.5 rounded-full ${activeTab === "channels" ? "bg-black" : "bg-emerald-400"}`} />
-              )}
-            </button>
-            <button type="button" onClick={() => setActiveTab("dms")} className={`${tabClass("dms")} flex items-center justify-center gap-1.5`}>
-              <span>DMs</span>
-              {totalUnreadDms > 0 && (
-                <span
-                  className={`px-1.5 py-0.5 rounded-full font-bold text-[9px] font-mono ${
-                    activeTab === "dms" ? "bg-black text-emerald-500" : "bg-emerald-500 text-black"
-                  }`}
-                >
-                  {totalUnreadDms}
-                </span>
-              )}
-            </button>
-          </div>
-        )}
-
-        <div className="flex-1 overflow-y-auto px-3 py-1 space-y-1 scrollbar-thin scrollbar-thumb-zinc-800">
           {searchQuery.trim() ? (
-            <div className="space-y-6 pt-2">
+            /* Search Results Mode */
+            <div className="space-y-4 pt-1">
               <div>
-                <div className="px-3 pb-2 flex items-center justify-between text-[10px] font-mono font-bold uppercase tracking-[0.12em] text-emerald-500/80">
-                  <span>People</span>
+                <div className="pb-2 text-xs font-semibold text-zinc-400 flex items-center justify-between">
+                  <span>Classmates & Peers</span>
                   {isSearchingUsers ? (
-                    <span className="animate-spin text-emerald-400">◌</span>
+                    <span className="animate-spin text-zinc-400">◌</span>
                   ) : (
                     <span>{userSearchResults.length}</span>
                   )}
                 </div>
                 {userSearchResults.length > 0 ? (
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     {userSearchResults.map((user) => {
                       const isBlocked = blockedUserIds.includes(user.id);
                       return (
                         <div
                           key={`user-search-${user.id}`}
-                          className="w-full text-left px-3 py-3 rounded-2xl bg-white/[0.02] hover:bg-white/[0.05] border border-transparent hover:border-white/[0.05] transition-all flex items-center justify-between gap-3 cursor-pointer group"
+                          className="w-full text-left p-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.05] transition-all flex items-center justify-between gap-3 cursor-pointer group"
                         >
                           <div className="flex items-center gap-3 min-w-0 flex-1" onClick={() => setProfileUserId(user.id)}>
                             <UserAvatar
@@ -316,7 +383,7 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
                               isConnected={isUserOnline(user.id, user.username)}
                             />
                             <div className="min-w-0">
-                              <span className="text-sm font-bold text-white group-hover:text-emerald-400 truncate block transition-colors">
+                              <span className="text-sm font-semibold text-white group-hover:text-zinc-200 truncate block">
                                 @{user.username}
                               </span>
                               <p className="text-[11px] text-zinc-500 truncate font-medium">
@@ -327,11 +394,11 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
                           <button
                             type="button"
                             onClick={() => handleStartDm(user)}
-                            className="w-8 h-8 flex items-center justify-center rounded-xl bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-black transition-all shrink-0 cursor-pointer"
+                            className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white text-zinc-300 hover:text-black transition-all shrink-0 cursor-pointer"
                             title="Start chat"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                             </svg>
                           </button>
                         </div>
@@ -339,20 +406,21 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
                     })}
                   </div>
                 ) : (
-                  <div className="px-3 py-6 text-center rounded-2xl border border-dashed border-white/[0.06]">
-                    <p className="text-xs text-zinc-500">{isSearchingUsers ? "Searching…" : "No people found"}</p>
+                  <div className="p-6 text-center rounded-2xl border border-dashed border-white/[0.06]">
+                    <p className="text-xs text-zinc-500">{isSearchingUsers ? "Searching…" : "No classmates found"}</p>
                   </div>
                 )}
               </div>
 
               <div>
-                <div className="px-3 pb-2 text-[10px] font-mono font-bold uppercase tracking-[0.12em] text-zinc-500">
+                <div className="pb-2 text-xs font-semibold text-zinc-400">
                   Rooms
                 </div>
                 {filteredRooms.length > 0 ? (
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     {filteredRooms.map((room) => {
                       const isActive = activeChatType === "channel" && room.id === activeRoomId;
+                      const badge = getRoomBadge(room.id, room.emoji);
                       return (
                         <button
                           key={`search-room-${room.id}`}
@@ -362,54 +430,82 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
                             setSearchQuery("");
                             if (onSelectRoom) onSelectRoom(room.id);
                           }}
-                          className={`w-full text-left px-3 py-3 rounded-2xl transition-all flex items-center gap-3 cursor-pointer border ${
+                          className={`w-full text-left p-3 rounded-2xl transition-all flex items-center gap-3 cursor-pointer border ${
                             isActive
-                              ? "bg-white/10 text-white border-white/10"
+                              ? "bg-white/[0.08] text-white border-white/15"
                               : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03] border-transparent"
                           }`}
                         >
-                          <div className="w-10 h-10 rounded-2xl bg-zinc-900 border border-white/[0.06] flex items-center justify-center text-lg shrink-0">
-                            {room.emoji || "#"}
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${badge.bg}`}>
+                            {badge.icon}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5">
-                              <p className="text-sm font-bold truncate text-zinc-100">{room.name}</p>
-                              {room.requiredYear && (
-                                <span className="text-[9px] px-1.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono font-bold shrink-0">
-                                  YR {room.requiredYear}
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-[11px] text-zinc-500 truncate mt-0.5">{room.description}</p>
+                            <p className="text-sm font-semibold truncate text-zinc-100">{room.name}</p>
+                            <p className="text-[11px] text-zinc-500 truncate">{room.description}</p>
                           </div>
                         </button>
                       );
                     })}
                   </div>
                 ) : (
-                  <div className="px-3 py-6 text-center rounded-2xl border border-dashed border-white/[0.06]">
+                  <div className="p-6 text-center rounded-2xl border border-dashed border-white/[0.06]">
                     <p className="text-xs text-zinc-500">No rooms found</p>
                   </div>
                 )}
               </div>
             </div>
           ) : (
+            /* Normal Feed Mode: Direct Clean Chat Conversations */
             <>
-              {(activeTab === "all" || activeTab === "dms") && (
-                <div className="space-y-1">
-                  <div className="px-3 pb-2 flex items-center justify-between text-[10px] font-mono font-bold uppercase tracking-[0.15em] text-zinc-500">
-                    <span>Direct messages</span>
-                    {dmConversations.length > 0 && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 normal-case tracking-normal">{dmConversations.length}</span>
-                    )}
-                  </div>
+              {/* Conversations Section */}
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                    Conversations
+                  </h3>
 
-                  {dmConversations.length === 0 ? (
-                    <div className="px-4 py-8 rounded-2xl border border-dashed border-white/[0.06] text-center">
-                      <p className="text-xs text-zinc-400 font-medium">No direct messages yet</p>
-                      <p className="text-[11px] text-zinc-500 mt-1">Search a peer above to start one</p>
-                    </div>
-                  ) : (
+                  {/* Minimal Tab Switcher */}
+                  <div className="flex items-center p-0.5 rounded-lg bg-white/[0.05] border border-white/[0.06] text-[11px]">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("all")}
+                      className={`px-2 py-0.5 rounded-md font-medium transition-all ${
+                        activeTab === "all" ? "bg-white/15 text-white font-bold" : "text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      All
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("dms")}
+                      className={`px-2 py-0.5 rounded-md font-medium transition-all flex items-center gap-1 ${
+                        activeTab === "dms" ? "bg-white/15 text-white font-bold" : "text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      <span>Direct</span>
+                      {totalUnreadDms > 0 && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("channels")}
+                      className={`px-2 py-0.5 rounded-md font-medium transition-all flex items-center gap-1 ${
+                        activeTab === "channels" ? "bg-white/15 text-white font-bold" : "text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      <span>Rooms</span>
+                      {totalUnreadChannels > 0 && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* List Container */}
+                <div className="space-y-1.5">
+                  {/* Direct Messages */}
+                  {(activeTab === "all" || activeTab === "dms") &&
                     dmConversations.map((dm) => {
                       const isActive = activeChatType === "dm" && activeDmUser?.userId === dm.userId;
                       const unread = unreadDmCounts[dm.userId] || 0;
@@ -421,7 +517,7 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
                         ? getMessageSnippet(lastMsg.content)
                         : dm.lastMessage
                         ? getMessageSnippet(dm.lastMessage)
-                        : { text: "Open conversation", isMedia: false };
+                        : { text: "Tap to chat", isMedia: false };
                       const timeStr = lastMsg
                         ? formatChatTime(lastMsg.createdAt)
                         : dm.lastMessageTime
@@ -442,18 +538,19 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
                             });
                             if (onSelectDm) onSelectDm(dm.userId);
                           }}
-                          className={`w-full text-left px-3.5 py-3 rounded-2xl transition-all flex items-center gap-3.5 cursor-pointer group relative border overflow-hidden ${
+                          className={`w-full text-left p-3 rounded-2xl transition-all flex items-center gap-3.5 cursor-pointer group border ${
                             isActive
-                              ? "bg-[#121c17]/95 border-emerald-500/35 shadow-[0_4px_20px_rgba(16,185,129,0.15)]"
-                              : "hover:bg-white/[0.04] border-transparent hover:border-white/[0.05]"
+                              ? "bg-white/[0.08] border-white/15 text-white shadow-sm"
+                              : "bg-[#12141c]/70 hover:bg-[#181b26] border-white/[0.05]"
                           }`}
                         >
-                          {/* Right-side subtle green gradient wash for active conversation (Image 3) */}
-                          {isActive && (
-                            <div className="absolute inset-y-0 right-0 w-28 bg-gradient-to-l from-emerald-500/20 via-emerald-500/5 to-transparent pointer-events-none rounded-r-2xl" />
-                          )}
-
-                          <div onClick={(e) => { e.stopPropagation(); setProfileUserId(dm.userId); }} className="shrink-0 relative z-10">
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setProfileUserId(dm.userId);
+                            }}
+                            className="shrink-0 relative"
+                          >
                             <UserAvatar
                               src={dm.avatarUrl}
                               name={dm.username}
@@ -464,159 +561,92 @@ export default function ChatSidebar({ currentUser, isLoggedIn = true, onSelectRo
                               className="group-hover:scale-105 transition-transform"
                             />
                             {unread > 0 && (
-                              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-emerald-500 text-black text-[10px] font-black flex items-center justify-center border-2 border-[#0F0F12]">
+                              <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] px-1 rounded-full bg-emerald-400 text-zinc-950 text-[10px] font-black flex items-center justify-center shadow-sm">
                                 {unread > 9 ? "9+" : unread}
                               </span>
                             )}
                           </div>
-                          <div className="flex-1 min-w-0 z-10">
+
+                          <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-1 mb-0.5">
                               <span className={`text-sm font-bold truncate ${isActive ? "text-white" : "text-zinc-200 group-hover:text-white"}`}>
                                 {dm.username}
                               </span>
                               {timeStr && (
-                                <span className={`text-[10px] font-mono font-bold shrink-0 ${isActive ? "text-emerald-400" : "text-zinc-500"}`}>
+                                <span className={`text-[11px] font-mono shrink-0 ${isActive ? "text-zinc-300" : "text-zinc-500"}`}>
                                   {timeStr}
                                 </span>
                               )}
                             </div>
-                            <p className={`text-[12px] truncate font-medium ${isBlocked ? "text-rose-400/70 italic" : isActive ? "text-zinc-300" : "text-zinc-500 group-hover:text-zinc-400"}`}>
+                            <p className={`text-xs truncate ${isBlocked ? "text-rose-400/80 italic" : isActive ? "text-zinc-300" : "text-zinc-400 group-hover:text-zinc-300"}`}>
                               {isBlocked ? "Blocked" : snippet.text}
                             </p>
                           </div>
-
-                          {/* Emerald-Green Glow Indicator Pill (Image 3) */}
-                          {isActive && (
-                            <div className="w-1.5 h-6 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.95)] shrink-0 z-10" />
-                          )}
                         </button>
                       );
-                    })
-                  )}
-                </div>
-              )}
+                    })}
 
-              {(activeTab === "all" || activeTab === "channels") && (
-                <div className="space-y-1 pt-4">
-                  <div className="px-3 pb-2 flex items-center justify-between text-[10px] font-mono font-bold uppercase tracking-[0.15em] text-zinc-500">
-                    <span>Rooms</span>
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 normal-case tracking-normal">{filteredRooms.length}</span>
-                  </div>
-                  {filteredRooms.map((room) => {
-                    const isActive = activeChatType === "channel" && room.id === activeRoomId;
-                    const roomMsgs = messagesByRoom[room.id] ?? [];
-                    const unseenCount = unreadCounts[room.id] || 0;
-                    const lastMsg = roomMsgs.length > 0 ? roomMsgs[roomMsgs.length - 1] : null;
-                    const timeStr = lastMsg ? formatChatTime(lastMsg.createdAt) : "";
-                    const lastSenderName = lastMsg ? resolveSenderName(lastMsg.sender, lastMsg.senderEmail) : "";
-                    const snippet = lastMsg
-                      ? getMessageSnippet(lastMsg.content, lastSenderName)
-                      : { text: room.description || "Public room", isMedia: false };
+                  {/* Rooms list */}
+                  {(activeTab === "all" || activeTab === "channels") &&
+                    filteredRooms.map((room) => {
+                      const isActive = activeChatType === "channel" && room.id === activeRoomId;
+                      const roomMsgs = messagesByRoom[room.id] ?? [];
+                      const unseenCount = unreadCounts[room.id] || 0;
+                      const lastMsg = roomMsgs.length > 0 ? roomMsgs[roomMsgs.length - 1] : null;
+                      const timeStr = lastMsg ? formatChatTime(lastMsg.createdAt) : "";
+                      const lastSenderName = lastMsg ? resolveSenderName(lastMsg.sender, lastMsg.senderEmail) : "";
+                      const snippet = lastMsg
+                        ? getMessageSnippet(lastMsg.content, lastSenderName)
+                        : { text: room.description || "Public room", isMedia: false };
+                      const badge = getRoomBadge(room.id, room.emoji);
 
-                    return (
-                      <button
-                        key={room.id}
-                        type="button"
-                        onClick={() => {
-                          setActiveRoom(room.id);
-                          if (onSelectRoom) onSelectRoom(room.id);
-                        }}
-                        className={`w-full text-left px-3.5 py-3 rounded-2xl transition-all flex items-center gap-3.5 cursor-pointer group relative border overflow-hidden ${
-                          isActive
-                            ? "bg-[#121c17]/95 border-emerald-500/35 shadow-[0_4px_20px_rgba(16,185,129,0.15)]"
-                            : "hover:bg-white/[0.04] border-transparent hover:border-white/[0.05]"
-                        }`}
-                      >
-                        {/* Right-side subtle green gradient wash for active room (Image 3) */}
-                        {isActive && (
-                          <div className="absolute inset-y-0 right-0 w-28 bg-gradient-to-l from-emerald-500/20 via-emerald-500/5 to-transparent pointer-events-none rounded-r-2xl" />
-                        )}
-
-                        <div className="relative shrink-0 z-10">
-                          <div
-                            className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xl transition-all border ${
-                              isActive
-                                ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.25)]"
-                                : "bg-[#18191f] text-zinc-400 border-white/[0.05] group-hover:scale-105"
-                            }`}
-                          >
-                            {room.emoji || "#"}
-                          </div>
-                          {unseenCount > 0 && (
-                            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-emerald-500 text-black text-[10px] font-black flex items-center justify-center border-2 border-[#0F0F12]">
-                              {unseenCount > 9 ? "9+" : unseenCount}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0 z-10">
-                          <div className="flex items-center justify-between gap-1 mb-0.5">
-                            <span className={`text-sm font-bold truncate ${isActive ? "text-white" : "text-zinc-200 group-hover:text-white"}`}>
-                              {room.name}
-                            </span>
-                            {timeStr && (
-                              <span className={`text-[10px] font-mono font-bold shrink-0 ${isActive ? "text-emerald-400" : "text-zinc-500"}`}>
-                                {timeStr}
+                      return (
+                        <button
+                          key={`room-${room.id}`}
+                          type="button"
+                          onClick={() => {
+                            setActiveRoom(room.id);
+                            if (onSelectRoom) onSelectRoom(room.id);
+                          }}
+                          className={`w-full text-left p-3 rounded-2xl transition-all flex items-center gap-3.5 cursor-pointer group border ${
+                            isActive
+                              ? "bg-white/[0.08] border-white/15 text-white shadow-sm"
+                              : "bg-[#12141c]/70 hover:bg-[#181b26] border-white/[0.05]"
+                          }`}
+                        >
+                          <div className="relative shrink-0">
+                            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border transition-transform group-hover:scale-105 ${badge.bg}`}>
+                              {badge.icon}
+                            </div>
+                            {unseenCount > 0 && (
+                              <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] px-1 rounded-full bg-emerald-400 text-zinc-950 text-[10px] font-black flex items-center justify-center shadow-sm">
+                                {unseenCount > 9 ? "9+" : unseenCount}
                               </span>
                             )}
                           </div>
-                          <p className={`text-[12px] truncate font-medium ${isActive ? "text-zinc-300" : "text-zinc-500 group-hover:text-zinc-400"}`}>
-                            {snippet.text}
-                          </p>
-                        </div>
 
-                        {/* Emerald-Green Glow Indicator Pill (Image 3) */}
-                        {isActive && (
-                          <div className="w-1.5 h-6 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.95)] shrink-0 z-10" />
-                        )}
-                      </button>
-                    );
-                  })}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-1 mb-0.5">
+                              <span className={`text-sm font-bold truncate ${isActive ? "text-white" : "text-zinc-200 group-hover:text-white"}`}>
+                                {room.name}
+                              </span>
+                              {timeStr && (
+                                <span className={`text-[11px] font-mono shrink-0 ${isActive ? "text-zinc-300" : "text-zinc-500"}`}>
+                                  {timeStr}
+                                </span>
+                              )}
+                            </div>
+                            <p className={`text-xs truncate ${isActive ? "text-zinc-300" : "text-zinc-400 group-hover:text-zinc-300"}`}>
+                              {snippet.text}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
                 </div>
-              )}
+              </div>
             </>
           )}
-        </div>
-
-        <div className="p-4 bg-[#0F0F12] border-t border-white/[0.04] pb-24 md:pb-4">
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.03] border border-white/[0.04]">
-            <UserAvatar
-              src={currentUser.avatarUrl}
-              name={currentUser.anonymousName || "Anonymous"}
-              size="md"
-              showStatus={true}
-              isConnected={isConnected}
-              isConnecting={isConnecting}
-            />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-bold text-white truncate">
-                  {isLoggedIn ? currentUser.anonymousName || "Anonymous" : "Guest"}
-                </p>
-                {isLoggedIn && currentUser.studentYear && (
-                  <span className="text-[9px] px-1.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold font-mono shrink-0">
-                    Y{currentUser.studentYear}
-                  </span>
-                )}
-                {!isLoggedIn && (
-                  <span className="text-[9px] px-1.5 py-0.5 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/20 font-bold font-mono shrink-0">
-                    Read only
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 font-medium mt-0.5">
-                <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? "bg-emerald-500" : isConnecting ? "bg-amber-400" : "bg-zinc-600"}`} />
-                <span>
-                  {isLoggedIn
-                    ? isConnected
-                      ? "Online"
-                      : isConnecting
-                      ? "Connecting"
-                      : "Offline"
-                    : "Sign in to send messages"}
-                </span>
-              </div>
-            </div>
-          </div>
         </div>
       </aside>
 

@@ -288,7 +288,7 @@ export default function ChatContainer({ currentUser, isLoggedIn = true }: ChatCo
       <div className="flex h-full w-full relative z-10">
         {/* Left Sidebar */}
         <div
-          className={`h-full md:w-[320px] md:shrink-0 md:border-r border-white/[0.08] ${
+          className={`h-full md:w-[350px] lg:w-[380px] md:shrink-0 md:border-r border-white/[0.08] ${
             mobileView === "list" ? "flex flex-col w-full" : "hidden md:flex"
           }`}
         >

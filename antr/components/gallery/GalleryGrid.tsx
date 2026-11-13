@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { GalleryPost, deleteGalleryPhoto } from "@/lib/api/gallery";
 import { UserProfile } from "@/app/lib/auth";
-import ImageZoomModal from "@/components/marketplace/ImageZoomModal";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import LoadingAnimation from "@/components/ui/LoadingAnimation";
 
@@ -45,7 +44,6 @@ export default function GalleryGrid({
   const [selectedPost, setSelectedPost] = useState<GalleryPost | null>(null);
   const [postToDelete, setPostToDelete] = useState<GalleryPost | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [isZoomOpen, setIsZoomOpen] = useState(false);
 
   const handleDeleteClick = (e: React.MouseEvent, post: GalleryPost) => {
     e.stopPropagation();
@@ -78,22 +76,20 @@ export default function GalleryGrid({
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="py-6 flex justify-center">
+        <div className="py-12 flex justify-center">
           <LoadingAnimation
             size="sm"
-            text="Streaming Media"
-            subtitle="Fetching latest campus moments"
+            text="Loading Moments"
+            subtitle="Fetching campus photography"
           />
         </div>
-        <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-3.5 space-y-3.5">
+        <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-4 space-y-4">
           {Array.from({ length: 10 }).map((_, idx) => (
             <div
               key={idx}
-              className="break-inside-avoid rounded-2xl bg-zinc-950/70 border border-white/[0.05] relative overflow-hidden shadow-inner"
-              style={{ height: `${200 + (idx % 4) * 55}px` }}
-            >
-              <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/[0.04] to-transparent animate-shimmer-slide" />
-            </div>
+              className="break-inside-avoid rounded-2xl bg-zinc-900/60 border border-white/[0.05] relative overflow-hidden"
+              style={{ height: `${220 + (idx % 3) * 60}px` }}
+            />
           ))}
         </div>
       </div>
@@ -103,8 +99,8 @@ export default function GalleryGrid({
   if (posts.length === 0) {
     return (
       <div className="py-28 text-center flex flex-col items-center justify-center space-y-4 max-w-sm mx-auto">
-        <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-center text-zinc-400">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-zinc-400">
+          <svg className="w-6 h-6 text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -114,18 +110,16 @@ export default function GalleryGrid({
           </svg>
         </div>
         <div className="space-y-1">
-          <p className="text-sm font-medium text-zinc-300">No photos yet</p>
-          <p className="text-xs text-zinc-500">
-            Be the first to add a photo to the stream
-          </p>
+          <p className="text-sm font-semibold text-zinc-200">No moments yet</p>
+          <p className="text-xs text-zinc-400">Be the first to share a photo from campus</p>
         </div>
         {onOpenUpload && (
           <button
             type="button"
             onClick={onOpenUpload}
-            className="px-4 py-2 rounded-xl bg-white text-black hover:bg-zinc-200 text-xs font-medium transition-all active:scale-95 cursor-pointer shadow-sm"
+            className="px-4 py-2 rounded-xl bg-white text-zinc-950 hover:bg-zinc-200 text-xs font-semibold transition-all active:scale-95 cursor-pointer shadow-sm"
           >
-            Upload photo
+            + Upload Photo
           </button>
         )}
       </div>
@@ -134,8 +128,8 @@ export default function GalleryGrid({
 
   return (
     <>
-      {/* Editorial Masonry Grid */}
-      <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-3.5 space-y-3.5">
+      {/* Professional Masonry Columns */}
+      <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-4 space-y-4">
         {posts.map((post) => {
           const isOwner =
             currentUser &&
@@ -149,122 +143,106 @@ export default function GalleryGrid({
             <div
               key={post.id}
               onClick={() => setSelectedPost(post)}
-              className="break-inside-avoid group relative rounded-2xl overflow-hidden bg-zinc-950 border border-white/[0.06] hover:border-white/20 transition-all duration-300 cursor-pointer shadow-md hover:shadow-xl select-none"
+              className="break-inside-avoid group relative rounded-2xl overflow-hidden bg-zinc-950 border border-white/[0.08] hover:border-white/25 transition-all duration-300 cursor-pointer shadow-sm hover:shadow-xl select-none"
             >
-              {/* Media Image */}
               <div className="relative w-full overflow-hidden bg-zinc-950">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={post.mediaUrl}
-                  alt={post.caption || "Photo"}
+                  alt={post.caption || "Campus Moment"}
                   loading="lazy"
-                  className="w-full h-auto object-cover group-hover:scale-[1.02] transition-transform duration-500 ease-out"
+                  className="w-full h-auto object-cover group-hover:scale-[1.025] transition-transform duration-300 ease-out"
                 />
 
-                {/* Top-Left Chat Username Badge */}
-                <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1.5">
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-white/15 text-white shadow-lg transition-transform duration-200 group-hover:scale-105">
+                {/* Top User Pill Badge */}
+                <div className="absolute top-2.5 left-2.5 z-10">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/65 backdrop-blur-md border border-white/10 text-white shadow-md">
                     {post.uploaderAvatarUrl ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
                         src={post.uploaderAvatarUrl}
-                        alt={post.uploaderUsername || "Chat User"}
-                        className="w-3.5 h-3.5 rounded-full object-cover border border-white/20 shrink-0"
+                        alt=""
+                        className="w-3.5 h-3.5 rounded-full object-cover"
                       />
                     ) : (
-                      <span className="w-3.5 h-3.5 rounded-full bg-gradient-to-tr from-emerald-400 to-teal-400 flex items-center justify-center text-[8px] font-bold text-zinc-950 uppercase shrink-0">
-                        {(post.uploaderUsername || "A").slice(0, 1)}
+                      <span className="w-3.5 h-3.5 rounded-full bg-white/20 text-white flex items-center justify-center text-[9px] font-bold">
+                        {(post.uploaderUsername || "A")[0]}
                       </span>
                     )}
-                    <span className="text-[11px] font-medium tracking-tight text-zinc-200 max-w-[100px] sm:max-w-[120px] truncate">
+                    <span className="text-[11px] font-medium text-zinc-200 truncate max-w-[95px]">
                       {post.uploaderUsername || "Anonymous"}
                     </span>
-                    {post.uploaderTag && (
-                      <span className="text-[9px] px-1 py-0.5 rounded bg-white/10 text-emerald-400 font-mono hidden sm:inline-block">
-                        {post.uploaderTag}
-                      </span>
-                    )}
                   </div>
                 </div>
 
-                {/* Top-Right overlay actions (Owner delete button & timestamp) */}
-                <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-10">
-                  {isOwner && (
-                    <button
-                      type="button"
-                      onClick={(e) => handleDeleteClick(e, post)}
-                      disabled={deletingId === post.id}
-                      title="Delete"
-                      className="p-1.5 rounded-lg bg-black/70 hover:bg-rose-600/90 text-zinc-300 hover:text-white transition-colors backdrop-blur-md border border-white/15 cursor-pointer shadow-md"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  )}
+                {/* Top Right: Delete Button (if owner) */}
+                {isOwner && (
+                  <button
+                    type="button"
+                    onClick={(e) => handleDeleteClick(e, post)}
+                    disabled={deletingId === post.id}
+                    title="Delete photo"
+                    className="absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-black/65 hover:bg-rose-600 text-zinc-300 hover:text-white transition-colors backdrop-blur-md border border-white/10 z-10 cursor-pointer shadow-md"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                )}
 
-                  <span className="px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-md border border-white/15 text-[10px] text-zinc-300 shadow-md">
-                    {formatRelativeTime(post.createdAt)}
-                  </span>
-                </div>
-
-                {/* Bottom caption overlay (if present) */}
-                {post.caption && (
-                  <div className="absolute bottom-0 inset-x-0 p-3 pt-8 bg-gradient-to-t from-black/85 via-black/40 to-transparent flex flex-col gap-0.5 z-10">
+                {/* Bottom Overlay: Caption + Time */}
+                <div className="absolute bottom-0 inset-x-0 p-3 pt-8 bg-gradient-to-t from-black/85 via-black/40 to-transparent flex flex-col gap-1">
+                  {post.caption && (
                     <p className="text-xs text-white/95 font-medium line-clamp-2 leading-snug drop-shadow-sm">
                       {post.caption}
                     </p>
-                  </div>
-                )}
+                  )}
+                  <span className="text-[10px] text-zinc-400 font-mono">
+                    {formatRelativeTime(post.createdAt)}
+                  </span>
+                </div>
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* Cinematic Fullscreen Lightbox Modal */}
+      {/* Professional Fullscreen Lightbox Modal */}
       {selectedPost && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-xl animate-fadeIn"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-xl animate-in fade-in duration-150"
           onClick={() => setSelectedPost(null)}
         >
-          {/* Inner Lightbox Container */}
           <div
-            className="relative max-w-4xl max-h-[90vh] w-full flex flex-col rounded-2xl bg-zinc-950 border border-white/10 shadow-2xl overflow-hidden"
+            className="relative max-w-4xl max-h-[90vh] w-full flex flex-col rounded-2xl bg-[#0d0f14] border border-white/10 overflow-hidden shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Top Minimal Bar with Uploader Chat Profile */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.08] bg-zinc-950/90 backdrop-blur-md">
-              <div className="flex items-center gap-2.5 min-w-0">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-white/[0.08] bg-[#12141a]/95">
+              <div className="flex items-center gap-3">
                 {selectedPost.uploaderAvatarUrl ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img
                     src={selectedPost.uploaderAvatarUrl}
-                    alt={selectedPost.uploaderUsername || "Chat User"}
-                    className="w-8 h-8 rounded-full object-cover border border-white/20 shrink-0"
+                    alt=""
+                    className="w-8 h-8 rounded-full object-cover border border-white/15"
                   />
                 ) : (
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-xs font-bold text-zinc-950 uppercase shrink-0 shadow-inner">
-                    {(selectedPost.uploaderUsername || "A").slice(0, 1)}
+                  <div className="w-8 h-8 rounded-full bg-white/15 text-white flex items-center justify-center text-xs font-bold">
+                    {(selectedPost.uploaderUsername || "A")[0]}
                   </div>
                 )}
-                <div className="flex flex-col min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs sm:text-sm font-semibold text-white truncate">
-                      {selectedPost.uploaderUsername || "Anonymous"}
-                    </span>
-                    {selectedPost.uploaderTag && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono font-medium">
-                        {selectedPost.uploaderTag}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[10px] text-zinc-400 font-mono">
+                <div>
+                  <p className="text-sm font-semibold text-white">
+                    {selectedPost.uploaderUsername || "Anonymous"}
+                  </p>
+                  <p className="text-[10px] text-zinc-400 font-mono">
                     {formatRelativeTime(selectedPost.createdAt)}
-                  </span>
+                  </p>
                 </div>
               </div>
 
+              {/* Action Buttons */}
               <div className="flex items-center gap-2">
                 {currentUser &&
                   ((selectedPost.uploaderId && currentUser.id === selectedPost.uploaderId) ||
@@ -276,17 +254,9 @@ export default function GalleryGrid({
                       type="button"
                       onClick={(e) => handleDeleteClick(e, selectedPost)}
                       disabled={deletingId === selectedPost.id}
-                      className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-xs text-rose-400 hover:text-rose-300 transition-colors flex items-center gap-1.5 border border-rose-500/20 cursor-pointer"
+                      className="px-3 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 text-xs font-medium border border-rose-500/30 transition-colors"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.75}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                      <span>Delete</span>
+                      Delete
                     </button>
                   )}
 
@@ -294,7 +264,7 @@ export default function GalleryGrid({
                   href={selectedPost.mediaUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-zinc-400 hover:text-white transition-colors"
+                  className="px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-xs font-medium text-zinc-300 hover:text-white transition-colors border border-white/[0.08]"
                 >
                   Original ↗
                 </a>
@@ -302,40 +272,27 @@ export default function GalleryGrid({
                 <button
                   type="button"
                   onClick={() => setSelectedPost(null)}
-                  className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer text-xs"
+                  className="w-8 h-8 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-zinc-400 hover:text-white flex items-center justify-center text-sm border border-white/[0.08] transition-colors cursor-pointer"
                 >
                   ✕
                 </button>
               </div>
             </div>
 
-            {/* High-Res Image Canvas */}
-            <div className="flex-1 overflow-auto bg-black flex items-center justify-center p-2 min-h-[300px] relative group/preview">
+            {/* Modal Photo Frame */}
+            <div className="flex-1 overflow-auto bg-black flex items-center justify-center p-3 min-h-[300px]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={selectedPost.mediaUrl}
-                alt={selectedPost.caption || "Full resolution photo"}
-                onClick={() => setIsZoomOpen(true)}
-                className="max-h-[72vh] w-auto max-w-full object-contain rounded-lg select-none cursor-zoom-in hover:brightness-105 transition-all"
-                title="Click to zoom in"
+                alt={selectedPost.caption || "Photo"}
+                className="max-h-[72vh] w-auto max-w-full object-contain rounded-xl select-none"
               />
-              <button
-                type="button"
-                onClick={() => setIsZoomOpen(true)}
-                className="absolute bottom-4 right-4 px-3 py-1.5 rounded-full bg-black/80 hover:bg-black text-white text-xs font-mono font-semibold border border-white/20 backdrop-blur-md shadow-lg flex items-center gap-1.5 cursor-pointer opacity-90 sm:opacity-0 sm:group-hover/preview:opacity-100 transition-opacity"
-              >
-                <span>🔍</span>
-                <span className="text-emerald-400">Zoom</span>
-              </button>
             </div>
 
-            {/* Lightbox Caption (if present) */}
+            {/* Caption Footer */}
             {selectedPost.caption && (
-              <div className="px-5 py-3.5 bg-zinc-950 border-t border-white/[0.08] flex items-start gap-2">
-                <span className="text-xs font-semibold text-emerald-400 shrink-0 pt-0.5">
-                  @{selectedPost.uploaderUsername || "Anonymous"}:
-                </span>
-                <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
+              <div className="px-5 py-3.5 bg-[#12141a] border-t border-white/[0.08]">
+                <p className="text-xs sm:text-sm text-zinc-200 leading-relaxed">
                   {selectedPost.caption}
                 </p>
               </div>
@@ -344,23 +301,12 @@ export default function GalleryGrid({
         </div>
       )}
 
-      {/* Fullscreen Interactive Lightbox Zoom Modal */}
-      {selectedPost && (
-        <ImageZoomModal
-          isOpen={isZoomOpen}
-          onClose={() => setIsZoomOpen(false)}
-          images={posts.map((p) => p.mediaUrl)}
-          initialIndex={posts.findIndex((p) => p.id === selectedPost.id)}
-          title={selectedPost.caption || `Photo by @${selectedPost.uploaderUsername || "Anonymous"}`}
-        />
-      )}
-
-      {/* Sleek Confirm Modal for Delete */}
+      {/* Confirm Delete */}
       <ConfirmModal
         isOpen={!!postToDelete}
         title="Delete Photo"
-        description="Are you sure you want to delete this photo? It will be removed permanently from the public gallery."
-        confirmText="Delete photo"
+        description="Are you sure you want to delete this photo from the campus feed?"
+        confirmText="Delete"
         cancelText="Cancel"
         variant="danger"
         isLoading={deletingId !== null}

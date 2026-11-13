@@ -10,7 +10,7 @@ import {
   MediaItem,
   resolveGiphyUrl,
 } from "@/lib/chat/mediaData";
-import { IsometricCubeIcon, IsometricSparkleIcon, IsometricMediaIcon } from "./FolderTab";
+import { IsometricCubeIcon, IsometricMediaIcon } from "./FolderTab";
 
 interface MediaPickerProps {
   isOpen: boolean;
@@ -202,7 +202,9 @@ export default function MediaPicker({
                 : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]"
             }`}
           >
-            <IsometricSparkleIcon className="w-3.5 h-3.5" />
+            <svg className="w-3.5 h-3.5 text-zinc-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
             <span>Stickers</span>
           </button>
 

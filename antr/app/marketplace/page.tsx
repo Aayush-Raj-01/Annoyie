@@ -12,7 +12,7 @@ import LoadingAnimation from "@/components/ui/LoadingAnimation";
 import OlxHeader from "@/components/marketplace/OlxHeader";
 import OlxCategoryGrid, { OLX_CATEGORIES } from "@/components/marketplace/OlxCategoryGrid";
 import OlxProductCard from "@/components/marketplace/OlxProductCard";
-import OlxSellButton from "@/components/marketplace/OlxSellButton";
+import ProductDetailModal from "@/components/marketplace/ProductDetailModal";
 import OlxDrawer from "@/components/marketplace/OlxDrawer";
 import {
   MarketplaceProfile,
@@ -62,6 +62,7 @@ export default function MarketplacePage() {
   const [currentPage, setCurrentPage] = useState(1);
 
   // Dialogs, Drawers & Wishlist
+  const [selectedDetailListing, setSelectedDetailListing] = useState<MarketplaceListing | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
   const [toast, setToast] = useState<{ message: string; variant: ToastVariant } | null>(null);
@@ -466,15 +467,25 @@ export default function MarketplacePage() {
         {/* "FRESH RECOMMENDATIONS" FEED SECTION                     */}
         {/* ========================================================= */}
         <section className="space-y-4 pt-2">
-          {/* Header Row: Title & Sub-Filter Chips */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-white/[0.08]">
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg sm:text-xl font-bold tracking-tight text-white">
-                Fresh recommendations
+          {/* Header Row: Title, Category Badge & Sub-Filter Chips */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-white/[0.08]">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-base sm:text-xl font-bold tracking-tight text-white">
+                {selectedCategoryId !== "nearby" ? activeCategoryObj.label : "Fresh recommendations"}
               </h2>
               <span className="text-xs font-mono text-zinc-500">
                 ({filteredListings.length})
               </span>
+              {selectedCategoryId !== "nearby" && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategoryId("nearby")}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 text-[10px] font-mono hover:bg-emerald-500/25 transition-colors cursor-pointer"
+                  title="Clear category filter"
+                >
+                  <span>✕ Reset</span>
+                </button>
+              )}
             </div>
 
             {/* Filter Chips */}
@@ -498,20 +509,6 @@ export default function MarketplacePage() {
               })}
             </div>
           </div>
-
-          {/* Active Filter Pill Alert (if a category is active) */}
-          {selectedCategoryId !== "nearby" && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300">
-              <span>Showing: <strong>{activeCategoryObj.label}</strong></span>
-              <button
-                type="button"
-                onClick={() => setSelectedCategoryId("nearby")}
-                className="ml-auto font-bold underline hover:text-white cursor-pointer"
-              >
-                Clear
-              </button>
-            </div>
-          )}
 
           {/* Product Feed Grid */}
           {isLoadingListings ? (
@@ -574,6 +571,7 @@ export default function MarketplacePage() {
                     onDelete={handleDeleteListing}
                     isFavorite={wishlistIds.has(listing.id)}
                     onToggleFavorite={handleToggleFavorite}
+                    onClick={() => setSelectedDetailListing(listing)}
                   />
                 );
               })}
@@ -625,10 +623,19 @@ export default function MarketplacePage() {
         </section>
       </div>
 
-      {/* ========================================================= */}
-      {/* THE ICONIC FLOATING "+ SELL" BUTTON (Matching Screenshot) */}
-      {/* ========================================================= */}
-      <OlxSellButton onClick={handlePostItemClick} />
+      {/* Full Product Detail Sheet / Modal */}
+      <ProductDetailModal
+        listing={selectedDetailListing}
+        isOpen={Boolean(selectedDetailListing)}
+        onClose={() => setSelectedDetailListing(null)}
+        isMine={Boolean(
+          (currentUser?.id && selectedDetailListing?.sellerUserId === currentUser.id) ||
+          (marketProfile?.id && selectedDetailListing?.sellerProfileId === marketProfile.id)
+        )}
+        isFavorite={selectedDetailListing ? wishlistIds.has(selectedDetailListing.id) : false}
+        onToggleFavorite={handleToggleFavorite}
+        onDelete={handleDeleteListing}
+      />
 
       {/* OLX Side Navigation Drawer */}
       <OlxDrawer

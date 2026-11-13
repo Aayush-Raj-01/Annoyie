@@ -34,17 +34,11 @@ export function IsometricCubeIcon({ className = "w-4 h-4" }: { className?: strin
   );
 }
 
-export function IsometricSparkleIcon({ className = "w-4 h-4" }: { className?: string }) {
+export function IsometricHashIcon({ className = "w-3.5 h-3.5" }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none">
-      <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="url(#sparkle-grad)" />
-      <defs>
-        <linearGradient id="sparkle-grad" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#F43F5E" />
-          <stop offset="1" stopColor="#FB7185" />
-        </linearGradient>
-      </defs>
-    </svg>
+    <span className={`${className} font-mono font-bold text-zinc-400 flex items-center justify-center`}>
+      #
+    </span>
   );
 }
 
@@ -105,8 +99,6 @@ export default function FolderTabs({
                 tab.customIcon
               ) : tab.icon === "cube" ? (
                 <IsometricCubeIcon />
-              ) : tab.icon === "sparkles" ? (
-                <IsometricSparkleIcon />
               ) : tab.icon === "media" ? (
                 <IsometricMediaIcon />
               ) : (

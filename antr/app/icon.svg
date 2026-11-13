@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <!-- Pitch Black Void Gradient -->
+    <radialGradient id="voidGlow" cx="50%" cy="45%" r="60%">
+      <stop offset="0%" stop-color="#051a11" />
+      <stop offset="60%" stop-color="#020704" />
+      <stop offset="100%" stop-color="#000000" />
+    </radialGradient>
+
+    <!-- Toxic Creepy Emerald Glow -->
+    <linearGradient id="toxicGreen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#86efac" />
+      <stop offset="40%" stop-color="#22c55e" />
+      <stop offset="100%" stop-color="#15803d" />
+    </linearGradient>
+
+    <linearGradient id="eyeGlow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#bbf7d0" />
+      <stop offset="70%" stop-color="#22c55e" />
+      <stop offset="100%" stop-color="#14532d" />
+    </linearGradient>
+
+    <filter id="eerieGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="14" result="blur1" />
+      <feGaussianBlur stdDeviation="6" result="blur2" />
+      <feMerge>
+        <feMergeNode in="blur1" />
+        <feMergeNode in="blur2" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Dark Rounded Squircle Base -->
+  <rect width="512" height="512" rx="128" fill="url(#voidGlow)" />
+  <rect x="8" y="8" width="496" height="496" rx="120" fill="none" stroke="#22c55e" stroke-width="4" stroke-opacity="0.3" />
+
+  <!-- Eerie Creepy Face Features emerging from the dark -->
+  <g filter="url(#eerieGlow)">
+    <!-- Left Sinister Slanted Eye -->
+    <path d="M 115 210 
+             C 145 175, 195 168, 230 198 
+             C 215 228, 175 240, 115 210 Z" 
+          fill="url(#eyeGlow)" />
+    
+    <!-- Left Piercing Pupil Slit -->
+    <ellipse cx="178" cy="204" rx="4" ry="16" fill="#000000" transform="rotate(-15 178 204)" />
+
+    <!-- Right Sinister Slanted Eye -->
+    <path d="M 397 210 
+             C 367 175, 317 168, 282 198 
+             C 297 228, 337 240, 397 210 Z" 
+          fill="url(#eyeGlow)" />
+    
+    <!-- Right Piercing Pupil Slit -->
+    <ellipse cx="334" cy="204" rx="4" ry="16" fill="#000000" transform="rotate(15 334 204)" />
+
+    <!-- Creepy Whispering Nose Slits -->
+    <ellipse cx="248" cy="254" rx="3" ry="7" fill="#22c55e" opacity="0.6" transform="rotate(-12 248 254)" />
+    <ellipse cx="264" cy="254" rx="3" ry="7" fill="#22c55e" opacity="0.6" transform="rotate(12 264 254)" />
+
+    <!-- Creepy Sinister Grin (Cheshire / Phantom Smile) -->
+    <!-- Outer Smile Contour -->
+    <path d="M 120 285 
+             C 170 385, 342 385, 392 285 
+             C 355 335, 157 335, 120 285 Z" 
+          fill="url(#toxicGreen)" />
+
+    <!-- Jagged Creepy Sharp Teeth in the Grin -->
+    <!-- Top Sharp Teeth -->
+    <polygon points="175,296 187,314 200,298" fill="#000000" />
+    <polygon points="212,301 224,322 237,303" fill="#000000" />
+    <polygon points="248,304 256,326 264,304" fill="#000000" />
+    <polygon points="275,303 288,322 300,301" fill="#000000" />
+    <polygon points="312,298 325,314 337,296" fill="#000000" />
+
+    <!-- Bottom Sharp Teeth -->
+    <polygon points="190,345 204,326 218,348" fill="#000000" />
+    <polygon points="228,354 242,329 256,355" fill="#000000" />
+    <polygon points="256,355 270,329 284,354" fill="#000000" />
+    <polygon points="294,348 308,326 322,345" fill="#000000" />
+
+    <!-- Eerie Stitched Smile Corner Slits -->
+    <line x1="102" y1="272" x2="124" y2="288" stroke="#86efac" stroke-width="4" stroke-linecap="round" />
+    <line x1="112" y1="274" x2="116" y2="286" stroke="#22c55e" stroke-width="3" stroke-linecap="round" />
+    <line x1="410" y1="272" x2="388" y2="288" stroke="#86efac" stroke-width="4" stroke-linecap="round" />
+    <line x1="400" y1="274" x2="396" y2="286" stroke="#22c55e" stroke-width="3" stroke-linecap="round" />
+  </g>
+</svg>
